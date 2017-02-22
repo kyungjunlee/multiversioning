@@ -6,7 +6,6 @@
 #include <memory>
 #include <vector>
 #include <stdint.h>
-#include <vector>
 
 // Fully abstract class specifying the behavior of a container. 
 //

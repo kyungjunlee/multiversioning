@@ -2,6 +2,7 @@
 #define _TEST_ACTION_H_
 
 #include <batch/batch_action.h>
+#include <test/test_txn.h>
 
 /*
  * Simple test fixture for actions.
@@ -53,6 +54,16 @@ public:
 
   // own functions
   uint64_t get_id() const {return id;}
+  static std::shared_ptr<TestAction> make_test_action_with_test_txn(
+      RecSet writes,
+      RecSet reads) {
+    std::shared_ptr<TestAction> ta = std::make_shared<TestAction>(new TestTxn());
+
+    for (auto& j : writes) ta->add_write_key(j);
+    for (auto& j : reads) ta->add_read_key(j);
+
+    return ta;
+  };
 }; 
 
 #endif //_TEST_ACTION_H_
