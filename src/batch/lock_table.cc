@@ -1,6 +1,8 @@
 #include "batch/lock_table.h"
 #include "batch/lock_types.h"
 
+#include <cassert>
+
 LockTable::LockTable() {} 
 
 void LockTable::merge_batch_table(BatchLockTable& blt) {
@@ -33,8 +35,7 @@ void BatchLockTable::insert_lock_request(std::shared_ptr<BatchAction> req) {
       if (blq->peek_tail() == nullptr || 
           blq->peek_tail()->add_to_stage(req, typ) == false) {
         // insertion into the stage failed. Make a new stage and add it in.
-        LockStage* ls = new LockStage({req}, typ);
-        blq->non_concurrent_push_tail(ls); 
+        blq->non_concurrent_push_tail(std::move(LockStage({req}, typ))); 
       }
     }
   };

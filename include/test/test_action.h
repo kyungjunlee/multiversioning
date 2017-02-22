@@ -54,13 +54,15 @@ public:
 
   // own functions
   uint64_t get_id() const {return id;}
-  static std::shared_ptr<TestAction> make_test_action_with_test_txn(
+  static TestAction* make_test_action_with_test_txn(
       RecSet writes,
-      RecSet reads) {
-    std::shared_ptr<TestAction> ta = std::make_shared<TestAction>(new TestTxn());
+      RecSet reads,
+      uint64_t id = 0) {
+    TestAction* ta = new TestAction(new TestTxn());
 
     for (auto& j : writes) ta->add_write_key(j);
     for (auto& j : reads) ta->add_read_key(j);
+    ta->id = id;
 
     return ta;
   };

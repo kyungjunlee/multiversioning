@@ -16,6 +16,7 @@
 // The container allows us to obtain the elements in an increasing order
 // skipping some of them.
 class Container {
+public:
   typedef std::unique_ptr<BatchAction> action_uptr;
   typedef std::vector<action_uptr> actions_vec;
 protected:

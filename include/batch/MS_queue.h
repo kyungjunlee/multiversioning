@@ -5,6 +5,8 @@
 //    - Memory Management. Right now we have memory leakage within the destructor
 //    since the lock stages are never deallocated!
 //    - Overloading of new/delete.
+//    - Memory management within pop. The QueueElt should be released, since we are 
+//    only ever passing the contents.
 
 /*
  *    MS Queue
@@ -28,7 +30,8 @@ public:
   class QueueElt {
   public:
     QueueElt();
-    QueueElt(Elt* e);
+    QueueElt(const Elt& e);
+    QueueElt(Elt&& e);
     Elt* contents;
     QueueElt* next;
     
@@ -49,10 +52,15 @@ public:
   Elt* peek_head() const; 
   
   Elt* try_pop_head();
-  
+  void push_tail(const Elt& e);
+  void push_tail(Elt&& e);
+
   // The implicit assumption is that lq is immutable at the time of
   // merging. 
   void merge_queue(MSQueue<Elt>* lq);
+
+private:
+  void push_tail_implem(QueueElt* qe);
 };
 
 #include "batch/MS_queue_impl.h"

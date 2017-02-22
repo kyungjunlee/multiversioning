@@ -16,7 +16,10 @@ class BatchLockQueue;
  *    
  *    A queue of lock stages implemented as a MS-queue. See batch/MS_queue.h for details. 
  */
-typedef MSQueue<LockStage> LockQueue;
+class LockQueue : public MSQueue<LockStage> {
+private:
+  using MSQueue<LockStage>::push_tail;
+};
 
 /*
  * BatchLockQueue
@@ -26,11 +29,14 @@ typedef MSQueue<LockStage> LockQueue;
  *    merging into the global schedule.
  */
 class BatchLockQueue : public MSQueue<LockStage> {
+private:
+  void non_concurrent_push_tail_implem(typename MSQueue<LockStage>::QueueElt* ls);
 public:
   // TODO:
   //    This creates an element using the new directive. Make sure to override
   //    it and return memory whenever necessary.
-  void non_concurrent_push_tail(LockStage* ls);
+  void non_concurrent_push_tail(LockStage&& ls);
+  void non_concurrent_push_tail(const LockStage& ls);
 };
 
 #endif // _LOCK_QUEUE_H_

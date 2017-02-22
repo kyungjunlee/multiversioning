@@ -36,7 +36,8 @@ TEST_F(LockStageTest, constructorTests) {
   expect_requesting_actions_to_be(ls1, LockStage::RequestingActions({}));
   expect_lock_type_to_be(ls1, LockType::shared);
 
-  std::shared_ptr<TestAction> requester = TestAction::make_test_action_with_test_txn({}, {});
+  std::shared_ptr<TestAction> requester = 
+    std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {}));
   LockStage ls2(
       {requester},
       LockType::exclusive);
@@ -51,14 +52,14 @@ TEST_F(LockStageTest, addStageToSharedTest) {
   LockStage ls1;
   // insertion of a single shared stage to an empty lockstage
   ASSERT_TRUE(ls1.add_to_stage(
-        TestAction::make_test_action_with_test_txn({}, {}),
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
         LockType::shared));
   expect_lock_type_to_be(ls1, LockType::shared);
   ASSERT_EQ(ls1.get_requesters().size(), 1);
 
   // insertion of another shared stage to the same lockstage
   ASSERT_TRUE(ls1.add_to_stage(
-        TestAction::make_test_action_with_test_txn({}, {}),
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
         LockType::shared));
   expect_lock_type_to_be(ls1, LockType::shared);
   ASSERT_EQ(ls1.get_requesters().size(), 2);
@@ -66,7 +67,7 @@ TEST_F(LockStageTest, addStageToSharedTest) {
   // attempt to insert an exlusive stage to the same lockstage
   LockStage expected(ls1);
   ASSERT_FALSE(ls1.add_to_stage(
-        TestAction::make_test_action_with_test_txn({}, {}),
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
         LockType::exclusive));
   // the stage should not have changed
   expect_lock_stages_to_equal(expected, ls1); 
@@ -77,7 +78,7 @@ TEST_F(LockStageTest, addStageToSharedTest) {
 TEST_F(LockStageTest, addStageToExclusiveTest) {
   LockStage ls1;
   ASSERT_TRUE(ls1.add_to_stage(
-        TestAction::make_test_action_with_test_txn({}, {}),
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
         LockType::exclusive));
   ASSERT_EQ(TestLockStage(ls1).get_lock_type(), LockType::exclusive);
   ASSERT_EQ(ls1.get_requesters().size(), 1);
@@ -86,12 +87,12 @@ TEST_F(LockStageTest, addStageToExclusiveTest) {
   // not change
   LockStage expected(ls1);
   ASSERT_FALSE(ls1.add_to_stage(
-        TestAction::make_test_action_with_test_txn({}, {}),
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
         LockType::exclusive));
   expect_lock_stages_to_equal(expected, ls1); 
 
   ASSERT_FALSE(ls1.add_to_stage(
-        TestAction::make_test_action_with_test_txn({}, {}),
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
         LockType::shared));
   expect_lock_stages_to_equal(expected, ls1); 
 }
@@ -100,7 +101,9 @@ TEST_F(LockStageTest, decrement_holdersTest) {
   // lock stage with 100 actions
   LockStage ls1;
   for (unsigned int i = 0; i < 100; i++) 
-    ls1.add_to_stage(TestAction::make_test_action_with_test_txn({}, {}), LockType::shared);
+    ls1.add_to_stage(
+        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})), 
+        LockType::shared);
 
   // single threaded decrement works.
   expect_holders_to_be(ls1, 100);

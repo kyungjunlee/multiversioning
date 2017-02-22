@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include <cassert>
+#include <utility>
 
 // Definitions of QueueElt functions.
 template <typename Elt>
@@ -11,8 +12,14 @@ MSQueue<Elt>::QueueElt::QueueElt() :
 {};
 
 template <typename Elt>
-MSQueue<Elt>::QueueElt::QueueElt(Elt* e):
-  contents(e),
+MSQueue<Elt>::QueueElt::QueueElt(const Elt& e):
+  contents(new Elt(e)),
+  next(nullptr)
+{};
+
+template <typename Elt>
+MSQueue<Elt>::QueueElt::QueueElt(Elt&& e):
+  contents(new Elt(std::forward<Elt>(e))),
   next(nullptr)
 {};
 
@@ -100,6 +107,38 @@ Elt* MSQueue<Elt>::try_pop_head() {
   }  
 
   return m_next->get_contents();
+}
+
+template <typename Elt>
+void MSQueue<Elt>::push_tail(Elt&& e) {
+  push_tail_implem(new QueueElt(std::forward<Elt>(e)));  
+}
+
+template <typename Elt>
+void MSQueue<Elt>::push_tail(const Elt& e) {
+  push_tail_implem(new QueueElt(e));
+};
+
+template <typename Elt>
+void MSQueue<Elt>::push_tail_implem(QueueElt* qe) {
+  QueueElt* m_tail = tail;
+  barrier();
+
+  // single consumer, single producer means that this must
+  // succeed on the first attempt
+  bool CAS_success = false;
+  assert(m_tail->get_next_elt() == nullptr);
+  // set the next stage
+  CAS_success = m_tail->set_next_elt(qe);
+  assert(CAS_success);
+
+  // swing the tail around.
+  CAS_success= cmp_and_swap(
+     (uint64_t*) &tail, 
+     (uint64_t) m_tail,
+     (uint64_t) qe);
+  assert(CAS_success); 
+
 }
 
 template <typename Elt>
