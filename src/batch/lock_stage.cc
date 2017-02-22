@@ -4,17 +4,14 @@
 
 LockStage::LockStage(): 
     holders(0),
-    next_stage(nullptr),
     l_type(LockType::shared),
     requesters({})
   {};
 
 LockStage::LockStage(
       RequestingActions requesters,
-      LockType lt,
-      LockStage* ns):
+      LockType lt):
     holders(requesters.size()),
-    next_stage(ns),
     l_type(lt),
     requesters(requesters)
   {
@@ -37,14 +34,6 @@ bool LockStage::add_to_stage(Action_spt txn, LockType lt) {
 
 uint64_t LockStage::decrement_holders() {
   return fetch_and_decrement(&holders);
-}
-
-bool LockStage::set_next_stage(LockStage* ns) {
-  return cmp_and_swap((uint64_t*) &next_stage, 0, (uint64_t) ns); 
-}
-
-LockStage* LockStage::get_next_stage() {
-  return next_stage; 
 }
 
 const LockStage::RequestingActions& LockStage::get_requesters() const {

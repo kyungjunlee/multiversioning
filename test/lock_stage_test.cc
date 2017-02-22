@@ -5,6 +5,12 @@
 
 #include <thread>
 
+bool operator==(const LockStage& ls1, const LockStage& ls2) {
+  return (ls1.requesters == ls2.requesters &&
+    ls1.holders == ls2.holders &&
+    ls1.l_type == ls2.l_type);
+}
+
 class LockStageTest : public testing::Test {
 protected:
   void expect_holders_to_be(LockStage& ls, uint64_t n) {
@@ -13,10 +19,6 @@ protected:
 
   void expect_requesting_actions_to_be(LockStage& ls, const LockStage::RequestingActions& exp) {
     ASSERT_EQ(exp, TestLockStage(ls).get_requesters());
-  }
-
-  void expect_next_stage_to_be(LockStage& ls, LockStage* ns) {
-    ASSERT_EQ(ns, TestLockStage(ls).get_next_stage());
   }
 
   void expect_lock_type_to_be(LockStage& ls, LockType lt) {
@@ -32,17 +34,14 @@ TEST_F(LockStageTest, constructorTests) {
   LockStage ls1;
   expect_holders_to_be(ls1, 0);
   expect_requesting_actions_to_be(ls1, LockStage::RequestingActions({}));
-  expect_next_stage_to_be(ls1, nullptr);
   expect_lock_type_to_be(ls1, LockType::shared);
 
   std::shared_ptr<TestAction> requester = TestAction::make_test_action_with_test_txn({}, {});
   LockStage ls2(
       {requester},
-      LockType::exclusive,
-      &ls1);
+      LockType::exclusive);
   expect_holders_to_be(ls2, 1);
   expect_requesting_actions_to_be(ls2, {requester});
-  expect_next_stage_to_be(ls2, &ls1);
   expect_lock_type_to_be(ls2, LockType::exclusive);
 }
 
@@ -55,7 +54,6 @@ TEST_F(LockStageTest, addStageToSharedTest) {
         TestAction::make_test_action_with_test_txn({}, {}),
         LockType::shared));
   expect_lock_type_to_be(ls1, LockType::shared);
-  expect_next_stage_to_be(ls1, nullptr);
   ASSERT_EQ(ls1.get_requesters().size(), 1);
 
   // insertion of another shared stage to the same lockstage
@@ -63,7 +61,6 @@ TEST_F(LockStageTest, addStageToSharedTest) {
         TestAction::make_test_action_with_test_txn({}, {}),
         LockType::shared));
   expect_lock_type_to_be(ls1, LockType::shared);
-  expect_next_stage_to_be(ls1, nullptr);
   ASSERT_EQ(ls1.get_requesters().size(), 2);
 
   // attempt to insert an exlusive stage to the same lockstage
@@ -118,24 +115,3 @@ TEST_F(LockStageTest, decrement_holdersTest) {
   threads[1].join();
   expect_holders_to_be(ls1, 0);
 } 
-
-TEST_F(LockStageTest, SetNextStage) {
-  LockStage ls1;
-  LockStage ls2;
-
-  // single-threaded setting works
-  ls1.set_next_stage(&ls2);
-  expect_next_stage_to_be(ls1, &ls2);
-
-  LockStage ls3;
-  // multiple threads leave the state consistent
-  std::thread threads[2];
-  threads[0] = std::thread([&ls1, &ls2](){for(unsigned int i = 0; i < 100; i++) ls1.set_next_stage(&ls2);});
-  threads[1] = std::thread([&ls1, &ls3](){for(unsigned int i = 0; i < 100; i++) ls1.set_next_stage(&ls3);});
-
-  threads[0].join();
-  threads[1].join();
-  ASSERT_TRUE(
-      TestLockStage(ls1).get_next_stage() == &ls2 || 
-      TestLockStage(ls1).get_next_stage() == &ls3);
-}

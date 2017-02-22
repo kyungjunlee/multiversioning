@@ -1,11 +1,7 @@
 #ifndef _TEST_LOCK_STAGE_H_
 #define _TEST_LOCK_STAGE_H_
 
-bool operator==(const LockStage& ls1, const LockStage& ls2) {
-  return (ls1.requesters == ls2.requesters &&
-    ls1.holders == ls2.holders &&
-    ls1.l_type == ls2.l_type);
-}
+#include "batch/lock_stage.h"
 
 /*
  * Simple Lock Stage Test fixture.
@@ -15,6 +11,7 @@ bool operator==(const LockStage& ls1, const LockStage& ls2) {
  */
 class TestLockStage : public LockStage {
 public:
+  TestLockStage(): LockStage() {};
   TestLockStage(LockStage& ls): LockStage(ls) {};
 
   uint64_t get_holders() const {return holders;}

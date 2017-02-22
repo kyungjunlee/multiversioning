@@ -31,7 +31,6 @@ public:
 protected:
   // The number of transactions holding on to the lock.
   uint64_t holders;
-  LockStage* next_stage;
   LockType l_type;
   RequestingActions requesters;
 
@@ -39,8 +38,7 @@ public:
   LockStage();
   LockStage(
       RequestingActions requesters,
-      LockType lt,
-      LockStage* ns = nullptr);
+      LockType lt);
 
   // Returns true if successful and false otherwise
   //
@@ -49,12 +47,7 @@ public:
   bool add_to_stage(Action_spt txn, LockType lt);
   // Returns the new value of holders
   uint64_t decrement_holders(); 
-  // Returns true if successful and false otherwise.
-  //
-  // Failure reported when next_stage was non-null
-  bool set_next_stage(LockStage* ns);
   
-  LockStage* get_next_stage();
   const RequestingActions& get_requesters() const; 
   uint64_t get_holders() const;
 
