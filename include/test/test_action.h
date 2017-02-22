@@ -18,8 +18,10 @@ class TestAction : public BatchAction {
 private:
   RecSet writeSet;
   RecSet readSet;
+  uint64_t id;
 public: 
-  TestAction(txn* txn): BatchAction(txn) {} 
+  TestAction(txn* txn): BatchAction(txn), id(0) {} 
+  TestAction(txn* txn, uint64_t id): BatchAction(txn), id(id) {}
 
   // override the translator functions
   void *write_ref(uint64_t key, uint32_t table) override {
@@ -48,6 +50,9 @@ public:
     return (get_readset_size() + get_writeset_size() <
       ta.get_readset_size() + ta.get_writeset_size());
   }
+
+  // own functions
+  uint64_t get_id() const {return id;}
 }; 
 
 #endif //_TEST_ACTION_H_

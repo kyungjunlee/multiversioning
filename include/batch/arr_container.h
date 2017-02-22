@@ -22,7 +22,7 @@
  *
  *    Usage is described within include/batch/container.h
  */
-class ArrayContainer : Container {
+class ArrayContainer : public Container {
 public:
   typedef std::unique_ptr<BatchAction> action_uptr;
   typedef std::vector<action_uptr> actions_vec;
