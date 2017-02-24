@@ -7,8 +7,6 @@
 #include <set>
 #include <common_constants.h>
 
-extern uint32_t GLOBAL_RECORD_SIZE;
-
 struct ActionListNode {
   mv_action *action;
   ActionListNode *next;
