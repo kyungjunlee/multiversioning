@@ -1,4 +1,4 @@
-CFLAGS=-O2 -g -Wall -Wextra -Werror -std=c++0x -Wno-sign-compare 
+CFLAGS=-O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1
 LIBS=-lnuma -lpthread -lrt -lcityhash 
 TEST_LIBS=-lgtest
@@ -42,6 +42,7 @@ build/%.o: src/%.cc $(DEPSDIR)/stamp GNUmakefile
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -c -o $@ $<
 
 build/batch/%.o: src/batch/%.cc $(DEPSDIR)/stamp GNUmakefile
+	@mkdir -p build/batch
 	@echo + cc $<
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -c -o $@ $<
 
@@ -57,10 +58,11 @@ start/%.o: start/%.cc $(DEPSDIR)/stamp GNUmakefile
 
 build/db:$(START_OBJECTS) $(OBJECTS)
 	@echo $(INCLUDE)
-	@$(CXX) $(CFLAGS) -v -o $@ $^ -L$(LIBPATH) $(LIBS)
+	@$(CXX) $(CFLAGS) -o $@ $^ -L$(LIBPATH) $(LIBS)
 
 build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
-	@$(CXX) $(CFLAGS) -o $@ $^ $(LIBS) $(TEST_LIBS)
+	@$(CXX) $(CFLAGS) $(INCLUDE) -o $@ $^ $(LIBS) $(TEST_LIBS)
+	build/tests
 
 $(DEPSDIR)/stamp:
 	@mkdir -p $(DEPSDIR)

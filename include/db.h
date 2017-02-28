@@ -96,6 +96,8 @@ class txn {
  private:
         translator *trans;
  protected:
+        // These functions return the reference to the memory needed for a 
+        // read of write to a particular key. Composite key is created.
         void* get_write_ref(uint64_t key, uint32_t table_id);
         void* get_read_ref(uint64_t key, uint32_t table_id);
         void* get_insert_ref(uint64_t key, uint32_t table_id);
@@ -105,9 +107,13 @@ class txn {
         txn();
         virtual bool Run() = 0;
         
+        // These functions count the number of reads/writes/rmws that 
+        // are done while a transaction is executing.
         virtual uint32_t num_reads();
         virtual uint32_t num_writes();
         virtual uint32_t num_rmws();
+        // These functions do the read/write/rmws during the transaction
+        // execution using the big_key structure.
         virtual void get_reads(struct big_key *array);
         virtual void get_writes(struct big_key *array);
         virtual void get_rmws(struct big_key *array);
