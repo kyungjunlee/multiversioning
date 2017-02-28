@@ -8,16 +8,20 @@ LIBPATH=./libs/lib/
 INC_DIRS=include libs/include
 INCLUDE=$(foreach d, $(INC_DIRS), -I$d)
 SRC=src
+
 SOURCES:=$(wildcard $(SRC)/*.cc $(SRC)/*.c)
-HEKATON:=$(wildcard $(SRC)/hek*.cc $(SRC)/hek*.c)
-HEK_OBJ:=$(patsubst $(SRC)/%.cc,build/%.o,$(HEKATON))
 OBJECTS:=$(patsubst $(SRC)/%.cc,build/%.o,$(SOURCES))
+
 START:=$(wildcard start/*.cc start/*.c)
 START_OBJECTS:=$(patsubst start/%.cc,start/%.o,$(START))
+
+BATCHING:=$(wildcard $(SRC)/batch/*.cc)
+BATCHING_OBJECTS:=$(patsubst src/batch/%.cc,build/batch/%.o,$(BATCHING))
+
 TEST:=test
 TESTSOURCES:=$(wildcard $(TEST)/*.cc)
 TESTOBJECTS:=$(patsubst test/%.cc,test/%.o,$(TESTSOURCES))
-NON_HEK_OBJECTS:=$(filter-out $(HEK_OBJ),$(OBJECTS))
+
 NON_MAIN_STARTS:=$(filter-out start/main.o,$(START_OBJECTS))
 
 
@@ -37,6 +41,10 @@ build/%.o: src/%.cc $(DEPSDIR)/stamp GNUmakefile
 	@echo + cc $<
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -c -o $@ $<
 
+build/batch/%.o: src/batch/%.cc $(DEPSDIR)/stamp GNUmakefile
+	@echo + cc $<
+	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -c -o $@ $<
+
 $(TESTOBJECTS):$(OBJECTS)
 
 test/%.o: test/%.cc $(DEPSDIR)/stamp GNUmakefile
@@ -48,9 +56,10 @@ start/%.o: start/%.cc $(DEPSDIR)/stamp GNUmakefile
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -Istart -c -o $@ $<
 
 build/db:$(START_OBJECTS) $(OBJECTS)
-	@$(CXX) $(CFLAGS) -o $@ $^ -L$(LIBPATH) $(LIBS)
+	@echo $(INCLUDE)
+	@$(CXX) $(CFLAGS) -v -o $@ $^ -L$(LIBPATH) $(LIBS)
 
-build/tests:$(OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
+build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
 	@$(CXX) $(CFLAGS) -o $@ $^ $(LIBS) $(TEST_LIBS)
 
 $(DEPSDIR)/stamp:
