@@ -39,13 +39,13 @@ public:
     return nullptr;}
   int rand() override {return 0;}
 
-  uint64_t getReadSetSize() const {return readSet.size();}
-  uint64_t getWriteSetSize() const {return writeSet.size();}
+  uint64_t get_readset_size() const {return readSet.size();}
+  uint64_t get_writeset_size() const {return writeSet.size();}
 
   // inequality calculated based on the overall number of transactions.
   bool operator<(const TestAction& ta) const {
-    return (getReadSetSize() + getWriteSetSize()) < 
-      (ta.getReadSetSize() + ta.getWriteSetSize());
+    return (get_readset_size() + get_writeset_size()) < 
+      (ta.get_readset_size() + ta.get_writeset_size());
   }
 }; 
 

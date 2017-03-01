@@ -47,7 +47,7 @@ protected:
 TEST_F(ArrayContainerTest, traversalAndPeekAfterCreationTest) {
   for (unsigned int i = 0; i < ACTIONS_NUM; i++) {
     auto act = testContainer->peek_curr_elt();
-    ASSERT_EQ(i, act->getReadSetSize() + act->getWriteSetSize())
+    ASSERT_EQ(i, act->get_readset_size() + act->get_writeset_size())
        << "Expecting ith action to have i locks.";
     testContainer->advance_to_next_elt();
   }
@@ -83,7 +83,7 @@ TEST_F(ArrayContainerTest, sortRemainingTest) {
   testContainer->sort_remaining();
   for (unsigned int i = 1; i < ACTIONS_NUM; i += 2) {
     auto act = testContainer->peek_curr_elt();
-    EXPECT_EQ(i, act->getReadSetSize() + act->getWriteSetSize());
+    EXPECT_EQ(i, act->get_readset_size() + act->get_writeset_size());
     testContainer->advance_to_next_elt();
   }
 
