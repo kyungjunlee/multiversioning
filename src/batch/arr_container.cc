@@ -1,22 +1,19 @@
 #include <batch/arr_container.h>
 #include <algorithm>
 
-template <class Action>
-bool ArrayContainer<Action>::arr_is_empty() {
+bool ArrayContainer::arr_is_empty() {
   return current_min_index >= this->actions_uptr->size() ||
     current_min_index < current_barrier_index;
 }
 
-template <class Action>
-Action* ArrayContainer<Action>::peek_curr_elt() {
+BatchAction* ArrayContainer::peek_curr_elt() {
   if (arr_is_empty()) return nullptr;
 
   // return the pointer within unique_ptr of the right elt.
   return ((*this->actions_uptr)[current_min_index].get());
 }
 
-template <class Action>
-typename ArrayContainer<Action>::action_uptr ArrayContainer<Action>::take_curr_elt() {
+ArrayContainer::action_uptr ArrayContainer::take_curr_elt() {
   if (arr_is_empty()) return nullptr;
 
   // swap the current min with the current barrier index one. That
@@ -31,13 +28,11 @@ typename ArrayContainer<Action>::action_uptr ArrayContainer<Action>::take_curr_e
   return min;
 }
 
-template <class Action>
-void ArrayContainer<Action>::advance_to_next_elt() {
+void ArrayContainer::advance_to_next_elt() {
   current_min_index ++;
 }
 
-template <class Action>
-void ArrayContainer<Action>::sort_remaining() {
+void ArrayContainer::sort_remaining() {
   std::sort(
       this->actions_uptr->begin() + current_barrier_index,
       this->actions_uptr->end(),
@@ -47,7 +42,6 @@ void ArrayContainer<Action>::sort_remaining() {
   current_min_index = current_barrier_index;
 }
 
-template <class Action>
-uint32_t ArrayContainer<Action>::get_remaining_count() {
+uint32_t ArrayContainer::get_remaining_count() {
   return this->actions_uptr->size() - current_barrier_index;
 }

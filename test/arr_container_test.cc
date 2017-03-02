@@ -14,12 +14,12 @@ protected:
   unsigned int ACTIONS_NUM = 100;
   float WRITE_PERC_IN_ACTION = 0.5;
 
-  std::unique_ptr<ArrayContainer<TestAction>> testContainer;
+  std::unique_ptr<ArrayContainer> testContainer;
 
   virtual void SetUp() {
     // prep the actions
-    std::unique_ptr<ArrayContainer<TestAction>::actions_vec> actions 
-      = std::make_unique<ArrayContainer<TestAction>::actions_vec>();
+    std::unique_ptr<ArrayContainer::actions_vec> actions 
+      = std::make_unique<ArrayContainer::actions_vec>();
     
     for (unsigned int i = 0; i < ACTIONS_NUM; i++) {
       std::unique_ptr<TestAction> ta = std::make_unique<TestAction>(new TestTxn());
@@ -37,7 +37,7 @@ protected:
     }
     
     // make the container
-    testContainer = std::make_unique<ArrayContainer<TestAction>>(std::move(actions));
+    testContainer = std::make_unique<ArrayContainer>(std::move(actions));
   }  
 };
 

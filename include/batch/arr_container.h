@@ -22,10 +22,9 @@
  *
  *    Usage is described within include/batch/container.h
  */
-template <class Action>
-class ArrayContainer : Container<Action> {
+class ArrayContainer : Container {
 public:
-  typedef std::unique_ptr<Action> action_uptr;
+  typedef std::unique_ptr<BatchAction> action_uptr;
   typedef std::vector<action_uptr> actions_vec;
 private:
   uint32_t current_min_index;
@@ -38,19 +37,17 @@ protected:
 
 public:
   ArrayContainer(std::unique_ptr<actions_vec> actions):
-    Container<Action>(std::move(actions)), current_min_index(0), current_barrier_index(0)
+    Container(std::move(actions)), current_min_index(0), current_barrier_index(0)
   {
     sort_remaining();
   };
 
-  Action* peek_curr_elt() override;
+  BatchAction* peek_curr_elt() override;
   action_uptr take_curr_elt() override;
   void advance_to_next_elt() override;
   void sort_remaining() override;
   uint32_t get_remaining_count() override;
   virtual ~ArrayContainer() {};
 };
-
-#include <batch/arr_container.cc>
 
 #endif // _ARR_CONTAINER_H_

@@ -1,7 +1,7 @@
 #ifndef _TEST_ACTION_H_
 #define _TEST_ACTION_H_
 
-#include <db.h>
+#include <batch/batch_action.h>
 
 /*
  * Simple test fixture for actions.
@@ -14,19 +14,14 @@
  *    just a declaration of a static function!
  */
 
-class TestAction : public translator {
-public:
-  typedef uint64_t RecKey;
-  typedef std::vector<RecKey> RecVec;
+class TestAction : public BatchAction {
 private:
-  RecVec writeSet;
-  RecVec readSet;
+  RecSet writeSet;
+  RecSet readSet;
 public: 
-  TestAction(txn* txn): translator(txn) {} 
+  TestAction(txn* txn): BatchAction(txn) {} 
 
-  void add_read_key(RecKey rk) {readSet.push_back(rk);}
-  void add_write_key(RecKey rk) {writeSet.push_back(rk);}
-
+  // override the translator functions
   void *write_ref(uint64_t key, uint32_t table) override {
     // suppress "unused parameter"
     (void)(key);
@@ -39,13 +34,19 @@ public:
     return nullptr;}
   int rand() override {return 0;}
 
-  uint64_t get_readset_size() const {return readSet.size();}
-  uint64_t get_writeset_size() const {return writeSet.size();}
+  // override the BatchAction functions.
+  void add_read_key(RecKey rk) override {readSet.insert(rk);}
+  void add_write_key(RecKey rk) override {writeSet.insert(rk);}
+
+  uint64_t get_readset_size() const override {return readSet.size();}
+  uint64_t get_writeset_size() const override {return writeSet.size();}
+  RecSet* get_readset_handle() {return &readSet;}
+  RecSet* get_writeset_handle() {return &writeSet;}
 
   // inequality calculated based on the overall number of transactions.
-  bool operator<(const TestAction& ta) const {
-    return (get_readset_size() + get_writeset_size()) < 
-      (ta.get_readset_size() + ta.get_writeset_size());
+  bool operator<(const BatchAction& ta) const {
+    return (get_readset_size() + get_writeset_size() <
+      ta.get_readset_size() + ta.get_writeset_size());
   }
 }; 
 

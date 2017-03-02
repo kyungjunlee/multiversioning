@@ -1,6 +1,8 @@
 #ifndef _CONTAINER_H_
 #define _CONTAINER_H_
 
+#include <batch/batch_action.h>
+
 #include <memory>
 #include <vector>
 #include <stdint.h>
@@ -13,9 +15,8 @@
 //
 // The container allows us to obtain the elements in an increasing order
 // skipping some of them.
-template <class Action>
 class Container {
-  typedef std::unique_ptr<Action> action_uptr;
+  typedef std::unique_ptr<BatchAction> action_uptr;
   typedef std::vector<action_uptr> actions_vec;
 protected:
   std::unique_ptr<actions_vec> actions_uptr;
@@ -32,7 +33,7 @@ public:
    *
    * Returns nullptr if no elements are left.
    */
-  virtual Action* peek_curr_elt() = 0;
+  virtual BatchAction* peek_curr_elt() = 0;
   /*
    * Obtain ownership over the currently minimum element. The element
    * is removed from the container. curr_elt is advanced to the next element.
