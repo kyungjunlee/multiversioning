@@ -39,6 +39,7 @@ public:
   //    at run time!
   LockTable();
   void merge_batch_table(BatchLockTable& blt);
+  LockStage* get_head_for_record(BatchAction::RecKey);
 };
 
 
