@@ -11,6 +11,7 @@ Executor::Executor(ExecutorConfig cfg):
 };
 
 void Executor::StartWorking() {
+  // TODO: introduce a "kill" flag.
   while (true) {
     // get a batch to execute or busy wait until we may do that
     while ((currentBatch = input_queue.try_pop_head()) != nullptr);
