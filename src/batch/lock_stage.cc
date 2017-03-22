@@ -47,7 +47,7 @@ uint64_t LockStage::get_holders() const {
   return holders;
 };
 
-bool LockStage::finalize_action(std::shared_ptr<BatchAction> act) {
+bool LockStage::finalize_action(std::shared_ptr<BatchActionInterface> act) {
   // act is a part of this stage!
   assert(requesters.find(act) != requesters.end());
   assert(has_lock());

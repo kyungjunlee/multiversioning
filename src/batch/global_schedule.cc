@@ -9,12 +9,13 @@ void GlobalSchedule::merge_into_global_schedule(
 };
 
 std::shared_ptr<LockStage> GlobalSchedule::get_stage_holding_lock_for(
-    BatchAction::RecKey key) {
+    RecordKey key) {
   return lt.get_head_for_record(key);
 };
 
-void GlobalSchedule::finalize_execution_of_action(std::shared_ptr<BatchAction> act) {
-  auto finalize_from_set = [this, act](BatchAction::RecSet* s){
+void GlobalSchedule::finalize_execution_of_action(
+    std::shared_ptr<BatchActionInterface> act) {
+  auto finalize_from_set = [this, act](BatchActionInterface::RecordKeySet* s){
     std::shared_ptr<LockStage> ls;
     for (auto& key : *s) {
       ls = get_stage_holding_lock_for(key);

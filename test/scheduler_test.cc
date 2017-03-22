@@ -26,8 +26,8 @@ protected:
   };
 
   virtual void add_test_txn_to_scheduler_batch(
-      BatchAction::RecSet write_set,
-      BatchAction::RecSet read_set,
+      BatchActionInterface::RecordKeySet write_set,
+      BatchActionInterface::RecordKeySet read_set,
       uint64_t id) {
     // allocate the object if that didn't happen yet.
     if (s->batch_actions == nullptr) {
@@ -46,14 +46,14 @@ protected:
 //     {Record Key, std::vector<sets of txn ids within stages>}
 typedef std::unordered_set<uint64_t> ExpectedTxnIds;
 typedef std::vector<ExpectedTxnIds> ExpectedStages;
-typedef std::pair<BatchAction::RecKey, ExpectedStages> ExpectedRecordQueue;
+typedef std::pair<RecordKey, ExpectedStages> ExpectedRecordQueue;
 typedef std::vector<ExpectedRecordQueue> ExpectedLockTable;
 void assert_correct_schedule(
     std::shared_ptr<Scheduler> s,
     ExpectedLockTable e) {
   auto collect_ids_from_lock_stage = [](std::shared_ptr<LockStage> ls){
     const LockStage::RequestingActions& r = ls->get_requesters();
-    std::unordered_set<BatchAction::RecKey> ids;
+    std::unordered_set<uint64_t> ids;
 
     for (const auto& e : r) {
       TestAction* ta = static_cast<TestAction*>(e.get());

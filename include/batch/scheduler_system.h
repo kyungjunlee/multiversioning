@@ -2,6 +2,7 @@
 #define SCHEDULER_SYSTEM_H_
 
 #include "batch/global_schedule.h"
+#include "batch/batch_action_interface.h"
 
 #include <memory>
 
@@ -25,7 +26,7 @@ protected:
 public:
   SchedulingSystem(SchedulingSystemConfig c): conf(c) {};
 
-  virtual void add_action(std::unique_ptr<BatchAction>&& act) = 0;
+  virtual void add_action(std::unique_ptr<BatchActionInterface>&& act) = 0;
   virtual void set_global_schedule_ptr(GlobalScheduleInterface* gs) = 0;
   virtual void start_working() = 0;
   virtual void init() = 0;

@@ -20,7 +20,7 @@ class Scheduler;
  */
 class InputQueue : public MSQueue<std::unique_ptr<BatchActionInterface>> {
   private:
-    using MSQueue<std::unique_ptr<BatchAction>>::merge_queue;
+   using MSQueue<std::unique_ptr<BatchActionInterface>>::merge_queue;
 };
 
 #endif

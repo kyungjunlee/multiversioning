@@ -2,7 +2,7 @@
 #define BATCH_EXECUTOR_H_
 
 #include "batch/MS_queue.h"
-#include "batch/batch_action.h"
+#include "batch/batch_action_interface.h"
 #include "batch/executor_thread.h"
 #include "batch/executor_thread_manager.h"
 
@@ -27,7 +27,7 @@ private:
 //    Pending Queue is used by the executor to keep track of actions within
 //    a particular batch that could not be executed when the executor attempted
 //    to do so.
-typedef std::list<std::shared_ptr<BatchAction>> PendingList;
+typedef std::list<std::shared_ptr<BatchActionInterface>> PendingList;
 
 // BatchExecutor
 //
@@ -45,7 +45,7 @@ protected:
 
   void process_action_batch();
   // true if successful and false otherwise
-  bool process_action(std::shared_ptr<BatchAction> act);
+  bool process_action(std::shared_ptr<BatchActionInterface> act);
   void process_pending();
   
 public:

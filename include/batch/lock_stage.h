@@ -55,7 +55,7 @@ public:
   uint64_t get_holders() const;
 
   // return true if all actions within this lock stage have been finished.
-  bool finalize_action(std::shared_ptr<BatchAction> act);
+  bool finalize_action(std::shared_ptr<BatchActionInterface> act);
   void notify_lock_obtained();
   bool has_lock();
 

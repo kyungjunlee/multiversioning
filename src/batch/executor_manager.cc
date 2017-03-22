@@ -58,10 +58,10 @@ void ExecutorManager::set_global_schedule_ptr(GlobalScheduleInterface* gs) {
 }
 
 std::shared_ptr<LockStage> 
-ExecutorManager::get_current_lock_holder_for(BatchAction::RecKey key) {
+ExecutorManager::get_current_lock_holder_for(RecordKey key) {
   return gs->get_stage_holding_lock_for(key);
 }
 
-void ExecutorManager::finalize_action(std::shared_ptr<BatchAction> act) {
+void ExecutorManager::finalize_action(std::shared_ptr<BatchActionInterface> act) {
   gs->finalize_execution_of_action(act);
 }

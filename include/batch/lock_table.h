@@ -44,8 +44,8 @@ public:
   LockTable();
   void merge_batch_table(BatchLockTable& blt);
   
-  std::shared_ptr<LockStage> get_head_for_record(BatchAction::RecKey key);
-  void pass_lock_to_next_stage_for(BatchAction::RecKey key);
+  std::shared_ptr<LockStage> get_head_for_record(RecordKey key);
+  void pass_lock_to_next_stage_for(RecordKey key);
 };
 
 // BatchLockTable

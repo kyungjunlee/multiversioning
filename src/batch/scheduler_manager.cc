@@ -19,7 +19,7 @@ bool SchedulerManager::system_is_initialized() {
   return schedulers.size() > 0;
 }
 
-void SchedulerManager::add_action(std::unique_ptr<BatchAction>&& act) {
+void SchedulerManager::add_action(std::unique_ptr<BatchActionInterface>&& act) {
 	iq->push_tail(std::move(act));
 };
 
@@ -64,7 +64,7 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
     barrier();
   } while (s != schedulers[h].get());
 
-  std::unique_ptr<BatchAction>* act;
+  std::unique_ptr<BatchActionInterface>* act;
 	SchedulerThread::BatchActions batch(this->conf.batch_size_act);
   for (unsigned int actionsTaken = 0; 
       actionsTaken < this->conf.batch_size_act; 

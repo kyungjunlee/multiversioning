@@ -29,8 +29,7 @@ void Scheduler::Init() {
 void Scheduler::make_batch_schedule() {
   // construct array container from the batch
   ArrayContainer ac(std::move(batch_actions));
-
-  std::vector<std::unique_ptr<BatchAction>> packing;
+  std::vector<std::unique_ptr<BatchActionInterface>> packing;
   while (ac.get_remaining_count() != 0) {
     // get packing
     packing = Packer::get_packing(&ac);

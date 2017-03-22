@@ -12,7 +12,7 @@ class TestLockTable : public LockTable {
     }
 
     bool lock_table_contains_stage(
-        BatchAction::RecKey k, 
+        RecordKey k, 
         std::shared_ptr<LockStage> ls) {
       auto lq = lock_table.find(k);
       if (lq == lock_table.end()) return false;
