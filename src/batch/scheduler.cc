@@ -5,24 +5,19 @@
 
 #include <cassert>
 
-Scheduler::Scheduler(SchedulerConfig sc):
-    Runnable(sc.m_cpu_number),
-    conf(sc),
-    state(SchedulerState::waiting_for_input)  
-{
-  // allocate memory up front.
-  batch_actions = 
-    std::make_unique<std::vector<std::unique_ptr<BatchAction>>>(
-        sc.batch_size_act);
-}
+Scheduler::Scheduler(
+    SchedulerThreadManager* manager,
+    int m_cpu_number):
+  SchedulerThread(manager, m_cpu_number)
+{};
 
 void Scheduler::StartWorking() {
   // TODO: implement a flag for killing the thread.
   while(true) {
     // get the batch actions
     signal_waiting_for_input();
-    conf.input->obtain_batch(this);
-
+    batch_actions = std::make_unique<BatchActions>(
+        std::move(this->manager->request_input(this)));
     // make a batch schedule
     signal_batch_creation();
     make_batch_schedule();
@@ -39,15 +34,12 @@ void Scheduler::Init() {
 };
 
 SchedulerState Scheduler::get_state() {
-  return state;
+  return this->state;
 };
 
 void Scheduler::make_batch_schedule() {
   // construct array container from the batch
   ArrayContainer ac(std::move(batch_actions));
-  batch_actions = 
-    std::make_unique<std::vector<std::unique_ptr<BatchAction>>>(
-        conf.batch_size_act);
 
   std::vector<std::unique_ptr<BatchAction>> packing;
   while (ac.get_remaining_count() != 0) {
@@ -60,14 +52,6 @@ void Scheduler::make_batch_schedule() {
     }
   }
 }
-
-unsigned int Scheduler::get_max_actions() {
-  return conf.batch_size_act;
-};
-
-void Scheduler::put_action(std::unique_ptr<BatchAction> act) {
-  batch_actions->push_back(std::move(act)); 
-};
 
 bool Scheduler::change_state(
     SchedulerState nextState, 

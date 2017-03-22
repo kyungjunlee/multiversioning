@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "batch/scheduler.h"
-#include "test/test_input_queue.h"
+#include "test/test_scheduler_thread_manager.h"
 
 #include <memory>
 #include <utility>
@@ -17,14 +17,8 @@ protected:
   std::shared_ptr<Scheduler> s;
 
   virtual void SetUp() {
-    iq = std::make_shared<TestInputQueue>();
-    SchedulerConfig config = {
-      batch_size,
-      batch_length,
-      m_cpu_num,
-      iq.get()
-    };
-    s = std::make_shared<Scheduler>(config);
+    s = std::make_shared<Scheduler>(
+      new TestSchedulerThreadManager(), 0);    
   };
 };
 
@@ -33,19 +27,19 @@ TEST_F(SchedulerTest, LegalStateTransitionsTest) {
     ASSERT_EQ(this->s->get_state(), expected) << "from line " << line;
   };
   checkState(SchedulerState::waiting_for_input, __LINE__);
-  s->signal_input();
+  EXPECT_TRUE(s->signal_input());
   checkState(SchedulerState::input, __LINE__);
-  s->signal_batch_creation();
+  EXPECT_TRUE(s->signal_batch_creation());
   checkState(SchedulerState::batch_creation, __LINE__);
-  s->signal_waiting_for_merge();
+  EXPECT_TRUE(s->signal_waiting_for_merge());
   checkState(SchedulerState::waiting_to_merge, __LINE__);
-  s->signal_merging();
+  EXPECT_TRUE(s->signal_merging());
   checkState(SchedulerState::batch_merging, __LINE__);
-  s->signal_waiting_for_exec_signal();
+  EXPECT_TRUE(s->signal_waiting_for_exec_signal());
   checkState(SchedulerState::waiting_to_signal_execution, __LINE__);
-  s->signal_exec_signal();
+  EXPECT_TRUE(s->signal_exec_signal());
   checkState(SchedulerState::signaling_execution, __LINE__);
-  s->signal_waiting_for_input();
+  EXPECT_TRUE(s->signal_waiting_for_input());
   checkState(SchedulerState::waiting_for_input, __LINE__);
 };
 
