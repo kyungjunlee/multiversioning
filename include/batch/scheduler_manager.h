@@ -36,7 +36,7 @@ public:
       ExecutorThreadManager* exec);
 
   // implementing the SchedulingSystem interface
-	virtual void add_action(std::unique_ptr<BatchActionInterface>&& act) override;
+	virtual void add_action(std::unique_ptr<BatchAction>&& act) override;
   virtual void set_global_schedule_ptr(GlobalScheduleInterface* gs) override;
   virtual void start_working() override;
   virtual void init() override;

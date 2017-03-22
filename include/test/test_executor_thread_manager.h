@@ -15,13 +15,13 @@ public:
     signal_execution_threads_called ++;
   };
 
-  std::shared_ptr<LockStage> get_current_lock_holder_for(RecordKey key) override {
+  std::shared_ptr<LockStage> get_current_lock_holder_for(BatchAction::RecKey key) override {
     (void) key;
     get_current_lock_holder_for_called ++;
     return nullptr;
   };
 
-  void finalize_action(std::shared_ptr<BatchActionInterface> act) override {
+  void finalize_action(std::shared_ptr<BatchAction> act) override {
     (void) act;
     finalize_action_called ++;
   };

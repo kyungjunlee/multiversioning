@@ -3,50 +3,60 @@
 
 #include "batch/batch_action_interface.h"
 
+#include <stdint.h>
+#include <unordered_set>
+
+enum class BatchActionState {
+  // substantiated == created, but not being processed and not done
+  substantiated = 0,
+  // processing == claimed by an execution thread
+  processing,
+  // done == finished execution
+  done,
+  state_count
+};
+
 // BatchAction
 //
-//    Concrete implementation of actions used within our system.
-class BatchAction : public BatchActionInterface {
-  private:
-    RecordKeySet readset;
-    RecordKeySet writeset;
-  public:
-    BatchAction(txn* t): BatchActionInterface(t) {};
+//    Purely virtual interface of any batch action within the system.
+class BatchAction : public translator {
+protected:
+  BatchAction(txn* t): 
+    translator(t),
+    action_state(static_cast<uint64_t>(BatchActionState::substantiated)),
+    locks_held(0)
+  {};
 
-    // override the translator functions
-    virtual void *write_ref(uint64_t key, uint32_t table) override;
-    virtual void *read(uint64_t key, uint32_t table) override;
- 
-    // TODO:
-    //    Tests for there
-    // override the BatchActionInterface functions
-    virtual uint64_t notify_lock_obtained() override;
-    virtual bool ready_to_execute() override;
+public:
+  // typedefs
+  typedef uint64_t RecKey;
+  typedef std::unordered_set<RecKey> RecSet;
 
-    virtual void add_read_key(RecordKey rk) override;
-    virtual void add_write_key(RecordKey rk) override;
-   
-    virtual uint64_t get_readset_size() const override;
-    virtual uint64_t get_writeset_size() const override;
-    virtual RecordKeySet* get_readset_handle() override;
-    virtual RecordKeySet* get_writeset_handle() override;
+  uint64_t action_state;
+  // changed the state of action only if current state is 
+  // the "expected_state". Equivalent to CAS.
+  virtual bool conditional_atomic_change_state(
+      BatchActionState expected_state, 
+      BatchActionState new_state) = 0;
+  // change the state of the action independent of the 
+  // current state. Equivalent to xchgq. Returns the old state
+  // that has been changed.
+  virtual BatchActionState atomic_change_state(
+      BatchActionState new_state) = 0;
 
-    // TODO: 
-    //    Tests for these!
-    virtual bool conditional_atomic_change_state(
-        BatchActionState expected_state,
-        BatchActionState new_state) override;
-    virtual BatchActionState atomic_change_state(
-        BatchActionState new_state) override;
-    
-    uint64_t action_state;
+  uint64_t locks_held;
+  virtual uint64_t notify_lock_obtained() = 0; 
+  virtual bool ready_to_execute() = 0;
 
-    // TODO: 
-    //    Do this after we fill in the interface
-    virtual void run() override;
+  virtual void add_read_key(RecKey rk) = 0;
+  virtual void add_write_key(RecKey rk) = 0;
+  
+  virtual uint64_t get_readset_size() const = 0;
+  virtual uint64_t get_writeset_size() const = 0;
+  virtual RecSet* get_readset_handle() = 0;
+  virtual RecSet* get_writeset_handle() = 0;
 
-    virtual bool operator<(const BatchActionInterface& ba2) const override;
-    virtual int rand() override;
+  virtual bool operator<(const BatchAction& ba2) const = 0;
 };
 
 #endif //BATCH_ACTION_H_

@@ -1,8 +1,7 @@
 #ifndef EXECUTOR_MANAGER_H_
 #define EXECUTOR_MANAGER_H_
 
-#include "batch/batch_action_interface.h"
-#include "batch/record_key.h"
+#include "batch/batch_action.h"
 #include "batch/scheduler.h"
 #include "batch/executor.h"
 #include "batch/executor_thread_manager.h"
@@ -42,8 +41,8 @@ public:
   virtual void signal_execution_threads(
       ExecutorThreadManager::SignalWorkload&& workload) override;
   virtual std::shared_ptr<LockStage> 
-    get_current_lock_holder_for(RecordKey key) override;
-  virtual void finalize_action(std::shared_ptr<BatchActionInterface> act) override;
+    get_current_lock_holder_for(BatchAction::RecKey key) override;
+  virtual void finalize_action(std::shared_ptr<BatchAction> act) override;
 };
 
 #endif //EXECUTOR_MANAGER_H_

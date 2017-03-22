@@ -2,13 +2,10 @@
 #define GLOBAL_SCHEDULE_H_
 
 #include "batch/lock_table.h"
-#include "batch/batch_action_interface.h"
-#include "batch/record_key.h"
+#include "batch/batch_action.h"
 
 #include <memory>
 
-// TODO:
-//    Move to its own file
 // GlobalScheduleInterface
 //
 //    The purely virtual interface between the global schedule and the
@@ -20,9 +17,9 @@ public:
 
   // executor thread manager interface:
   virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(
-      RecordKey key) = 0;
+      BatchAction::RecKey key) = 0;
   virtual void finalize_execution_of_action(
-      std::shared_ptr<BatchActionInterface> act) = 0;
+      std::shared_ptr<BatchAction> act) = 0;
 };
 
 // TODO:
@@ -34,16 +31,16 @@ class GlobalSchedule : public GlobalScheduleInterface {
 protected:
   LockTable lt;
 
-  void advance_lock_for_record(RecordKey key);
+  void advance_lock_for_record(BatchAction::RecKey key);
 public:
   GlobalSchedule();
 
   void merge_into_global_schedule(BatchLockTable&& blt) override;
 
   std::shared_ptr<LockStage> get_stage_holding_lock_for(
-      RecordKey key) override;
+      BatchAction::RecKey key) override;
   void finalize_execution_of_action(
-      std::shared_ptr<BatchActionInterface> act) override;
+      std::shared_ptr<BatchAction> act) override;
 };
 
 #endif

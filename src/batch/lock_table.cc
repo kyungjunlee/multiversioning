@@ -37,14 +37,14 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
   }
 }
 
-std::shared_ptr<LockStage> LockTable::get_head_for_record(RecordKey key) {
+std::shared_ptr<LockStage> LockTable::get_head_for_record(BatchAction::RecKey key) {
   auto elt = lock_table.find(key);
   assert(elt != lock_table.end());
 
   return *elt->second->peek_head();
 };
 
-void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
+void LockTable::pass_lock_to_next_stage_for(BatchAction::RecKey key) {
   auto elt = lock_table.find(key);
   assert(elt != lock_table.end());
 

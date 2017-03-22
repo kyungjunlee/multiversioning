@@ -1,4 +1,5 @@
 #include "batch/executor.h"
+#include "batch/lock_stage.h"
 
 #include <utility>
 
@@ -55,7 +56,7 @@ void BatchExecutor::process_action_batch() {
   output_queue->push_tail(std::move(currentBatch));
 };
 
-bool BatchExecutor::process_action(std::shared_ptr<BatchActionInterface> act) {
+bool BatchExecutor::process_action(std::shared_ptr<BatchAction> act) {
   assert(act != nullptr);
 
   uint64_t action_state = act->action_state;
@@ -86,8 +87,7 @@ bool BatchExecutor::process_action(std::shared_ptr<BatchActionInterface> act) {
     return true;
   } else {
     // attempt to execute blockers.
-    auto execute_blockers = [this, act](
-        BatchActionInterface::RecordKeySet* set) {
+    auto execute_blockers = [this, act](BatchAction::RecSet* set) {
       LockStage* blocking_stage = nullptr;
       for (auto rec_key : *set) {
         this->exec_manager->get_current_lock_holder_for(rec_key);

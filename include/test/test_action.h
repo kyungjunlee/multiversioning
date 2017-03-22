@@ -1,8 +1,8 @@
 #ifndef _TEST_ACTION_H_
 #define _TEST_ACTION_H_
 
-#include <batch/batch_action_interface.h>
-#include <test/test_txn.h>
+#include "batch/batch_action.h"
+#include "test/test_txn.h"
 #include "util.h"
 
 /*
@@ -24,8 +24,7 @@ private:
   
 public: 
   TestAction(txn* txn): TestAction(txn, 0) {} 
-  TestAction(txn* txn, uint64_t id): BatchActionInterface(txn), id(id) {}
-
+  TestAction(txn* txn, uint64_t id): BatchAction(txn), id(id) {}
   // override the translator functions
   void *write_ref(uint64_t key, uint32_t table) override {
     // suppress "unused parameter"
@@ -39,6 +38,7 @@ public:
     return nullptr;}
   int rand() override {return 0;}
 
+  // override the BatchAction functions.
   // state functions
   bool conditional_atomic_change_state(
       BatchActionState expected_state,
@@ -65,8 +65,8 @@ public:
   };
 
   // key fnuctions
-  void add_read_key(RecordKey rk) override {readSet.insert(rk);}
-  void add_write_key(RecordKey rk) override {writeSet.insert(rk);}
+  void add_read_key(RecKey rk) override {readSet.insert(rk);}
+  void add_write_key(RecKey rk) override {writeSet.insert(rk);}
 
   // read/write set functions
   uint64_t get_readset_size() const override {return readSet.size();}
