@@ -3,6 +3,7 @@
 
 #include "batch/scheduler.h"
 #include "batch/lock_table.h"
+#include "batch/input_queue.h"
 #include "batch/scheduler_system.h"
 #include "batch/scheduler_thread_manager.h"
 
@@ -18,19 +19,17 @@
 class SchedulerManager : 
   public SchedulerThreadManager,
   public SchedulingSystem {
-protected:
-  // imlementation of the protected part of SchedulingSystem interface.
-	void add_action(std::unique_ptr<BatchAction>&& act) override;
-
 public:
   uint64_t current_input_scheduler;
   uint64_t current_signaling_scheduler;
 	uint64_t current_merging_scheduler;
   
+  std::unique_ptr<InputQueue> iq;
 	std::vector<std::shared_ptr<SchedulerThread>> schedulers;
   SchedulerManager(SchedulingSystemConfig c);
 
   // implementing the SchedulingSystem interface
+	void add_action(std::unique_ptr<BatchAction>&& act) override;
   void create_threads() override;
   void start_working() override;
   void init_threads() override;

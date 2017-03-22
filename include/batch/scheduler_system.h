@@ -1,8 +1,6 @@
 #ifndef SCHEDULER_SYSTEM_H_
 #define SCHEDULER_SYSTEM_H_
 
-#include "batch/input_queue.h"
-
 // Scheduler System Config 
 //
 //    Used to configure the scheduling system within the system.
@@ -24,8 +22,6 @@ protected:
   virtual void create_threads() = 0;
 public:
   SchedulingSystem(SchedulingSystemConfig c): conf(c) {};
-  
-  std::unique_ptr<InputQueue> iq;
 
   virtual void add_action(std::unique_ptr<BatchAction>&& act) = 0;
   virtual void start_working() = 0;
