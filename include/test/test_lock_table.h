@@ -11,7 +11,9 @@ class TestLockTable : public LockTable {
       return lock_table;
     }
 
-    bool lock_table_contains_stage(RecordKey k, LockStage* ls) {
+    bool lock_table_contains_stage(
+        RecordKey k, 
+        std::shared_ptr<LockStage> ls) {
       auto lq = lock_table.find(k);
       if (lq == lock_table.end()) return false;
 
@@ -23,7 +25,7 @@ class TestLockTable : public LockTable {
       TestLockStage tls(*ls);
       LockQueue::QueueElt* curr = lq->second->peek_head_elt();
       while (curr != nullptr) {
-        TestLockStage ctls(*curr->get_contents());
+        TestLockStage ctls(**curr->get_contents());
 
         if (ctls.get_requesters() == tls.get_requesters() &&
             ctls.get_holders() == tls.get_holders() &&

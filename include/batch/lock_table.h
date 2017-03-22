@@ -3,6 +3,7 @@
 
 #include "batch/batch_action_interface.h"
 #include "batch/lock_queue.h"
+#include "batch/record_key.h"
 
 #include <unordered_map>
 #include <mutex>
@@ -31,6 +32,9 @@ public:
   typedef std::unordered_map<RecordKey, std::shared_ptr<LockQueue>> LockTableType;
 protected:
   LockTableType lock_table;
+  // TODO:
+  //    Do we even need this mutex? We are assuring that the higher-level
+  //    objects coordinate among themselves. Right?
   std::mutex merge_batch_table_mutex;
 public:
   // TODO:
@@ -39,8 +43,10 @@ public:
   //    at run time!
   LockTable();
   void merge_batch_table(BatchLockTable& blt);
+  
+  std::shared_ptr<LockStage> get_head_for_record(RecordKey key);
+  void pass_lock_to_next_stage_for(RecordKey key);
 };
-
 
 // BatchLockTable
 //

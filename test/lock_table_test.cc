@@ -78,11 +78,17 @@ TEST(LockTable, concurrent_merge_table_test) {
       for (const auto& elt : thread_data[i][j]->get_lock_table_data()) {
         currElt = elt.second->peek_head_elt();
         while (currElt != nullptr) {
-          ASSERT_TRUE(lt.lock_table_contains_stage(elt.first, currElt->get_contents()));
+          ASSERT_TRUE(lt.lock_table_contains_stage(elt.first, *currElt->get_contents()));
           currElt = currElt->get_next_elt();
         }
       }
     } 
   }  
+
+  // make sure that the first lock stage for every lock queue has the lock.
+  for (auto& elt : lt.get_lock_table_data()) {
+    ASSERT_TRUE((*elt.second->peek_head())->has_lock());
+  } 
+
   ASSERT_EQ(5, lt.get_lock_table_data().size());
 };

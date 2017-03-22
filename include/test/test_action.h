@@ -3,6 +3,7 @@
 
 #include <batch/batch_action_interface.h>
 #include <test/test_txn.h>
+#include "util.h"
 
 /*
  * Simple test fixture for actions.
@@ -22,7 +23,7 @@ private:
   uint64_t id;
   
 public: 
-  TestAction(txn* txn): BatchActionInterface(txn), id(0) {} 
+  TestAction(txn* txn): TestAction(txn, 0) {} 
   TestAction(txn* txn, uint64_t id): BatchActionInterface(txn), id(id) {}
 
   // override the translator functions
@@ -38,10 +39,36 @@ public:
     return nullptr;}
   int rand() override {return 0;}
 
-  // override the BatchAction functions.
+  // state functions
+  bool conditional_atomic_change_state(
+      BatchActionState expected_state,
+      BatchActionState new_state) override {
+    return cmp_and_swap(
+      &action_state,
+      static_cast<uint64_t>(expected_state),
+      static_cast<uint64_t>(new_state));
+  }
+  BatchActionState atomic_change_state(
+      BatchActionState new_state) override {
+    return static_cast<BatchActionState>(
+      xchgq(&action_state, static_cast<uint64_t>(new_state)));
+  }
+
+  // locks_held functions
+  uint64_t notify_lock_obtained() {
+    return fetch_and_increment(&locks_held);
+  }
+  bool ready_to_execute() {
+    uint64_t l = locks_held;
+    barrier();
+    return l == get_readset_size() + get_writeset_size(); 
+  };
+
+  // key fnuctions
   void add_read_key(RecordKey rk) override {readSet.insert(rk);}
   void add_write_key(RecordKey rk) override {writeSet.insert(rk);}
 
+  // read/write set functions
   uint64_t get_readset_size() const override {return readSet.size();}
   uint64_t get_writeset_size() const override {return writeSet.size();}
   RecordKeySet* get_readset_handle() {return &readSet;}

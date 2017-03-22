@@ -64,10 +64,10 @@ protected:
   virtual void SetUp() {} 
 };
 
-// 1 <- T0 <- T1
-// 2 <- T2
-// 3 <- T2 <- T1
-// 4 <- T1
+// Input, all exclusive:
+//    T0: 1
+//    T1: 1, 3, 4
+//    T2: 2, 3
 // Correct packings would be:
 //    1)  T0, T2
 //    2)  T1
@@ -80,11 +80,10 @@ TEST_F(PackingTest, smallestExclusiveResult) {
   assertPackings({{0, 2}, {1}});
 }  
 
-// 1 <- T0 <- T2
-// 2 <- T1 <- T2
-// 3 <- T1
-// 4 <- T2 <- T1
-// 5 <- T1
+// Input, all exclusive:
+//    T0: 1
+//    T1: 2, 3, 4, 5
+//    T2: 1, 2, 4
 // Correct packing: 
 //    1) T0, T1 
 //    2) T2
@@ -97,9 +96,10 @@ TEST_F(PackingTest, smallestLargestExclusiveResult) {
   assertPackings({{0, 1}, {2}});
 }
 
-// 1 <- T0s <- T1s
-// 2 <- T2s <- T1s
-// 3 <- T0s <- T2s
+// Input, all shared:
+//    T0: 1, 3
+//    T1: 1, 2
+//    T2: 2, 3
 // Correct packing: 
 //    1) T0, T1, T2 
 TEST_F(PackingTest, smallSharedOnlyResult) {
@@ -111,9 +111,10 @@ TEST_F(PackingTest, smallSharedOnlyResult) {
   assertPackings({{0, 1, 2}});
 }
 
-// 1 <- T0s <- T1s <- T2s
-// 2 <- T0 <- T2s
-// 3 <- T1 <- T2s
+// Input, mixed:
+//  T0: 1s, 2
+//  T1: 1s, 3
+//  T2: 1s, 2s, 3s
 // Correct packing:
 //    1) T0, T1
 //    2) T2

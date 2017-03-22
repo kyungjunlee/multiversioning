@@ -118,3 +118,36 @@ TEST_F(LockStageTest, decrement_holdersTest) {
   threads[1].join();
   expect_holders_to_be(ls1, 0);
 } 
+
+TEST_F(LockStageTest, notify_lock_obtainedTest) {
+  LockStage ls;
+  std::vector<std::shared_ptr<TestAction>> acts;
+  for (unsigned int i = 0; i < 3; i++) {
+    acts.push_back(std::make_shared<TestAction>(
+      *TestAction::make_test_action_with_test_txn({i}, {})));
+    ls.add_to_stage(acts[i], LockType::shared);
+  }
+  ASSERT_FALSE(ls.has_lock());
+  ls.notify_lock_obtained();
+  ASSERT_TRUE(ls.has_lock());
+  for (auto act_ptr : acts) {
+    ASSERT_TRUE(act_ptr->ready_to_execute());
+  }
+};
+
+TEST_F(LockStageTest, finalize_actionTest) {
+  LockStage ls;
+  std::vector<std::shared_ptr<TestAction>> acts;
+  for (unsigned int i = 0; i < 3; i++) {
+    acts.push_back(std::make_shared<TestAction>(
+      *TestAction::make_test_action_with_test_txn({i}, {})));
+    ls.add_to_stage(acts[i], LockType::shared);
+  }
+
+  ls.notify_lock_obtained();
+  for (unsigned int i = 0; i < 2; i++) {
+    ASSERT_FALSE(ls.finalize_action(acts[i]));
+  }
+
+  ASSERT_TRUE(ls.finalize_action(acts[2]));
+};

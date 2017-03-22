@@ -17,7 +17,12 @@ class BatchAction : public BatchActionInterface {
     virtual void *write_ref(uint64_t key, uint32_t table) override;
     virtual void *read(uint64_t key, uint32_t table) override;
  
+    // TODO:
+    //    Tests for there
     // override the BatchActionInterface functions
+    virtual uint64_t notify_lock_obtained() override;
+    virtual bool ready_to_execute() override;
+
     virtual void add_read_key(RecordKey rk) override;
     virtual void add_write_key(RecordKey rk) override;
    
@@ -25,10 +30,21 @@ class BatchAction : public BatchActionInterface {
     virtual uint64_t get_writeset_size() const override;
     virtual RecordKeySet* get_readset_handle() override;
     virtual RecordKeySet* get_writeset_handle() override;
+
+    // TODO: 
+    //    Tests for these!
+    virtual bool conditional_atomic_change_state(
+        BatchActionState expected_state,
+        BatchActionState new_state) override;
+    virtual BatchActionState atomic_change_state(
+        BatchActionState new_state) override;
     
+    uint64_t action_state;
+
     // TODO: 
     //    Do this after we fill in the interface
     virtual void run() override;
+
     virtual bool operator<(const BatchActionInterface& ba2) const override;
     virtual int rand() override;
 };

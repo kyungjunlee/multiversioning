@@ -34,6 +34,9 @@ protected:
   LockType l_type;
   RequestingActions requesters;
 
+  // this is just to assert that no stage is given a lock more than once.
+  uint64_t has_been_given_lock;
+
 public:
   LockStage();
   LockStage(
@@ -50,6 +53,11 @@ public:
   
   const RequestingActions& get_requesters() const; 
   uint64_t get_holders() const;
+
+  // return true if all actions within this lock stage have been finished.
+  bool finalize_action(std::shared_ptr<BatchActionInterface> act);
+  void notify_lock_obtained();
+  bool has_lock();
 
   friend bool operator==(const LockStage& ls1, const LockStage& ls2);
 };
