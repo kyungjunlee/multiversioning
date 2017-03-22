@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <unordered_set>
 
-class enum BatchActionState {
+enum class BatchActionState {
   // substantiated == created, but not being processed and not done
   substantiated = 0,
   // processing == claimed by an execution thread

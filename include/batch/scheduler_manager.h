@@ -6,6 +6,7 @@
 #include "batch/input_queue.h"
 #include "batch/scheduler_system.h"
 #include "batch/scheduler_thread_manager.h"
+#include "batch/executor_thread_manager.h"
 
 #include <vector>
 #include <memory>
@@ -19,6 +20,11 @@
 class SchedulerManager : 
   public SchedulerThreadManager,
   public SchedulingSystem {
+private:
+  bool inputs_are_ok(
+      SchedulerThread *s,
+      std::vector<SchedulerState> possible_stated_of_s);
+  bool system_is_initialized();
 public:
   uint64_t current_input_scheduler;
   uint64_t current_signaling_scheduler;
@@ -26,7 +32,9 @@ public:
   
   std::unique_ptr<InputQueue> iq;
 	std::vector<std::shared_ptr<SchedulerThread>> schedulers;
-  SchedulerManager(SchedulingSystemConfig c);
+  SchedulerManager(
+      SchedulingSystemConfig c,
+      ExecutorThreadManager* exec);
 
   // implementing the SchedulingSystem interface
 	void add_action(std::unique_ptr<BatchAction>&& act) override;
@@ -42,8 +50,12 @@ public:
 	//    - Profile this to see whether we need "batch dequeues" to
 	//    expedite the process of obtaining a batch.
   SchedulerThread::BatchActions request_input(SchedulerThread* s) override;
-  void signal_exec_threads(SchedulerThread* s) override;
-	void merge_into_global_schedule(BatchLockTable&& blt) override;
+  virtual void signal_exec_threads(
+      SchedulerThread* s,
+      ExecutorThreadManager::SignalWorkload&& workload) override;
+	void merge_into_global_schedule(
+      SchedulerThread* s,
+      BatchLockTable&& blt) override;
 };
 
 #endif // SCHEDULER_MANAGER_H_

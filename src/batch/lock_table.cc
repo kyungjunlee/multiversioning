@@ -25,8 +25,8 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
   }
 }
 
-LockStage* get_head_for_record(BatchAction::RecKey) {
-  auto elt = lock_table.find(RecKey);
+LockStage* LockTable::get_head_for_record(BatchAction::RecKey key) {
+  auto elt = lock_table.find(key);
   assert(elt != lock_table.end());
 
   return elt->second->peek_head();

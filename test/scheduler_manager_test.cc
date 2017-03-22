@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "batch/scheduler_manager.h"
 #include "test/test_action.h"
+#include "test/test_executor_thread_manager.h"
 
 #include <thread>
 #include <memory>
@@ -22,7 +23,9 @@ protected:
 	const unsigned int actions_at_start = batch_size * scheduling_threads_count;
 
 	virtual void SetUp() {
-		sm = std::make_shared<SchedulerManager>(this->conf);
+		sm = std::make_shared<SchedulerManager>(
+        this->conf,
+        new TestExecutorThreadManager());
 		// populate the input queue.
 		for (unsigned int i = 0;
 				i < actions_at_start;

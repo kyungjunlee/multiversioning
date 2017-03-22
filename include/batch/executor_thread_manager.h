@@ -7,8 +7,10 @@ class ExecutorThreadManager {
   public:
     // TODO:
     //    -- Access to global schedule for a particular record?
-    virtual void signal_execution_threads(
-        std::vector<ExecutorThread::BatchACtions> workload);
+    typedef std::vector<ExecutorThread::BatchActions> SignalWorkload;
+    virtual void signal_execution_threads(SignalWorkload&& workload);
+
+    virtual ~ExecutorThreadManager();
 };
 
 #endif // EXECUTOR_THREAD_MANAGER_H_

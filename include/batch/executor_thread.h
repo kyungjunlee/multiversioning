@@ -4,6 +4,9 @@
 #include "batch/batch_action.h"
 #include "runnable.hh"
 
+#include <memory>
+#include <vector>
+
 class ExecutorThreadManager;
 class ExecutorThread : public Runnable {
 protected:
@@ -26,7 +29,7 @@ public:
   typedef std::vector<std::shared_ptr<BatchAction>> BatchActions;
 
   virtual void add_actions(BatchActions&& actions) = 0;
-  virtual std::shared_ptr<BatchAction> try_get_done_action() = 0;
+  virtual std::unique_ptr<BatchActions> try_get_done_batch() = 0;
 };
 
 #endif // EXECUTOR_THREAD_H_

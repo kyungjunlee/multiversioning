@@ -1,8 +1,9 @@
 #ifndef _TEST_ACTION_H_
 #define _TEST_ACTION_H_
 
-#include <batch/batch_action.h>
-#include <test/test_txn.h>
+#include "batch/batch_action.h"
+#include "test/test_txn.h"
+#include "util.h"
 
 /*
  * Simple test fixture for actions.
@@ -49,8 +50,7 @@ public:
   BatchActionState atomic_change_state(
       BatchActionState new_state) override {
     return static_cast<BatchActionState>(
-      xchgq(&action_state, static_cast<uint64_t>(new_state));
-    );
+      xchgq(&action_state, static_cast<uint64_t>(new_state)));
   }
 
   // locks_held functions

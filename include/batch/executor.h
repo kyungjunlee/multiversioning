@@ -3,6 +3,7 @@
 
 #include "batch/MS_queue.h"
 #include "batch/batch_action.h"
+#include "batch/executor_thread.h"
 
 #include <list>
 #include <memory>
@@ -15,12 +16,9 @@
 //    The executor manager contains handles to all the executor threads
 //    and may be used by scheduling threads to assign ownership of actions
 //    to execution threads in a synchronized manner. 
-//
-//    The output queue of an executor is used only by the executor itself and
-//    by the simulation framework.
-class ExecutorQueue : public MSQueue<std::vector<BatchAction>> {
+class ExecutorQueue : public MSQueue<std::unique_ptr<ExecutorThread::BatchActions>> {
 private:
-  using MSQueue<ExecutorThread::BatchActions:>::merge_queue;
+  using MSQueue<std::unique_ptr<ExecutorThread::BatchActions>>::merge_queue;
 };
 
 // Pending Queue
@@ -28,7 +26,7 @@ private:
 //    Pending Queue is used by the executor to keep track of actions within
 //    a particular batch that could not be executed when the executor attempted
 //    to do so.
-typedef std::list<std::shared_ptr<BatchAction>> PendingQueue;
+typedef std::list<std::shared_ptr<BatchAction>> PendingList;
 
 class Executor : public ExecutorThread {
 protected:
@@ -36,13 +34,12 @@ protected:
   std::unique_ptr<ExecutorQueue> output_queue;
   // Pending actions are those that may not be immediately executed, but 
   // belong to the currently processed batch.
-  std::unique_ptr<PendingQueue> pending_queue;
+  std::unique_ptr<PendingList> pending_list;
   std::unique_ptr<ExecutorThread::BatchActions> currentBatch;
 
   void process_action_batch();
   // true if successful and false otherwise
-  bool process_action(BatchAction* act);
-  void process_blocking_actions(BatchAction* act);
+  bool process_action(std::shared_ptr<BatchAction> act);
   void process_pending();
   
 public:
@@ -50,13 +47,13 @@ public:
       ExecutorThreadManager* manager,
       int m_cpu_number);
 
-  // override of Runnable interface
+  // implement the Runnable interface
   void StartWorking() override;
-  void Init() override();
+  void Init() override;
   
-  // implement the eecutor thread interface.
+  // implement the executor thread interface.
   void add_actions(ExecutorThread::BatchActions&& actions);
-  std::shared_ptr<BatchAction> try_get_done_action();
+  std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch();
 };
 
 #endif //BATCH_EXECUTOR_H_

@@ -2,6 +2,7 @@
 #define SCHEDULER_THREAD_MANAGER_H_
 
 #include "batch/scheduler_thread.h"
+#include "batch/executor_thread_manager.h"
 
 // Scheduler Thread Manager
 //
@@ -11,13 +12,17 @@
 //    accessed to shared resources such as the global input queue, 
 //    the global schedule and the execution threads input queues.
 class SchedulerThreadManager {
+  protected:
+    ExecutorThreadManager* exec_manager;
   public:
+    SchedulerThreadManager(ExecutorThreadManager* exec): exec_manager(exec) {};
     virtual SchedulerThread::BatchActions request_input(SchedulerThread* s) = 0;
-    virtual void signal_exec_threads(SchedulerThread* s) = 0;
-    virtual void merge_into_global_schedule(BatchLockTable&& blt) = 0;
-
-    // TODO:
-    //    Add a handle to the ExecutionThreadManager.
+    virtual void signal_exec_threads(
+        SchedulerThread* s,
+        ExecutorThreadManager::SignalWorkload&& workload) = 0;
+    virtual void merge_into_global_schedule(
+        SchedulerThread* s,
+        BatchLockTable&& blt) = 0;
 };
 
 #endif

@@ -19,8 +19,8 @@ protected:
 public:
   ExecutingSystem(ExecutingSystemConfig c): conf(c) {};
 
-  virtual std::shared_ptr<BatchAction> get_done_action() = 0;  
-  virtual std::shared_ptr<BatchAction> try_get_done_action() = 0;  
+  virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch() = 0;  
+  virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() = 0;  
   virtual void start_working() = 0;
   virtual void init_threads() = 0;
 };
