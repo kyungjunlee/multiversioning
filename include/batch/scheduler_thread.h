@@ -3,6 +3,19 @@
 
 #include "runnable.hh"
 
+// Scheduler State
+//  
+//    Scheduler Threads may be thoughts of as state machines with the state
+//    dictating what the thread may and may not do. This state is used by the 
+//    Scheduler Thread Manager to determine whether or not a thread is ready
+//    to perform a given action without resolving to usage of shared memory.
+//
+//    See include/batch/scheduler_manager.h and its implementation for more
+//    information. 
+//
+//    Note:
+//        The state machine proceeds through the states one by one and never
+//        skips states.
 enum class SchedulerState { 
   waiting_for_input = 0,
   input,
@@ -16,8 +29,9 @@ enum class SchedulerState {
 
 //  Scheduler Thread
 //
-//      The interface that is required by the SchedulerManager to communicate
-//      with Scheduler threads properly. We require scheduling threads to:
+//
+//      The general interface of a scheduler thread required by the 
+//      Scheduler Thread Manager. 
 class SchedulerThreadManager;
 class SchedulerThread : public Runnable {
   protected:

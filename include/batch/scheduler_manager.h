@@ -9,9 +9,18 @@
 #include <vector>
 #include <memory>
 
+//  Scheduler Manager
+//
+//  Scheduler Manager is the actual implementation of Scheduling System and
+//  Scheduler Thread Manager classes. The supervisor class has a handle to it
+//  using a SchedulingSystem pointer and the scheduling threads have a handle
+//  to it using the SchedulerThreadManager pointer.
 class SchedulerManager : 
   public SchedulerThreadManager,
   public SchedulingSystem {
+protected:
+  // imlementation of the protected part of SchedulingSystem interface.
+	void add_action(std::unique_ptr<BatchAction>&& act) override;
 
 public:
   uint64_t current_input_scheduler;
@@ -22,7 +31,6 @@ public:
   SchedulerManager(SchedulingSystemConfig c);
 
   // implementing the SchedulingSystem interface
-	void add_action(std::unique_ptr<BatchAction>&& act) override;
   void create_threads() override;
   void start_working() override;
   void init_threads() override;

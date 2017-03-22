@@ -9,33 +9,10 @@
 
 //  Scheduler
 //
-//    Implementation of SchedulingThread. Scheduling threads may be 
-//    thought of as state machines. The state transitions are described below.
 //
-//    State transition of scheduler:
-//      - waiting_for_input 
-//          -- Awaits its turn to dequeue actions from the input queue. Input
-//            Queue is a single-producer single-consumer MS-queue that contains 
-//            all of the transactions in the system.
-//      - input 
-//          -- Dequeues transactions from the input queue.
-//      - batch_creation 
-//          -- Creates the batch schedule. This is done offline and does not
-//          conflict with anything else in the system.
-//      - waiting to merge 
-//          -- Awaits for the logical lock on merging its schedule into the 
-//          global schedule.
-//      - batch merging
-//          -- Merges into the global schedule.
-//      - waiting to signal execution
-//          -- Awaits for the logical lock on signaling to execution threads.
-//          Signaling execution threads means passing them pointers to
-//          actions that they own. For more information see include/batch/executor.h
-//      - signaling execution
-//          -- Signals execution threads
-//      - waiting for input
-//      - ...
-//
+//    The implementation of a scheduler thread. This is the part of the system
+//    that does the actual work of creating batch schedules, merging it within 
+//    the global schedule etc.
 //
 //      TODO:
 //          Tests for:

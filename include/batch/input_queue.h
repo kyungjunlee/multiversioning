@@ -15,8 +15,8 @@ class Scheduler;
  *  Input Queue
  *
  *    Input Queue for all of the actions in the system. The actions are passed
- *    on to the scheduling threads in round-robbin manner by the SchedulerThreadManager.
- *    See include/batch/scheduler_manager.h for more information. 
+ *    into the scheduling system through the SchedulingSystem class. 
+ *    See include/batch/scheduler_system.h for the general interface. 
  */
 class InputQueue : public MSQueue<std::unique_ptr<BatchAction>> {
   private:
