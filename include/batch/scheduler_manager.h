@@ -42,7 +42,6 @@ public:
 	//    simulations so that timeout never happens.
 	//    - Profile this to see whether we need "batch dequeues" to
 	//    expedite the process of obtaining a batch.
-	//    - Implement a waiting queue for scheduling threads.
   SchedulerThread::BatchActions request_input(SchedulerThread* s) override;
   void signal_exec_threads(SchedulerThread* s) override;
 	void merge_into_global_schedule(BatchLockTable&& blt) override;
