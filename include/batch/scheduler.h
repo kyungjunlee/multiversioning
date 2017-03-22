@@ -38,7 +38,7 @@ public:
   void StartWorking() override;
   void Init() override;
 
-  // implement the scheduler interface.
+  // implement the scheduler thread interface.
   SchedulerState get_state() override;
   bool signal_waiting_for_input() override;
   bool signal_input() override;

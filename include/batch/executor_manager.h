@@ -3,7 +3,6 @@
 #ifndef BATCH_EXECUTOR_H_
 #define BATCH_EXECUTOR_H_
 
-#include "batch/MS_queue.h"
 #include "batch/batch_action.h"
 #include "batch/scheduler.h"
 #include "batch/executor.h"
@@ -16,27 +15,29 @@
 
 //  Executor Manager
 //  
-//    Executor manager is the data structure used to manage all of the 
-//    execution threads in the system and the communication with them.
-//
-//    Executor manager class would also do all of the spin-off and 
-//    destruction etc. It would be the point of communication of the 
-//    execution threads with "outer world." This way we can keep such
-//    communication relatively simple and orderly.
-
-class ExecutorManager {
-protected:
-  std::vector<Executor> executors;
-  SchedulerManager* scheduler_manager;
+//  Executor Manager is the actual implementaiton of Executing System and
+//  Executor Thread Manager classes. The supervisor class has a handle to it
+//  using a Executing System pointer and the executing threads have a handle
+//  to it using the ExecutorThreadManager pointer.
+class ExecutorManager :
+  public ExecutorThreadManager,
+  public ExecutingSystem {
 public:
+  std::vector<std::shared_ptr<ExecutorThread>> executors;
+  unsigned int next_signaled_executor;
+  unsigned int next_output_executor;
+
   ExecutorManager();
 
-  void initialize_executors(unsigned int num_threads);
-  void register_schedulers(std::vector<Scheduler*> schedulers);
-  void start_threads();
-  void signal_threads(Scheduler* s);
+  // implementing the ExecutingSystem interface
+  virtual std::unique_ptr<BatchAction> get_done_action();
+  virtual std::unique_ptr<BatchAction> try_get_done_action();
+  virtual void start_working();
+  virtual void init_threads();
 
-  std::vector<Executor>* 
+  // implementing the ExecutorThreadManager interface
+  virtual void signal_execution_threads(
+      std::vector<ExecutorThread::BatchActions> workload);
 };
 
 

@@ -8,16 +8,6 @@
 #include <memory>
 #include <vector>
 
-// TODO:
-//  Executor manager class that is not a thread, but rather is used 
-//  for communication between scheduling threads and execution
-//  threads. Should do all the logical locking etc.
-//
-//  Executor manager class would also do all of the spin-off and 
-//  destruction etc. It would be the point of communication of the 
-//  execution threads with "outer world." This way we can keep such
-//  communication relatively simple and orderly.
-
 // ExecutorQueue
 //    
 //    Executor queue is a single-producer, single-consumer ms-queue. Every
@@ -30,16 +20,7 @@
 //    by the simulation framework.
 class ExecutorQueue : public MSQueue<std::vector<BatchAction>> {
 private:
-  using MSQueue<std::vector<BatchAction>>::merge_queue;
-};
-
-struct ExecutorConfig {
-  std::unique_ptr<ExecutorQueue> input_queue;
-  std::unique_ptr<ExecutorQueue> output_queue;
-  // TODO:
-  //    Pointer to the global schedule.
-  // std::shared_ptr<GlobalSchedule> global_schedule;
-  int m_cpu_number; 
+  using MSQueue<ExecutorThread::BatchActions:>::merge_queue;
 };
 
 // Pending Queue
@@ -47,22 +28,16 @@ struct ExecutorConfig {
 //    Pending Queue is used by the executor to keep track of actions within
 //    a particular batch that could not be executed when the executor attempted
 //    to do so.
-//
-//    The BatchAction* pointers are just observing pointers. The currentBatch
-//    element within executor still owns the actions since the simulation framework
-//    will want to get those.
-typedef std::list<BatchAction*> PendingQueue;
+typedef std::list<std::shared_ptr<BatchAction>> PendingQueue;
 
-class Executor : public Runnable {
+class Executor : public ExecutorThread {
 protected:
   std::unique_ptr<ExecutorQueue> input_queue;
   std::unique_ptr<ExecutorQueue> output_queue;
   // Pending actions are those that may not be immediately executed, but 
   // belong to the currently processed batch.
   std::unique_ptr<PendingQueue> pending_queue;
-  // TODO:
-  //      std::shared_ptr<GlobalSchedule> global_schedule;
-  std::unique_ptr<std::vector<BatchAction>> currentBatch;
+  std::unique_ptr<ExecutorThread::BatchActions> currentBatch;
 
   void process_action_batch();
   // true if successful and false otherwise
@@ -71,14 +46,17 @@ protected:
   void process_pending();
   
 public:
-  Executor(Executorconfig cfg);
+  Executor(
+      ExecutorThreadManager* manager,
+      int m_cpu_number);
 
   // override of Runnable interface
   void StartWorking() override;
   void Init() override();
   
-  // own functions
-  void enqueue_batch(std::vector<BatchAction>&& batch);
+  // implement the eecutor thread interface.
+  void add_actions(ExecutorThread::BatchActions&& actions);
+  std::shared_ptr<BatchAction> try_get_done_action();
 };
 
 #endif //BATCH_EXECUTOR_H_
