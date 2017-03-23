@@ -18,21 +18,19 @@
 //          Tests for:
 //            - StartWorking 
 //            - Init
-//            - make_batch_schedule
 class Scheduler : public SchedulerThread {
 public:
   typedef SchedulerThread::BatchActions BatchActions;
-protected:
-  std::unique_ptr<BatchActions> batch_actions;
-  BatchLockTable lt;
-
-  void make_batch_schedule();
 public:
   Scheduler(
       SchedulerThreadManager* manager,
       int m_cpu_number);
 
-  // override Runnable interface
+  std::unique_ptr<BatchActions> batch_actions;
+  BatchLockTable lt;
+
+  void make_batch_schedule();
+    // override Runnable interface
   void StartWorking() override;
   void Init() override;
 };
