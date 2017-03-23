@@ -51,11 +51,8 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
       s != nullptr &&
       system_is_initialized());
   
-  // fast track -- there is currently no thread trying to
-  // get actions. Notice that we do this only not to bounce cache too much. 
-	// If we continued getting current_input_scheduler with a barrier
-	// we would likely be doing too much memory operations! The state is thread
-	// local.
+  // TODO:
+  //    Consider conditional variables here if scheduling is slow.
   uint64_t h;
   do {
     h = current_input_scheduler;
@@ -89,7 +86,8 @@ void SchedulerManager::signal_exec_threads(
       s != nullptr &&
       system_is_initialized());
 
-  // fast track -- as in request_input!
+  // TODO:
+  //    Consider conditional variables here if scheduling is slow.
   uint64_t h;
   do {
     h = current_signaling_scheduler;
