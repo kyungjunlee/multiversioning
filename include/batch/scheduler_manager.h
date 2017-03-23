@@ -6,7 +6,6 @@
 #include "batch/input_queue.h"
 #include "batch/scheduler_system.h"
 #include "batch/scheduler_thread_manager.h"
-#include "batch/executor_thread_manager.h"
 
 #include <vector>
 #include <memory>

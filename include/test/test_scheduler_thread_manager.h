@@ -6,13 +6,13 @@
 
 class TestSchedulerThreadManager : public SchedulerThreadManager {
 public:
+  TestSchedulerThreadManager(ExecutorThreadManager* exec):
+    SchedulerThreadManager(exec)
+  {};
+
   uint64_t request_input_called = 0;
   uint64_t signal_exec_threads_called = 0;
   uint64_t merge_into_global_schedule_called = 0;
-
-  TestSchedulerThreadManager():
-    SchedulerThreadManager(new TestExecutorThreadManager())
-  {};
 
   SchedulerThread::BatchActions request_input(SchedulerThread* s) override {
     (void) s;
@@ -36,9 +36,6 @@ public:
     merge_into_global_schedule_called ++;
   };
 
-  ~TestSchedulerThreadManager() {
-    delete this->exec_manager;
-  };
 };
 
 #endif // TEST_SCHEDULER_THREAD_MANAGER_H_
