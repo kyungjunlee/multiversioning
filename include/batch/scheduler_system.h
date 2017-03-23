@@ -1,6 +1,10 @@
 #ifndef SCHEDULER_SYSTEM_H_
 #define SCHEDULER_SYSTEM_H_
 
+#include "batch/global_schedule.h"
+
+#include <memory>
+
 // Scheduler System Config 
 //
 //    Used to configure the scheduling system within the system.
@@ -8,6 +12,7 @@ struct SchedulingSystemConfig {
   uint32_t scheduling_threads_count;
   uint32_t batch_size_act;
   uint32_t batch_length_sec;
+  std::shared_ptr<GlobalScheduleInterface> gs; 
 };
 
 // Scheduling System

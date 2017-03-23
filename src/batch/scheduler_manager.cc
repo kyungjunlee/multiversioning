@@ -98,7 +98,7 @@ void SchedulerManager::signal_exec_threads(
 
   exec_manager->signal_execution_threads(std::move(workload));
 
-  // formally increment the current input scheduler
+  // formally increment the current signaling scheduler
   bool cas_success = cmp_and_swap(
       &current_signaling_scheduler,
       h,
@@ -109,7 +109,20 @@ void SchedulerManager::signal_exec_threads(
 void SchedulerManager::merge_into_global_schedule(
     SchedulerThread* s,
     BatchLockTable&& blt) {
-	// TODO
-	(void) blt;
-  (void) s;
+  assert(s != nullptr);
+
+  uint64_t h;
+  do {
+    h = current_merging_scheduler;
+    barrier();
+  } while (s != schedulers[h].get());
+
+  conf.gs->merge_into_global_schedule(std::move(blt));
+
+  // formally increment the current merging scheduler
+  bool cas_success = cmp_and_swap(
+      &current_merging_scheduler,
+      h,
+      (h+1) % schedulers.size());
+  assert(cas_success);
 };

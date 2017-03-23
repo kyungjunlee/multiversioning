@@ -1,11 +1,16 @@
 #ifndef EXECUTOR_SYSTEM_H_
 #define EXECUTOR_SYSTEM_H_
 
+#include "batch/global_schedule.h"
+
+#include <memory>
+
 // Executing System Config
 //  
 //    Used to configure the executing system withi the system.
 struct ExecutingSystemConfig {
   uint32_t executing_threads_count;
+  std::shared_ptr<GlobalScheduleInterface> gs;
 };
 
 // Executing System
