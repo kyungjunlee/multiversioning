@@ -7,12 +7,12 @@
 class GlobalScheduleInterface {
 public:
   // scheduler thread interface:
-  void merge_into_global_schedule(BatchLockTable&& blt) = 0;
+  virtual void merge_into_global_schedule(BatchLockTable&& blt) = 0;
 
   // executor thread interface:
-  std::shared_ptr<LockStage> get_stage_holding_lock_for(
+  virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(
       BatchAction::RecKey key) = 0;
-  void finalize_execution_of_action(
+  virtual void finalize_execution_of_action(
       BatchAction* act) = 0;
 };
 
