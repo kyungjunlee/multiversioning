@@ -22,7 +22,7 @@ class ExecutorManager :
   public ExecutingSystem,
   public ExecutorThreadManager {
 private:
-  void initialize_executors();
+  void create_threads();
 public:
   std::vector<std::shared_ptr<ExecutorThread>> executors;
   unsigned int next_signaled_executor;

@@ -6,9 +6,12 @@ ExecutorManager::ExecutorManager(ExecutingSystemConfig conf):
   next_output_executor(0)
 {};
 
-void ExecutorManager::initialize_executors() {
-  // TODO:
-  //    Create the threads.
+void ExecutorManager::create_threads() {
+  for (unsigned int i = 0; i < conf.executing_threads_count; i++) {
+    // TODO:
+    //    Pinning must be coordinated between executing and scheudling threads.
+    executors.push_back(std::make_shared<BatchExecutor>(this, 0));
+  }
 };
 
 void ExecutorManager::start_working() {
