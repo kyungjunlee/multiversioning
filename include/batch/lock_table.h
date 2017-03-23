@@ -31,6 +31,9 @@ public:
   typedef std::unordered_map<BatchAction::RecKey, std::shared_ptr<LockQueue>> LockTableType;
 protected:
   LockTableType lock_table;
+  // TODO:
+  //    Do we even need this mutex? We are assuring that the higher-level
+  //    objects coordinate among themselves. Right?
   std::mutex merge_batch_table_mutex;
 public:
   // TODO:
@@ -38,10 +41,14 @@ public:
   //    before anything merges into it. That way we can avoid emplacing new queues
   //    at run time!
   LockTable();
+  // TODO:
+  //    Changed tests for these. Incorporate the lock messaging.
   void merge_batch_table(BatchLockTable& blt);
-  LockStage* get_head_for_record(BatchAction::RecKey);
-};
 
+  // TODO: sets for these
+  LockStage* get_head_for_record(BatchAction::RecKey key);
+  void pass_lock_to_next_stage_for(BatchAction::RecKey key);
+};
 
 // BatchLockTable
 //
