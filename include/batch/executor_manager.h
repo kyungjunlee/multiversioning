@@ -31,14 +31,17 @@ public:
   ExecutorManager(ExecutingSystemConfig c);
 
   // implementing the ExecutingSystem interface
-  virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch();
-  virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch();
-  virtual void start_working();
-  virtual void init_threads();
+  virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch() override;
+  virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
+  virtual void start_working() override;
+  virtual void init_threads() override;
 
   // implementing the ExecutorThreadManager interface
   virtual void signal_execution_threads(
-      std::vector<ExecutorThread::BatchActions> workload);
+      ExecutorThreadManager::SignalWorkload&& workload) override;
+  virtual std::shared_ptr<LockStage> 
+    get_current_lock_holder_for(BatchAction::RecKey key) override;
+  virtual void finalize_action(std::shared_ptr<BatchAction> act) override;
 };
 
 

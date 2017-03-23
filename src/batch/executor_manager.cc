@@ -27,7 +27,7 @@ void ExecutorManager::init_threads() {
 }
 
 void ExecutorManager::signal_execution_threads(
-    std::vector<ExecutorThread::BatchActions> workloads) {
+    ExecutorThreadManager::SignalWorkload&& workloads) {
   for (auto workload : workloads) {
     executors[next_signaled_executor]->add_actions(std::move(workload));  
     next_signaled_executor ++;
@@ -50,4 +50,13 @@ ExecutorManager::try_get_done_batch() {
   next_output_executor %= executors.size();
 
   return std::move(batch);
+}
+
+std::shared_ptr<LockStage> 
+ExecutorManager::get_current_lock_holder_for(BatchAction::RecKey key) {
+  return conf.gs->get_stage_holding_lock_for(key);
+}
+
+void ExecutorManager::finalize_action(std::shared_ptr<BatchAction> act) {
+  conf.gs->finalize_execution_of_action(act);
 }

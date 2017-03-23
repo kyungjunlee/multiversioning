@@ -13,7 +13,7 @@ public:
   virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(
       BatchAction::RecKey key) = 0;
   virtual void finalize_execution_of_action(
-      BatchAction* act) = 0;
+      std::shared_ptr<BatchAction> act) = 0;
 };
 
 // TODO:
@@ -32,7 +32,7 @@ public:
   std::shared_ptr<LockStage> get_stage_holding_lock_for(
       BatchAction::RecKey key) override;
   void finalize_execution_of_action(
-      BatchAction* act) override;
+      std::shared_ptr<BatchAction> act) override;
 };
 
 #endif

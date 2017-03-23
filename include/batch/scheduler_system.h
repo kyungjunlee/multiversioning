@@ -3,6 +3,8 @@
 
 #include "batch/global_schedule.h"
 
+#include <memory>
+
 // Scheduler System Config 
 //
 //    Used to configure the scheduling system within the system.
