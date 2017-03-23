@@ -28,7 +28,7 @@ private:
 //    to do so.
 typedef std::list<std::shared_ptr<BatchAction>> PendingList;
 
-class Executor : public ExecutorThread {
+class BatchExecutor : public ExecutorThread {
 protected:
   std::unique_ptr<ExecutorQueue> input_queue;
   std::unique_ptr<ExecutorQueue> output_queue;
@@ -43,7 +43,7 @@ protected:
   void process_pending();
   
 public:
-  Executor(
+  BatchExecutor(
       ExecutorThreadManager* manager,
       int m_cpu_number);
 
@@ -52,8 +52,8 @@ public:
   void Init() override;
   
   // implement the executor thread interface.
-  void add_actions(ExecutorThread::BatchActions&& actions);
-  std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch();
+  void add_actions(ExecutorThread::BatchActions&& actions) override;
+  std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
 };
 
 #endif //BATCH_EXECUTOR_H_

@@ -26,8 +26,6 @@ protected:
   std::unique_ptr<BatchActions> batch_actions;
   BatchLockTable lt;
 
-  // state change is done using CAS and is thread safe.
-  bool change_state(SchedulerState nextState, SchedulerState expectedCurrState);
   void make_batch_schedule();
 public:
   Scheduler(
@@ -37,16 +35,6 @@ public:
   // override Runnable interface
   void StartWorking() override;
   void Init() override;
-
-  // implement the scheduler thread interface.
-  SchedulerState get_state() override;
-  bool signal_waiting_for_input() override;
-  bool signal_input() override;
-  bool signal_batch_creation() override;
-  bool signal_waiting_for_merge() override;
-  bool signal_merging() override;
-  bool signal_waiting_for_exec_signal() override;
-  bool signal_exec_signal() override;
 };
 
 #endif // BATCH_SCHEDULER_H_

@@ -15,17 +15,6 @@ SchedulerManager::SchedulerManager(
 	create_threads();
 };
 
-bool SchedulerManager::inputs_are_ok(
-    SchedulerThread* s,
-    std::vector<SchedulerState> possible_states_of_s) {
-  bool everything_ok = false;
-  for (auto& state : possible_states_of_s) {
-    everything_ok |= (s->get_state() == state);
-  }
-
-  return everything_ok && (s != nullptr);
-}
-
 bool SchedulerManager::system_is_initialized() {
   return schedulers.size() > 0;
 }
@@ -59,9 +48,7 @@ void SchedulerManager::init_threads() {
 
 SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s) {
   assert(
-      inputs_are_ok(s, 
-        {SchedulerState::waiting_for_input, 
-        SchedulerState::input}) &&
+      s != nullptr &&
       system_is_initialized());
   
   // fast track -- there is currently no thread trying to
@@ -69,12 +56,11 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
 	// If we continued getting current_input_scheduler with a barrier
 	// we would likely be doing too much memory operations! The state is thread
 	// local.
-  uint64_t h = current_input_scheduler;
-  barrier();
-  if (s != schedulers[h].get()) {
-    // there is some other thread getting the actions.
-    while (s->get_state() != SchedulerState::input);
-  } 
+  uint64_t h;
+  do {
+    h = current_input_scheduler;
+    barrier();
+  } while (s != schedulers[h].get());
 
   std::unique_ptr<BatchAction>* act;
 	SchedulerThread::BatchActions batch(this->conf.batch_size_act);
@@ -85,21 +71,12 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
     batch[actionsTaken] = std::move(*act);
   }
 
-  // move the holder to the next scheduler in turn.
-  uint64_t next = (h + 1) % schedulers.size();
-
-  // change the state of the next thread if there is one waiting
+  // formally increment the current_input_scheduler
 	bool cas_success = false;
-  if (schedulers[next]->get_state() == SchedulerState::waiting_for_input) {
-    cas_success = schedulers[next]->signal_input();
-    assert(cas_success);
-  }
-
-	// formally increment the current_input_scheduler
   cas_success = cmp_and_swap(
       &current_input_scheduler,
       h,
-      next);
+      (h + 1) % schedulers.size());
   assert(cas_success);
 
 	return batch;
@@ -109,35 +86,23 @@ void SchedulerManager::signal_exec_threads(
     SchedulerThread* s,
     ExecutorThreadManager::SignalWorkload&& workload) {
   assert(
-      inputs_are_ok(
-        s,
-        {SchedulerState::waiting_to_signal_execution, 
-        SchedulerState::signaling_execution}));
+      s != nullptr &&
+      system_is_initialized());
 
   // fast track -- as in request_input!
-  uint64_t h = current_signaling_scheduler;
-  barrier();
-  if (s != schedulers[h].get()) {
-    // there is some other thread getting the actions
-    while (s->get_state() != SchedulerState::signaling_execution);
-  }
+  uint64_t h;
+  do {
+    h = current_signaling_scheduler;
+    barrier();
+  } while (s != schedulers[h].get());
 
   exec_manager->signal_execution_threads(std::move(workload));
 
-  // move the holder to the next scheduler in turn.
-  uint64_t next = (h + 1) % schedulers.size();
-
-  bool cas_success = false;
-  if (schedulers[next]->get_state() == SchedulerState::waiting_to_signal_execution) {
-    cas_success = schedulers[next]->signal_merging();
-    assert(cas_success);
-  }
-
   // formally increment the current input scheduler
-  cas_success = cmp_and_swap(
+  bool cas_success = cmp_and_swap(
       &current_signaling_scheduler,
       h,
-      next);
+      (h+1) % schedulers.size());
   assert(cas_success);
 };
 

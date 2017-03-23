@@ -3,7 +3,7 @@
 
 #include <utility>
 
-Executor::Executor(
+BatchExecutor::BatchExecutor(
       ExecutorThreadManager* manager, 
       int m_cpu_number):
     ExecutorThread(manager, m_cpu_number) {
@@ -12,7 +12,7 @@ Executor::Executor(
   pending_list = std::make_unique<PendingList>();
 };
 
-void Executor::StartWorking() {
+void BatchExecutor::StartWorking() {
   // TODO: introduce a "kill" flag.
   while (true) {
     // get a batch to execute or busy wait until we may do that
@@ -25,17 +25,17 @@ void Executor::StartWorking() {
   }
 };
 
-void Executor::Init() {
+void BatchExecutor::Init() {
 };
 
-void Executor::add_actions(ExecutorThread::BatchActions&& actions) {
+void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
   input_queue->push_tail(
       std::move(
         std::make_unique<ExecutorThread::BatchActions>(
           std::move(actions))));
 };
 
-void Executor::process_action_batch() {
+void BatchExecutor::process_action_batch() {
   for (unsigned int i = 0; i < currentBatch->size(); i++) {
     // attempt to execute the pending actions first. This is because the 
     // actions "earlier" in the current batch are more likely to not
@@ -56,7 +56,7 @@ void Executor::process_action_batch() {
   output_queue->push_tail(std::move(currentBatch));
 };
 
-bool Executor::process_action(std::shared_ptr<BatchAction> act) {
+bool BatchExecutor::process_action(std::shared_ptr<BatchAction> act) {
   assert(act != nullptr);
 
   uint64_t action_state = act->action_state;
@@ -121,7 +121,7 @@ bool Executor::process_action(std::shared_ptr<BatchAction> act) {
   }
 };
 
-void Executor::process_pending() {
+void BatchExecutor::process_pending() {
   // attempt to execute everything within the pending queue
   auto it = pending_list->begin();
   while (it != pending_list->end()) {
@@ -134,6 +134,6 @@ void Executor::process_pending() {
   }
 };
 
-std::unique_ptr<ExecutorThread::BatchActions> Executor::try_get_done_batch() {
+std::unique_ptr<ExecutorThread::BatchActions> BatchExecutor::try_get_done_batch() {
   return std::move(*output_queue->try_pop_head());
 };

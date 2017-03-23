@@ -2,7 +2,6 @@
 #define TEST_SCHEDULER_THREAD_MANAGER_H_
 
 #include "batch/scheduler_thread_manager.h"
-#include "test/test_executor_thread_manager.h"
 
 class TestSchedulerThreadManager : public SchedulerThreadManager {
 public:

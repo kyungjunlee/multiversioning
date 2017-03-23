@@ -20,9 +20,6 @@ class SchedulerManager :
   public SchedulerThreadManager,
   public SchedulingSystem {
 private:
-  bool inputs_are_ok(
-      SchedulerThread *s,
-      std::vector<SchedulerState> possible_stated_of_s);
   bool system_is_initialized();
 public:
   uint64_t current_input_scheduler;
