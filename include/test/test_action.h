@@ -16,7 +16,7 @@
  *    just a declaration of a static function!
  */
 
-class TestAction : public BatchActionInterface {
+class TestAction : public IBatchAction {
 private:
   RecordKeySet writeSet;
   RecordKeySet readSet;
@@ -24,7 +24,7 @@ private:
   
 public: 
   TestAction(txn* txn): TestAction(txn, 0) {} 
-  TestAction(txn* txn, uint64_t id): BatchActionInterface(txn), id(id) {}
+  TestAction(txn* txn, uint64_t id): IBatchAction(txn), id(id) {}
 
   // override the translator functions
   void *write_ref(uint64_t key, uint32_t table) override {
@@ -74,9 +74,9 @@ public:
   RecordKeySet* get_readset_handle() {return &readSet;}
   RecordKeySet* get_writeset_handle() {return &writeSet;}
 
-  void run() override {};
+  void Run() override {};
   // inequality calculated based on the overall number of transactions.
-  bool operator<(const BatchActionInterface& ta) const {
+  bool operator<(const IBatchAction& ta) const {
     return (get_readset_size() + get_writeset_size() <
       ta.get_readset_size() + ta.get_writeset_size());
   }

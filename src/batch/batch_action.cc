@@ -48,11 +48,11 @@ bool BatchAction::ready_to_execute() {
   return l == get_readset_size() + get_writeset_size(); 
 };
 
-BatchActionInterface::RecordKeySet* BatchAction::get_readset_handle() {
+IBatchAction::RecordKeySet* BatchAction::get_readset_handle() {
   return &readset;
 }
 
-BatchActionInterface::RecordKeySet* BatchAction::get_writeset_handle() {
+IBatchAction::RecordKeySet* BatchAction::get_writeset_handle() {
   return &writeset;
 }
 
@@ -72,7 +72,7 @@ BatchActionState BatchAction::atomic_change_state(
 }
 
 //currently sort by total number of records in action
-bool BatchAction::operator<(const BatchActionInterface& ba2) const {
+bool BatchAction::operator<(const IBatchAction& ba2) const {
   return (get_readset_size() + get_writeset_size() < 
           ba2.get_readset_size() + ba2.get_writeset_size());
 }
@@ -81,6 +81,6 @@ int BatchAction::rand() {
   return 0;
 }
 
-void BatchAction::run() {
+void BatchAction::Run() {
   // TODO.
 }

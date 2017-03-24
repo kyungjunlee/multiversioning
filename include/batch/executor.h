@@ -27,7 +27,7 @@ private:
 //    Pending Queue is used by the executor to keep track of actions within
 //    a particular batch that could not be executed when the executor attempted
 //    to do so.
-typedef std::list<std::shared_ptr<BatchActionInterface>> PendingList;
+typedef std::list<std::shared_ptr<IBatchAction>> PendingList;
 
 // BatchExecutor
 //
@@ -45,7 +45,7 @@ protected:
 
   void process_action_batch();
   // true if successful and false otherwise
-  bool process_action(std::shared_ptr<BatchActionInterface> act);
+  bool process_action(std::shared_ptr<IBatchAction> act);
   void process_pending();
   
 public:

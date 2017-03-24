@@ -4,7 +4,7 @@
 #include "batch/batch_action_interface.h"
 #include "batch/lock_table.h"
 #include "batch/container.h"
-#include "batch/scheduler_manager.h"
+#include "batch/scheduler_thread_manager.h"
 #include "batch/scheduler_thread.h"
 
 //  Scheduler
@@ -20,15 +20,20 @@
 class Scheduler : public SchedulerThread {
 public:
   typedef SchedulerThread::BatchActions BatchActions;
-public:
+
   Scheduler(
       SchedulerThreadManager* manager,
       int m_cpu_number);
 
   std::unique_ptr<BatchActions> batch_actions;
   BatchLockTable lt;
+  SchedulerThreadManager::OrderedWorkload workloads;
 
-  void make_batch_schedule();
+  /*
+   *  Has two basic effects:
+   *    Populates the batch lock table and workloads variables.
+   */
+  void process_batch();
     // override Runnable interface
   void StartWorking() override;
   void Init() override;

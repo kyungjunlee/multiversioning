@@ -10,20 +10,22 @@
 // GlobalSchedule
 //
 //    The actual implementation of the above.
-class GlobalSchedule : public GlobalScheduleInterface {
+class GlobalSchedule : public IGlobalSchedule {
 protected:
   LockTable lt;
 
   void advance_lock_for_record(RecordKey key);
 public:
   GlobalSchedule();
+  // preallocates all memory needed by the global schedule.
+  GlobalSchedule(DBStorageConfig db_conf);
 
   void merge_into_global_schedule(BatchLockTable&& blt) override;
 
   std::shared_ptr<LockStage> get_stage_holding_lock_for(
       RecordKey key) override;
   void finalize_execution_of_action(
-      std::shared_ptr<BatchActionInterface> act) override;
+      std::shared_ptr<IBatchAction> act) override;
 };
 
 #endif

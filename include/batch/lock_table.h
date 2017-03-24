@@ -2,6 +2,7 @@
 #define _LOCK_TABLE_H_
 
 #include "batch/batch_action_interface.h"
+#include "batch/db_storage_interface.h"
 #include "batch/lock_queue.h"
 #include "batch/record_key.h"
 
@@ -36,12 +37,16 @@ protected:
   //    Do we even need this mutex? We are assuring that the higher-level
   //    objects coordinate among themselves. Right?
   std::mutex merge_batch_table_mutex;
+  bool memory_preallocated;
+
+  void allocate_mem_for(RecordKey key);
 public:
   // TODO:
   //    Make sure that the lock table has all of the necessary queues allocated up front
   //    before anything merges into it. That way we can avoid emplacing new queues
   //    at run time!
   LockTable();
+  LockTable(DBStorageConfig db_conf);
   void merge_batch_table(BatchLockTable& blt);
   
   std::shared_ptr<LockStage> get_head_for_record(RecordKey key);
@@ -63,7 +68,7 @@ protected:
   LockTableType lock_table;
 public:
   BatchLockTable();
-  void insert_lock_request(std::shared_ptr<BatchActionInterface> request);
+  void insert_lock_request(std::shared_ptr<IBatchAction> request);
   const LockTableType& get_lock_table_data();
 
   friend class LockTable;

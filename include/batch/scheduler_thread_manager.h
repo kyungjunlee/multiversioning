@@ -14,12 +14,18 @@
 class SchedulerThreadManager {
   public:
     ExecutorThreadManager* exec_manager;
+    /*
+     * An ordered workload is a batch workload that is "ordered" in the sense
+     * that the less likely to collide transactions are first. Think of this
+     * as a flattenned out hierarchy of packings (appended packings);
+     */
+    typedef std::vector<std::shared_ptr<IBatchAction>> OrderedWorkload;
 
     SchedulerThreadManager(ExecutorThreadManager* exec): exec_manager(exec) {};
     virtual SchedulerThread::BatchActions request_input(SchedulerThread* s) = 0;
     virtual void signal_exec_threads(
         SchedulerThread* s,
-        ExecutorThreadManager::SignalWorkload&& workload) = 0;
+        OrderedWorkload&& workload) = 0;
     virtual void merge_into_global_schedule(
         SchedulerThread* s,
         BatchLockTable&& blt) = 0;

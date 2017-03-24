@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "batch/scheduler.h"
+#include "batch/input_queue.h"
 #include "test/test_executor_thread_manager.h"
 #include "test/test_scheduler_thread_manager.h"
 #include "test/test_action.h"
@@ -26,8 +27,8 @@ protected:
   };
 
   virtual void add_test_txn_to_scheduler_batch(
-      BatchActionInterface::RecordKeySet write_set,
-      BatchActionInterface::RecordKeySet read_set,
+      IBatchAction::RecordKeySet write_set,
+      IBatchAction::RecordKeySet read_set,
       uint64_t id) {
     // allocate the object if that didn't happen yet.
     if (s->batch_actions == nullptr) {
@@ -101,11 +102,11 @@ void assert_correct_schedule(
 //  2 <- T2
 //  3 <- T2 <- T1
 //  4 <- T1
-TEST_F(SchedulerTest, make_batch_schedule_Test1) {
+TEST_F(SchedulerTest, process_batch_Test1) {
   add_test_txn_to_scheduler_batch({1}, {}, 0);
   add_test_txn_to_scheduler_batch({1, 3, 4}, {}, 1);
   add_test_txn_to_scheduler_batch({2, 3}, {}, 2);
-  s->make_batch_schedule();
+  s->process_batch();
 
   assert_correct_schedule(
       s,
@@ -126,11 +127,11 @@ TEST_F(SchedulerTest, make_batch_schedule_Test1) {
 //  3 <- T1
 //  4 <- T1 <- T2
 //  5 <- T1
-TEST_F(SchedulerTest, make_batch_schedule_Test2) {
+TEST_F(SchedulerTest, process_batch_Test2) {
   add_test_txn_to_scheduler_batch({1}, {}, 0);
   add_test_txn_to_scheduler_batch({2, 3, 4, 5}, {}, 1);
   add_test_txn_to_scheduler_batch({1, 2, 4}, {}, 2);
-  s->make_batch_schedule();
+  s->process_batch();
 
   assert_correct_schedule(
      s,
@@ -149,11 +150,11 @@ TEST_F(SchedulerTest, make_batch_schedule_Test2) {
 //  1 <- T0, T1
 //  2 <- T1, T2
 //  3 <- T0, T2
-TEST_F(SchedulerTest, make_batch_scheduler_Test3) {
+TEST_F(SchedulerTest, process_batchr_Test3) {
   add_test_txn_to_scheduler_batch({}, {1, 3}, 0);
   add_test_txn_to_scheduler_batch({}, {1, 2}, 1);
   add_test_txn_to_scheduler_batch({}, {2, 3}, 2);
-  s->make_batch_schedule();
+  s->process_batch();
 
   assert_correct_schedule(
       s,
@@ -170,11 +171,11 @@ TEST_F(SchedulerTest, make_batch_scheduler_Test3) {
 //  1 <- T0, T1, T2
 //  2 <- T0 <- T2
 //  3 <- T1 <- T2
-TEST_F(SchedulerTest, make_batch_scheduler_Test4) {
+TEST_F(SchedulerTest, process_batchr_Test4) {
   add_test_txn_to_scheduler_batch({2}, {1}, 0);
   add_test_txn_to_scheduler_batch({3}, {1}, 1);
   add_test_txn_to_scheduler_batch({}, {1, 2, 3}, 2);
-  s->make_batch_schedule();
+  s->process_batch();
 
   assert_correct_schedule(
       s,

@@ -3,33 +3,45 @@
 
 #include <cassert>
 
-LockTable::LockTable() {} 
+LockTable::LockTable(): memory_preallocated(false) {};
+
+LockTable::LockTable(DBStorageConfig db_conf): 
+  memory_preallocated(true) 
+{
+  memory_preallocated = true;
+
+  for (auto& table_conf : db_conf.tables_definitions) {
+    for (uint64_t i = 0; i < table_conf.num_records; i++) {
+      allocate_mem_for({i, table_conf.table_id});
+    }
+  }
+} 
 
 void LockTable::merge_batch_table(BatchLockTable& blt) {
   std::lock_guard<std::mutex> lock(merge_batch_table_mutex);
 
   // now we are the only thread merging into the global schedule.
-  LockTableType::iterator lq;
+  LockTableType::iterator lt_it;
+  // merge queue by queue
   for (auto& elt : blt.lock_table) {
-    // merge queue by queue
- 
-    // TODO: This should become uncommented when we allocate queues up front and the 
-    // emplace code should be deleted!
-    // lq = lock_table.find(elt.first);
-    // assert(lq != lock_table.end());
-    //
-    //
-    // For now, we create queues on the fly as we need them.
-    auto head_blt = *elt.second->peek_head();
+    if (memory_preallocated) {
+      // if memory has been preallocated, make sure that we never attempt
+      // to access non-existant record
+      lt_it = lock_table.find(elt.first);
+      assert(lt_it != lock_table.end());
+    } else {
+      // otherwise making records is alright
+      lt_it = lock_table.emplace(elt.first, std::make_shared<LockQueue>()).first;
+    }
 
-    lq = lock_table.emplace(elt.first, std::make_shared<LockQueue>()).first; 
-    lq->second->merge_queue(elt.second.get());
+    auto head_blt = *elt.second->peek_head();
+    lt_it->second->merge_queue(elt.second.get());
 
     // if the lock stage at the head has NOT been given the lock,
     // we should give it the lock. That means that we have merged into a queue 
     // that was empty and the execution thread must know that this stage
     // has the lock.
-    auto head = *lq->second->peek_head();
+    auto head = *lt_it->second->peek_head();
     barrier();
     if (head == head_blt && head->has_lock() == false) {
       head->notify_lock_obtained();
@@ -61,11 +73,17 @@ void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
   }
 }
 
+void LockTable::allocate_mem_for(RecordKey key) {
+  auto insert_res = lock_table.insert(
+      std::make_pair(key, std::make_shared<LockQueue>()));  
+  assert(insert_res.second);
+};
+
 BatchLockTable::BatchLockTable() {}
 
-void BatchLockTable::insert_lock_request(std::shared_ptr<BatchActionInterface> req) {
+void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
   auto add_request = [this, &req](
-      BatchActionInterface::RecordKeySet* set, LockType typ) {
+      IBatchAction::RecordKeySet* set, LockType typ) {
     std::shared_ptr<BatchLockQueue> blq;
     for (auto& i : *set) {
       blq = lock_table.emplace(i, std::make_shared<BatchLockQueue>()).first->second;

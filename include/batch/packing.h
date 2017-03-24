@@ -14,13 +14,13 @@
  **/
 class Packer {
 private:
-  typedef BatchActionInterface::RecordKeySet RecordKeySet;
+  typedef IBatchAction::RecordKeySet RecordKeySet;
   typedef Container::BatchActions BatchActions;
 
   Packer();
 
   static bool txn_conflicts(
-      BatchActionInterface* t, 
+      IBatchAction* t, 
       RecordKeySet* ex_locks_in_packing, 
       RecordKeySet* sh_locks_in_packing); 
 

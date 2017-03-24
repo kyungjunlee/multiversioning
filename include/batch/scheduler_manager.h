@@ -29,15 +29,15 @@ public:
   
   std::unique_ptr<InputQueue> iq;
 	std::vector<std::shared_ptr<SchedulerThread>> schedulers;
-  GlobalScheduleInterface* gs;
+  IGlobalSchedule* gs;
 
   SchedulerManager(
       SchedulingSystemConfig c,
       ExecutorThreadManager* exec);
 
   // implementing the SchedulingSystem interface
-	virtual void add_action(std::unique_ptr<BatchActionInterface>&& act) override;
-  virtual void set_global_schedule_ptr(GlobalScheduleInterface* gs) override;
+	virtual void add_action(std::unique_ptr<IBatchAction>&& act) override;
+  virtual void set_global_schedule_ptr(IGlobalSchedule* gs) override;
   virtual void start_working() override;
   virtual void init() override;
 
@@ -46,12 +46,10 @@ public:
 	//    - Make sure that one doesn't wait for the batch too long 
 	//    by using a timer. For now we assume high-load within the 
 	//    simulations so that timeout never happens.
-	//    - Profile this to see whether we need "batch dequeues" to
-	//    expedite the process of obtaining a batch.
   SchedulerThread::BatchActions request_input(SchedulerThread* s) override;
   virtual void signal_exec_threads(
       SchedulerThread* s,
-      ExecutorThreadManager::SignalWorkload&& workload) override;
+      OrderedWorkload&& workload) override;
   // TODO: tests for this
 	virtual void merge_into_global_schedule(
       SchedulerThread* s,

@@ -36,8 +36,8 @@ protected:
 public:
   ArrayContainer(std::unique_ptr<BatchActions> actions);
 
-  BatchActionInterface* peek_curr_elt() override;
-  std::unique_ptr<BatchActionInterface> take_curr_elt() override;
+  IBatchAction* peek_curr_elt() override;
+  std::unique_ptr<IBatchAction> take_curr_elt() override;
   void advance_to_next_elt() override;
   void sort_remaining() override;
   uint32_t get_remaining_count() override;

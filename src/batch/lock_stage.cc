@@ -21,7 +21,7 @@ LockStage::LockStage(
     assert(!(lt == LockType::exclusive && requesters.size() > 1));
   };
 
-bool LockStage::add_to_stage(std::shared_ptr<BatchActionInterface> txn, LockType lt) {
+bool LockStage::add_to_stage(std::shared_ptr<IBatchAction> txn, LockType lt) {
   // can only add to a stage when both the request and the stage are shared
   // or when the stage is empty.
   if ((lt == LockType::exclusive && requesters.size() > 0) ||
@@ -47,7 +47,7 @@ uint64_t LockStage::get_holders() const {
   return holders;
 };
 
-bool LockStage::finalize_action(std::shared_ptr<BatchActionInterface> act) {
+bool LockStage::finalize_action(std::shared_ptr<IBatchAction> act) {
   // act is a part of this stage!
   assert(requesters.find(act) != requesters.end());
   assert(has_lock());

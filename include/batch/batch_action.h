@@ -6,12 +6,12 @@
 // BatchAction
 //
 //    Concrete implementation of actions used within our system.
-class BatchAction : public BatchActionInterface {
+class BatchAction : public IBatchAction {
   private:
     RecordKeySet readset;
     RecordKeySet writeset;
   public:
-    BatchAction(txn* t): BatchActionInterface(t) {};
+    BatchAction(txn* t): IBatchAction(t) {};
 
     // override the translator functions
     virtual void *write_ref(uint64_t key, uint32_t table) override;
@@ -19,7 +19,7 @@ class BatchAction : public BatchActionInterface {
  
     // TODO:
     //    Tests for there
-    // override the BatchActionInterface functions
+    // override the IBatchAction functions
     virtual uint64_t notify_lock_obtained() override;
     virtual bool ready_to_execute() override;
 
@@ -43,9 +43,9 @@ class BatchAction : public BatchActionInterface {
 
     // TODO: 
     //    Do this after we fill in the interface
-    virtual void run() override;
+    virtual void Run() override;
 
-    virtual bool operator<(const BatchActionInterface& ba2) const override;
+    virtual bool operator<(const IBatchAction& ba2) const override;
     virtual int rand() override;
 };
 

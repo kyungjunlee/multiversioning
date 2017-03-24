@@ -19,11 +19,11 @@ bool SchedulerManager::system_is_initialized() {
   return schedulers.size() > 0;
 }
 
-void SchedulerManager::add_action(std::unique_ptr<BatchActionInterface>&& act) {
+void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
 	iq->push_tail(std::move(act));
 };
 
-void SchedulerManager::set_global_schedule_ptr(GlobalScheduleInterface* gs) {
+void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
   this->gs = gs;
 }
 
@@ -31,10 +31,8 @@ void SchedulerManager::create_threads() {
   for (int i = 0; 
       i < this->conf.scheduling_threads_count; 
       i++) {
-		// TODO: the cpu num must be done better here. Coordination with 
-		// execution threads is necessary.
 		schedulers.push_back(
-			std::make_shared<Scheduler>(this, i));
+			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i));
   }
 };
 
@@ -64,7 +62,7 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
     barrier();
   } while (s != schedulers[h].get());
 
-  std::unique_ptr<BatchActionInterface>* act;
+  std::unique_ptr<IBatchAction>* act;
 	SchedulerThread::BatchActions batch(this->conf.batch_size_act);
   for (unsigned int actionsTaken = 0; 
       actionsTaken < this->conf.batch_size_act; 
@@ -88,10 +86,16 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
 //    Tests for signal_exec_threads
 void SchedulerManager::signal_exec_threads(
     SchedulerThread* s,
-    ExecutorThreadManager::SignalWorkload&& workload) {
+    OrderedWorkload&& workload) {
   assert(
       s != nullptr &&
       system_is_initialized());
+
+  // convert OrderedWorkloads to ThreadWorkloads.
+  std::vector<OrderedWorkload> tw(exec_manager->get_executor_num());
+  for (unsigned int i = 0; i < workload.size(); i++) {
+    tw[i].push_back(workload[i]);
+  }
 
   // TODO:
   //    Consider conditional variables here if scheduling is slow.
@@ -101,7 +105,7 @@ void SchedulerManager::signal_exec_threads(
     barrier();
   } while (s != schedulers[h].get());
 
-  exec_manager->signal_execution_threads(std::move(workload));
+  exec_manager->signal_execution_threads(std::move(tw));
 
   // formally increment the current signaling scheduler
   bool cas_success = cmp_and_swap(

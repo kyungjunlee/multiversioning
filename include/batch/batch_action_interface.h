@@ -17,16 +17,16 @@ enum class BatchActionState {
   state_count
 };
 
-// BatchActionInterface
+// IBatchAction
 //
 //    The general interface of an action used within our
 //    system. 
-class BatchActionInterface : public translator {
+class IBatchAction : public translator {
 public:
   // typedefs
   typedef std::unordered_set<RecordKey> RecordKeySet;
 
-  BatchActionInterface(txn* t): 
+  IBatchAction(txn* t): 
     translator(t),
     locks_held(0),
     action_state(static_cast<uint64_t>(BatchActionState::substantiated))
@@ -58,9 +58,9 @@ public:
 
   // TODO: 
   //    Run must get a handle to the database storage
-  virtual void run() = 0;
+  virtual void Run() = 0;
 
-  virtual bool operator<(const BatchActionInterface& ba2) const = 0;
+  virtual bool operator<(const IBatchAction& ba2) const = 0;
 };
 
 #endif // BATCH_ACTION_INTERFACE_H_

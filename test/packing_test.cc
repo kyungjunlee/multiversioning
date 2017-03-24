@@ -8,7 +8,7 @@
 
 class PackingTest : public testing::Test {
 private:
-  typedef BatchActionInterface::RecordKeySet RecordKeySet;
+  typedef IBatchAction::RecordKeySet RecordKeySet;
   std::vector<RecordKeySet> readSets;
   std::vector<RecordKeySet> writeSets;
 protected:

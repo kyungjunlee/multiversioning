@@ -2,6 +2,7 @@
 #define EXECUTOR_SYSTEM_H_
 
 #include "batch/global_schedule.h"
+#include "batch/db_storage_interface.h"
 #include "batch/executor_thread.h"
 
 #include <memory>
@@ -11,6 +12,9 @@
 //    Used to configure the executing system within the system.
 struct ExecutingSystemConfig {
   uint32_t executing_threads_count;
+  // we pin threads within scheduling system sequentially
+  // starting at this cpu.
+  uint32_t first_pin_cpu_id;
 };
 
 // Executing System
@@ -26,7 +30,8 @@ public:
 
   virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch() = 0;  
   virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() = 0;  
-  virtual void set_global_schedule_ptr(GlobalScheduleInterface* gs) = 0;
+  virtual void set_global_schedule_ptr(IGlobalSchedule* gs) = 0;
+  virtual void set_db_storage_ptr(IDBStorage* db) = 0;
   virtual void start_working() = 0;
   virtual void init() = 0;
 };

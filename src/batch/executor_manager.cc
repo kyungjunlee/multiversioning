@@ -8,9 +8,8 @@ ExecutorManager::ExecutorManager(ExecutingSystemConfig conf):
 
 void ExecutorManager::create_threads() {
   for (unsigned int i = 0; i < conf.executing_threads_count; i++) {
-    // TODO:
-    //    Pinning must be coordinated between executing and scheudling threads.
-    executors.push_back(std::make_shared<BatchExecutor>(this, 0));
+    executors.push_back(
+        std::make_shared<BatchExecutor>(this, conf.first_pin_cpu_id + i));
   }
 };
 
@@ -27,8 +26,12 @@ void ExecutorManager::init() {
   }
 }
 
+unsigned int ExecutorManager::get_executor_num() {
+  return executors.size();
+}
+
 void ExecutorManager::signal_execution_threads(
-    ExecutorThreadManager::SignalWorkload&& workloads) {
+    ExecutorThreadManager::ThreadWorkloads&& workloads) {
   for (auto workload : workloads) {
     executors[next_signaled_executor]->add_actions(std::move(workload));  
     next_signaled_executor ++;
@@ -53,8 +56,12 @@ ExecutorManager::try_get_done_batch() {
   return std::move(batch);
 }
 
-void ExecutorManager::set_global_schedule_ptr(GlobalScheduleInterface* gs) {
+void ExecutorManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
   this->gs = gs;
+}
+
+void ExecutorManager::set_db_storage_ptr(IDBStorage* db) {
+  this->db = db;
 }
 
 std::shared_ptr<LockStage> 
@@ -62,6 +69,6 @@ ExecutorManager::get_current_lock_holder_for(RecordKey key) {
   return gs->get_stage_holding_lock_for(key);
 }
 
-void ExecutorManager::finalize_action(std::shared_ptr<BatchActionInterface> act) {
+void ExecutorManager::finalize_action(std::shared_ptr<IBatchAction> act) {
   gs->finalize_execution_of_action(act);
 }

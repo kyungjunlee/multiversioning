@@ -27,23 +27,26 @@ public:
   std::vector<std::shared_ptr<ExecutorThread>> executors;
   unsigned int next_signaled_executor;
   unsigned int next_output_executor;
-  GlobalScheduleInterface* gs;
+  IGlobalSchedule* gs;
+  IDBStorage* db;
 
   ExecutorManager(ExecutingSystemConfig c);
 
   // implementing the ExecutingSystem interface
   virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch() override;
   virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
-  virtual void set_global_schedule_ptr(GlobalScheduleInterface* gs) override;
+  virtual void set_global_schedule_ptr(IGlobalSchedule* gs) override;
+  virtual void set_db_storage_ptr(IDBStorage* db) override;
   virtual void start_working() override;
   virtual void init() override;
 
   // implementing the ExecutorThreadManager interface
+  virtual unsigned int get_executor_num() override;
   virtual void signal_execution_threads(
-      ExecutorThreadManager::SignalWorkload&& workload) override;
+      ExecutorThreadManager::ThreadWorkloads&& workload) override;
   virtual std::shared_ptr<LockStage> 
     get_current_lock_holder_for(RecordKey key) override;
-  virtual void finalize_action(std::shared_ptr<BatchActionInterface> act) override;
+  virtual void finalize_action(std::shared_ptr<IBatchAction> act) override;
 };
 
 #endif //EXECUTOR_MANAGER_H_

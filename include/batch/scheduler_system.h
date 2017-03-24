@@ -13,6 +13,9 @@ struct SchedulingSystemConfig {
   uint32_t scheduling_threads_count;
   uint32_t batch_size_act;
   uint32_t batch_length_sec;
+  // we pin threads within scheduling system sequentially 
+  // starting at this cpu.
+  uint32_t first_pin_cpu_id;
 };
 
 // Scheduling System
@@ -26,8 +29,8 @@ protected:
 public:
   SchedulingSystem(SchedulingSystemConfig c): conf(c) {};
 
-  virtual void add_action(std::unique_ptr<BatchActionInterface>&& act) = 0;
-  virtual void set_global_schedule_ptr(GlobalScheduleInterface* gs) = 0;
+  virtual void add_action(std::unique_ptr<IBatchAction>&& act) = 0;
+  virtual void set_global_schedule_ptr(IGlobalSchedule* gs) = 0;
   virtual void start_working() = 0;
   virtual void init() = 0;
 };

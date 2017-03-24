@@ -105,7 +105,7 @@ TEST_P(SchedulerManagerTest, obtain_batchConcurrentSOFTest) {
 concurrentFun get_signal_exec_threads_test_fun(
     std::shared_ptr<SchedulerManager> sm) {
   return [sm](int i){
-    ExecutorThreadManager::SignalWorkload workload; 
+    SchedulerManager::OrderedWorkload workload; 
     sm->signal_exec_threads(sm->schedulers[i].get(), std::move(workload)); 
   };  
 };

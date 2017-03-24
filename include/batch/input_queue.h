@@ -18,9 +18,9 @@ class Scheduler;
  *    into the scheduling system through the SchedulingSystem class. 
  *    See include/batch/scheduler_system.h for the general interface. 
  */
-class InputQueue : public MSQueue<std::unique_ptr<BatchActionInterface>> {
+class InputQueue : public MSQueue<std::unique_ptr<IBatchAction>> {
   private:
-   using MSQueue<std::unique_ptr<BatchActionInterface>>::merge_queue;
+   using MSQueue<std::unique_ptr<IBatchAction>>::merge_queue;
 };
 
 #endif

@@ -2,7 +2,7 @@
 #include "batch/batch_action_interface.h"
 
 bool Packer::txn_conflicts(
-    BatchActionInterface* t,
+    IBatchAction* t,
     RecordKeySet* ex_locks_in_packing, 
     RecordKeySet* sh_locks_in_packing) {
   auto t_ex = t->get_writeset_handle();
@@ -51,8 +51,8 @@ Packer::BatchActions Packer::get_packing(Container* c) {
   RecordKeySet held_sh_locks; 
 
   BatchActions actions_in_packing;
-  BatchActionInterface* next_action;
-  std::unique_ptr<BatchActionInterface> action;
+  IBatchAction* next_action;
+  std::unique_ptr<IBatchAction> action;
 
   auto merge_sets = [](RecordKeySet* mergeTo, RecordKeySet* mergeFrom) {
     for (auto it = mergeFrom->begin(); it != mergeFrom->end(); it++) {

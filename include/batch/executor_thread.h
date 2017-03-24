@@ -26,7 +26,7 @@ public:
   //    Make this typedef in global schedule so that it makes more sense? 
   //    Also... I think this will require changes in lock stages? Lock Stages
   //    don't own actions alone... they share them with the execution threads!
-  typedef std::vector<std::shared_ptr<BatchActionInterface>> BatchActions;
+  typedef std::vector<std::shared_ptr<IBatchAction>> BatchActions;
 
   virtual void add_actions(BatchActions&& actions) = 0;
   virtual std::unique_ptr<BatchActions> try_get_done_batch() = 0;

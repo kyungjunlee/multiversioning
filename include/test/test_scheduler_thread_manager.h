@@ -21,7 +21,7 @@ public:
 
   void signal_exec_threads(
       SchedulerThread* s,
-      ExecutorThreadManager::SignalWorkload&& workload) override {
+      OrderedWorkload&& workload) override {
     (void) s;
     (void) workload;
     signal_exec_threads_called ++;

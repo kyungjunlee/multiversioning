@@ -9,8 +9,9 @@ public:
   unsigned int finalize_action_called = 0;
   unsigned int get_current_lock_holder_for_called = 0;
 
+  unsigned int get_executor_num() override { return 0; }
   void signal_execution_threads(
-      ExecutorThreadManager::SignalWorkload&& workload) override {
+      ExecutorThreadManager::ThreadWorkloads&& workload) override {
     (void) workload;
     signal_execution_threads_called ++;
   };
@@ -21,7 +22,7 @@ public:
     return nullptr;
   };
 
-  void finalize_action(std::shared_ptr<BatchActionInterface> act) override {
+  void finalize_action(std::shared_ptr<IBatchAction> act) override {
     (void) act;
     finalize_action_called ++;
   };

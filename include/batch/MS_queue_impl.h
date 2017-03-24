@@ -105,6 +105,7 @@ Elt* MSQueue<Elt>::try_pop_head() {
             (uint64_t) m_next)) break;
     }
   }  
+  delete m_head;
 
   return m_next->get_contents();
 }

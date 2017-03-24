@@ -7,11 +7,11 @@
 #include "batch/record_key.h"
 
 #include <memory>
-// GlobalScheduleInterface
+// IGlobalSchedule
 //
 //    The purely virtual interface between the global schedule and the
 //    execution and scheduler thread manager.
-class GlobalScheduleInterface {
+class IGlobalSchedule {
 public:
   // scheduler thread manager interface:
   virtual void merge_into_global_schedule(BatchLockTable&& blt) = 0;
@@ -20,7 +20,7 @@ public:
   virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(
       RecordKey key) = 0;
   virtual void finalize_execution_of_action(
-      std::shared_ptr<BatchActionInterface> act) = 0;
+      std::shared_ptr<IBatchAction> act) = 0;
 };
 
 #endif //GLOBAL_SCHEDULE_INTERFACE_H_
