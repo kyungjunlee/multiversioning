@@ -2,6 +2,7 @@
 #define EXECUTOR_SYSTEM_H_
 
 #include "batch/global_schedule.h"
+#include "batch/executor_thread.h"
 
 #include <memory>
 
