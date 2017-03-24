@@ -3,6 +3,7 @@
 
 #include "batch/scheduler_system.h"
 #include "batch/executor_system.h"
+#include "batch/batch_action_interface.h"
 
 class SupervisorInterface {
 protected:
@@ -16,18 +17,20 @@ public:
       SchedulingSystemConfig sched_conf,
       ExecutingSystemConfig exec_conf):
     sched_conf(sched_conf),
-    exec_conf(exec_conf);
+    exec_conf(exec_conf)
+  {};
 
-  typedef std::vector<std::unique_ptr<BatchAction>> SimulationWorkload;
+  typedef std::vector<std::unique_ptr<BatchActionInterface>> SimulationWorkload;
   virtual void set_simulation_workload(
-      std::vector<std::unique_ptr<BatchAction>&& workload) {
+      std::vector<std::unique_ptr<BatchActionInterface>>&& workload) {
     for(auto& act_ptr : workload) {
       sched_system->add_action(std::move(act_ptr));
     }
   };
 
-  virtual std::unique_ptr<std::vector<std::shared_ptr<BatchAction>>> get_output() {
-    return std::move(exec_system->try_get_done_batch());
+  virtual std::unique_ptr<std::vector<std::shared_ptr<BatchActionInterface>>> 
+    get_output() {
+      return std::move(exec_system->try_get_done_batch());
   };
   
   virtual void init_system() {

@@ -2,6 +2,9 @@
 
 #include <cassert>
 
+GlobalSchedule::GlobalSchedule() {
+};
+
 inline
 void GlobalSchedule::merge_into_global_schedule(
     BatchLockTable&& blt) {
