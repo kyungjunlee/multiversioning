@@ -2,6 +2,7 @@
 #include <util.h>
 #include <cpuinfo.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 
 #define PRNG_BUFSZ 32
@@ -15,6 +16,7 @@ void Runnable::rand_init()
         random_buf = (char*)malloc(PRNG_BUFSZ);
         memset(random_buf, 0x0, PRNG_BUFSZ);
         initstate_r(random(), random_buf, PRNG_BUFSZ, m_rand_state);
+        free(random_buf);
 }
 
 Runnable::Runnable(int cpu_number) {
@@ -30,10 +32,23 @@ int Runnable::gen_random()
         return ret;
 }
 
+void Runnable::Join() {
+  if (was_started && pthread_kill(m_thread, 0) != ESRCH) {
+    pthread_join(m_thread, nullptr);
+  }
+//    pthread_kill(m_thread, SIGINT);
+//    int result = pthread_cancel(m_thread);
+//    assert(result == 0);
+//    pthread_join(m_thread, (void**) &result);
+//  }
+}
+
 void
 Runnable::Run() {
     assert(m_start_signal == 0);
-    
+    assert(was_started == false);
+    was_started = true;
+
     // Kickstart the worker thread
     pthread_create(&m_thread, NULL, Bootstrap, this);
 } 

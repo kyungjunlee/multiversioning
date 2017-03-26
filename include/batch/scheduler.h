@@ -34,9 +34,16 @@ public:
    *    Populates the batch lock table and workloads variables.
    */
   void process_batch();
-    // override Runnable interface
+  
+  // override SchedulerThread interface
+  void signal_stop_working() override;
+  bool is_stop_requested() override;
+
+  // override Runnable interface
   void StartWorking() override;
   void Init() override;
+
+  virtual ~Scheduler();
 };
 
 #endif // BATCH_SCHEDULER_H_

@@ -22,14 +22,14 @@ TEST_F(LockQueueTest, BatchLockQueue_non_concurrent_push_tailTest) {
     blq.non_concurrent_push_tail(testLockStages[i]);
 
     // the tail moves while the head remains.
-    ASSERT_EQ(*blq.peek_tail(), testLockStages[i]);
-    ASSERT_EQ(*blq.peek_head(), testLockStages[0]);
+    ASSERT_EQ(testLockStages[i], blq.peek_tail());
+    ASSERT_EQ(testLockStages[0], blq.peek_head());
   }
 
   // the queue is well formed
   BatchLockQueue::QueueElt* curr = blq.peek_head_elt();
   for (unsigned int i = 0; i < 100; i++) {
-    if (i != 99) ASSERT_EQ(testLockStages[i], *curr->get_contents());
+    if (i != 99) ASSERT_EQ(testLockStages[i], curr->get_contents());
 
     curr = curr->get_next_elt();
   }

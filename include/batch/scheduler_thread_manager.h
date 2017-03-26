@@ -29,6 +29,8 @@ class SchedulerThreadManager {
     virtual void merge_into_global_schedule(
         SchedulerThread* s,
         BatchLockTable&& blt) = 0;
+    
+    virtual ~SchedulerThreadManager(){};
 };
 
 #endif

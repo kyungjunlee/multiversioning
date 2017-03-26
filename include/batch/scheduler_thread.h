@@ -12,12 +12,14 @@ class SchedulerThreadManager;
 class SchedulerThread : public Runnable {
   protected:
     SchedulerThreadManager* manager;
+    uint64_t stop_signal;
     
     SchedulerThread(
         SchedulerThreadManager* manager,
         int m_cpu_number): 
       Runnable(m_cpu_number),
-      manager(manager)
+      manager(manager),
+      stop_signal(false)
     {};
 
   public:
@@ -25,6 +27,12 @@ class SchedulerThread : public Runnable {
     using Runnable::Init;
 
     typedef Container::BatchActions BatchActions;
+    virtual void signal_stop_working() = 0;
+    virtual bool is_stop_requested() = 0;
+ 
+    virtual ~SchedulerThread() {
+      free(m_rand_state); 
+    };
 };
 
 #endif // SCHEDULER_THREAD_H_

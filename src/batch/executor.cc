@@ -6,19 +6,21 @@ BatchExecutor::BatchExecutor(
       ExecutorThreadManager* manager, 
       int m_cpu_number):
     ExecutorThread(manager, m_cpu_number) {
-  input_queue = std::make_unique<ExecutorQueue>();;
-  output_queue = std::make_unique<ExecutorQueue>();
-  pending_list = std::make_unique<PendingList>();
+  this->input_queue = std::make_unique<ExecutorQueue>();;
+  this->output_queue = std::make_unique<ExecutorQueue>();
+  this->pending_list = std::make_unique<PendingList>();
 };
 
 void BatchExecutor::StartWorking() {
-  // TODO: introduce a "kill" flag.
-  while (true) {
+  while (!is_stop_requested()) {
     // get a batch to execute or busy wait until we may do that
     currentBatch.reset(nullptr);
-    while (currentBatch == nullptr) {
-      currentBatch = std::move(*input_queue->try_pop_head());
+
+    while(input_queue->is_empty()) {
+      if (is_stop_requested()) return; 
     }
+    currentBatch = std::move(input_queue->peek_head());
+    input_queue->pop_head();
 
     process_action_batch();
   }
@@ -41,8 +43,10 @@ void BatchExecutor::process_action_batch() {
     // be blocked by other actions!
     process_pending();
 
+    assert(currentBatch->at(i) != nullptr);
     if(!process_action(currentBatch->at(i))) {
       pending_list->push_back(currentBatch->at(i));        
+      pending_list->size();
     } 
   } 
 
@@ -76,8 +80,7 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
 
   // we successfully claimed the action.
   if (act->ready_to_execute()) {
-    // TODO:
-    // act->Run();
+    act->Run();
     this->exec_manager->finalize_action(act); 
     bool state_change_success = act->conditional_atomic_change_state(
         BatchActionState::processing,
@@ -88,9 +91,10 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
     // attempt to execute blockers.
     auto execute_blockers = [this, act](
         IBatchAction::RecordKeySet* set) {
-      LockStage* blocking_stage = nullptr;
+      std::shared_ptr<LockStage> blocking_stage = nullptr;
       for (auto rec_key : *set) {
-        this->exec_manager->get_current_lock_holder_for(rec_key);
+        blocking_stage = 
+          this->exec_manager->get_current_lock_holder_for(rec_key);
         const LockStage::RequestingActions& blocking_actions = 
           blocking_stage->get_requesters();
 
@@ -132,5 +136,20 @@ void BatchExecutor::process_pending() {
 };
 
 std::unique_ptr<ExecutorThread::BatchActions> BatchExecutor::try_get_done_batch() {
-  return std::move(*output_queue->try_pop_head());
+  if (!output_queue->is_empty()) {
+    std::unique_ptr<ExecutorThread::BatchActions> act;
+    act = std::move(output_queue->peek_head());
+    output_queue->pop_head();
+    return act; 
+  }
+
+  return nullptr;
 };
+
+void BatchExecutor::signal_stop_working() {
+  xchgq(&stop_signal, 1);
+}
+
+bool BatchExecutor::is_stop_requested() {
+  return stop_signal;
+}

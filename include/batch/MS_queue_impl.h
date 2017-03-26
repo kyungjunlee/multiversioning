@@ -7,24 +7,23 @@
 // Definitions of QueueElt functions.
 template <typename Elt>
 MSQueue<Elt>::QueueElt::QueueElt() :
-  contents(nullptr),
   next(nullptr)
 {};
 
 template <typename Elt>
 MSQueue<Elt>::QueueElt::QueueElt(const Elt& e):
-  contents(new Elt(e)),
+  contents(e),
   next(nullptr)
 {};
 
 template <typename Elt>
 MSQueue<Elt>::QueueElt::QueueElt(Elt&& e):
-  contents(new Elt(std::forward<Elt>(e))),
+  contents(std::move(e)),
   next(nullptr)
 {};
 
 template <typename Elt>
-Elt* MSQueue<Elt>::QueueElt::get_contents() {
+Elt& MSQueue<Elt>::QueueElt::get_contents() {
   return contents;
 };
 
@@ -48,6 +47,7 @@ MSQueue<Elt>::MSQueue() {
 
 template <typename Elt>
 bool MSQueue<Elt>::is_empty() const {
+  barrier();
   return (head == tail);
 }
 
@@ -57,11 +57,11 @@ typename MSQueue<Elt>::QueueElt* MSQueue<Elt>::peek_head_elt() const {
 }
 
 template <typename Elt>
-Elt* MSQueue<Elt>::peek_head() const {
+Elt& MSQueue<Elt>::peek_head() const {
   QueueElt* actual_head = peek_head_elt();
-  if (actual_head != nullptr) return actual_head->get_contents();
+  assert(actual_head != nullptr);
 
-  return nullptr;
+  return actual_head->get_contents();
 }
 
 template <typename Elt>
@@ -72,15 +72,15 @@ typename MSQueue<Elt>::QueueElt* MSQueue<Elt>::peek_tail_elt() const {
 }
 
 template <typename Elt>
-Elt* MSQueue<Elt>::peek_tail() const {
+Elt& MSQueue<Elt>::peek_tail() const {
   QueueElt* tail = peek_tail_elt();
-  if (tail != nullptr) return tail->get_contents();
+  assert(tail != nullptr);
 
-  return nullptr;
+  return tail->get_contents();
 }
 
 template <typename Elt>
-Elt* MSQueue<Elt>::try_pop_head() {
+void MSQueue<Elt>::pop_head() {
   QueueElt* m_head;
   QueueElt* m_tail;
   QueueElt* m_next;
@@ -92,11 +92,12 @@ Elt* MSQueue<Elt>::try_pop_head() {
     if (head == m_head) {               // head didn't change
       if (m_head == m_tail) {           // empty or tail behind
         if (m_next == nullptr) {
-          return nullptr;               // empty
+          assert(false);               // empty
         } 
         
         continue;
       }
+      assert(m_next != nullptr);
 
       // not empty and the tail is not lagging behind
       if (cmp_and_swap(
@@ -105,14 +106,13 @@ Elt* MSQueue<Elt>::try_pop_head() {
             (uint64_t) m_next)) break;
     }
   }  
-  delete m_head;
 
-  return m_next->get_contents();
+  delete m_head;
 }
 
 template <typename Elt>
 void MSQueue<Elt>::push_tail(Elt&& e) {
-  push_tail_implem(new QueueElt(std::forward<Elt>(e)));  
+  push_tail_implem(new QueueElt(std::move(e)));  
 }
 
 template <typename Elt>
@@ -122,6 +122,7 @@ void MSQueue<Elt>::push_tail(const Elt& e) {
 
 template <typename Elt>
 void MSQueue<Elt>::push_tail_implem(QueueElt* qe) {
+  assert(qe != nullptr);
   QueueElt* m_tail = tail;
   barrier();
 
@@ -139,8 +140,7 @@ void MSQueue<Elt>::push_tail_implem(QueueElt* qe) {
      (uint64_t) m_tail,
      (uint64_t) qe);
   assert(CAS_success); 
-
-}
+};
 
 template <typename Elt>
 void MSQueue<Elt>::merge_queue(MSQueue<Elt>* lq) {
@@ -167,4 +167,17 @@ void MSQueue<Elt>::merge_queue(MSQueue<Elt>* lq) {
      (uint64_t) m_tail,
      (uint64_t) lq_tail);
   assert(CAS_success); 
+
+  // remove all the elements from the lq so that
+  // destructor may handle it.
+  lq->tail = lq->head;
 }
+
+template <typename Elt>
+MSQueue<Elt>::~MSQueue() {
+  while (!is_empty()) {
+    pop_head();
+  }
+
+  delete head;
+};

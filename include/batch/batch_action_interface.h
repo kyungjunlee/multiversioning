@@ -61,6 +61,10 @@ public:
   virtual void Run() = 0;
 
   virtual bool operator<(const IBatchAction& ba2) const = 0;
+
+  virtual ~IBatchAction() {
+    delete t;
+  };
 };
 
 #endif // BATCH_ACTION_INTERFACE_H_

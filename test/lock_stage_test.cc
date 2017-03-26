@@ -28,6 +28,10 @@ protected:
   void expect_lock_stages_to_equal(LockStage& ls1, LockStage& ls2) {
     ASSERT_EQ(TestLockStage(ls1), TestLockStage(ls2));
   }
+
+  std::shared_ptr<TestAction> get_action() {
+    return std::make_shared<TestAction>(new TestTxn());
+  };
 };
 
 TEST_F(LockStageTest, constructorTests) {
@@ -36,8 +40,7 @@ TEST_F(LockStageTest, constructorTests) {
   expect_requesting_actions_to_be(ls1, LockStage::RequestingActions({}));
   expect_lock_type_to_be(ls1, LockType::shared);
 
-  std::shared_ptr<TestAction> requester = 
-    std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {}));
+  std::shared_ptr<TestAction> requester = get_action(); 
   LockStage ls2(
       {requester},
       LockType::exclusive);
@@ -52,14 +55,14 @@ TEST_F(LockStageTest, addStageToSharedTest) {
   LockStage ls1;
   // insertion of a single shared stage to an empty lockstage
   ASSERT_TRUE(ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
+        get_action(),
         LockType::shared));
   expect_lock_type_to_be(ls1, LockType::shared);
   ASSERT_EQ(ls1.get_requesters().size(), 1);
 
   // insertion of another shared stage to the same lockstage
   ASSERT_TRUE(ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
+        get_action(),
         LockType::shared));
   expect_lock_type_to_be(ls1, LockType::shared);
   ASSERT_EQ(ls1.get_requesters().size(), 2);
@@ -67,7 +70,7 @@ TEST_F(LockStageTest, addStageToSharedTest) {
   // attempt to insert an exlusive stage to the same lockstage
   LockStage expected(ls1);
   ASSERT_FALSE(ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
+        get_action(),
         LockType::exclusive));
   // the stage should not have changed
   expect_lock_stages_to_equal(expected, ls1); 
@@ -78,7 +81,7 @@ TEST_F(LockStageTest, addStageToSharedTest) {
 TEST_F(LockStageTest, addStageToExclusiveTest) {
   LockStage ls1;
   ASSERT_TRUE(ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
+        get_action(),
         LockType::exclusive));
   ASSERT_EQ(TestLockStage(ls1).get_lock_type(), LockType::exclusive);
   ASSERT_EQ(ls1.get_requesters().size(), 1);
@@ -87,12 +90,12 @@ TEST_F(LockStageTest, addStageToExclusiveTest) {
   // not change
   LockStage expected(ls1);
   ASSERT_FALSE(ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
+        get_action(),
         LockType::exclusive));
   expect_lock_stages_to_equal(expected, ls1); 
 
   ASSERT_FALSE(ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})),
+        get_action(),
         LockType::shared));
   expect_lock_stages_to_equal(expected, ls1); 
 }
@@ -102,7 +105,7 @@ TEST_F(LockStageTest, decrement_holdersTest) {
   LockStage ls1;
   for (unsigned int i = 0; i < 100; i++) 
     ls1.add_to_stage(
-        std::make_shared<TestAction>(*TestAction::make_test_action_with_test_txn({}, {})), 
+        get_action(),
         LockType::shared);
 
   // single threaded decrement works.
@@ -123,8 +126,9 @@ TEST_F(LockStageTest, notify_lock_obtainedTest) {
   LockStage ls;
   std::vector<std::shared_ptr<TestAction>> acts;
   for (unsigned int i = 0; i < 3; i++) {
-    acts.push_back(std::make_shared<TestAction>(
-      *TestAction::make_test_action_with_test_txn({i}, {})));
+    auto act = get_action();
+    act->add_write_key({i});
+    acts.push_back(act);
     ls.add_to_stage(acts[i], LockType::shared);
   }
   ASSERT_FALSE(ls.has_lock());
@@ -139,8 +143,9 @@ TEST_F(LockStageTest, finalize_actionTest) {
   LockStage ls;
   std::vector<std::shared_ptr<TestAction>> acts;
   for (unsigned int i = 0; i < 3; i++) {
-    acts.push_back(std::make_shared<TestAction>(
-      *TestAction::make_test_action_with_test_txn({i}, {})));
+    auto act = get_action();
+    act->add_write_key({i});
+    acts.push_back(act);
     ls.add_to_stage(acts[i], LockType::shared);
   }
 

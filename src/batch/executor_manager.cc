@@ -4,7 +4,9 @@ ExecutorManager::ExecutorManager(ExecutingSystemConfig conf):
   ExecutingSystem(conf),
   next_signaled_executor(0),
   next_output_executor(0)
-{};
+{
+  create_threads();
+};
 
 void ExecutorManager::create_threads() {
   for (unsigned int i = 0; i < conf.executing_threads_count; i++) {
@@ -16,7 +18,8 @@ void ExecutorManager::create_threads() {
 void ExecutorManager::start_working() {
   assert(gs != nullptr);
   for (auto executor : executors) {
-    executor->StartWorking();
+    executor->Run();
+    executor->WaitInit();
   }
 };
 
@@ -25,6 +28,13 @@ void ExecutorManager::init() {
     executor->Init();
   }
 }
+
+void ExecutorManager::stop_working() {
+  for (auto executor : executors) {
+    executor->signal_stop_working();
+    executor->Join();
+  }
+};
 
 unsigned int ExecutorManager::get_executor_num() {
   return executors.size();
@@ -71,4 +81,9 @@ ExecutorManager::get_current_lock_holder_for(RecordKey key) {
 
 void ExecutorManager::finalize_action(std::shared_ptr<IBatchAction> act) {
   gs->finalize_execution_of_action(act);
+}
+
+ExecutorManager::~ExecutorManager() {
+  // just to be safe
+  stop_working();
 }

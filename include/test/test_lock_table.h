@@ -22,16 +22,9 @@ class TestLockTable : public LockTable {
       //
       // We need to use the test lock stage class to access the type
       // of the lock easily.
-      TestLockStage tls(*ls);
       LockQueue::QueueElt* curr = lq->second->peek_head_elt();
       while (curr != nullptr) {
-        TestLockStage ctls(**curr->get_contents());
-
-        if (ctls.get_requesters() == tls.get_requesters() &&
-            ctls.get_holders() == tls.get_holders() &&
-            ctls.get_lock_type() == tls.get_lock_type()){
-          return true;
-        }
+        if (*ls == *curr->get_contents()) return true;
 
         curr = curr->get_next_elt();
       }

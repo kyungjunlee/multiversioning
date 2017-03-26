@@ -12,8 +12,7 @@ Scheduler::Scheduler(
 {};
 
 void Scheduler::StartWorking() {
-  // TODO: implement a flag for killing the thread.
-  while(true) {
+  while(!is_stop_requested()) {
     // get the batch actions
     batch_actions = std::make_unique<BatchActions>(
         std::move(this->manager->request_input(this)));
@@ -45,4 +44,17 @@ void Scheduler::process_batch() {
       lt.insert_lock_request(act_sptr);
     }
   }
+
+  assert(curr_workload_item == workloads.size());
 };
+
+Scheduler::~Scheduler() {
+};
+
+void Scheduler::signal_stop_working() {
+  xchgq(&stop_signal, 1);
+}
+
+bool Scheduler::is_stop_requested() {
+  return stop_signal;
+}

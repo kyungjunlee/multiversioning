@@ -34,6 +34,9 @@ public:
   virtual void set_db_storage_ptr(IDBStorage* db) = 0;
   virtual void start_working() = 0;
   virtual void init() = 0;
+  virtual void stop_working() = 0;
+
+  virtual ~ExecutingSystem(){};
 };
 
 #endif // EXECUTOR_SYSTEM_H_

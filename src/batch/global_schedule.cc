@@ -22,6 +22,7 @@ void GlobalSchedule::finalize_execution_of_action(
     std::shared_ptr<LockStage> ls;
     for (auto& key : *s) {
       ls = get_stage_holding_lock_for(key);
+      assert(ls != nullptr);
 
       if (ls->finalize_action(act)) {
         // if all the actions within the lockstage have finished,

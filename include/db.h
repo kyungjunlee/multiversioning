@@ -86,6 +86,7 @@ class translator {
         virtual void *write_ref(uint64_t key, uint32_t table) = 0;
         virtual void *read(uint64_t key, uint32_t table) = 0;
         virtual int rand() = 0;
+        virtual ~translator(){};
 };
 
 /*
@@ -118,7 +119,7 @@ class txn {
         virtual void get_writes(struct big_key *array);
         virtual void get_rmws(struct big_key *array);
         void set_translator(translator *trans);
+        virtual ~txn(){};
 };
-
 
 #endif // DB_H_

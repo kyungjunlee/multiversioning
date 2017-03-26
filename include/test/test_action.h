@@ -24,7 +24,17 @@ private:
   
 public: 
   TestAction(txn* txn): TestAction(txn, 0) {} 
-  TestAction(txn* txn, uint64_t id): IBatchAction(txn), id(id) {}
+  TestAction(txn* txn, uint64_t id): TestAction(txn, {}, {}, id) {}
+  TestAction(
+      txn* txn, 
+      RecordKeySet writes,
+      RecordKeySet reads, 
+      uint64_t id = 0) :
+    IBatchAction(txn),
+    writeSet(writes),
+    readSet(reads),
+    id(id)
+  {};
 
   // override the translator functions
   void *write_ref(uint64_t key, uint32_t table) override {
@@ -95,6 +105,8 @@ public:
 
     return ta;
   };
+
+  virtual ~TestAction(){};
 }; 
 
 #endif //_TEST_ACTION_H_

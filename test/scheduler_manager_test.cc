@@ -11,6 +11,7 @@ class SchedulerManagerTest :
   public testing::WithParamInterface<int> {
 protected:
   std::shared_ptr<SchedulerManager> sm;
+  std::shared_ptr<ExecutorThreadManager> etm;
 	const uint32_t batch_size = 100;
 	const uint32_t batch_length_sec = 0;
 	const uint32_t scheduling_threads_count = 3;
@@ -23,17 +24,16 @@ protected:
 	const unsigned int actions_at_start = batch_size * scheduling_threads_count;
 
 	virtual void SetUp() {
-		sm = std::make_shared<SchedulerManager>(
-        this->conf,
-        new TestExecutorThreadManager());
+    etm = std::make_shared<TestExecutorThreadManager>();
+		sm = std::make_shared<SchedulerManager>(this->conf, etm.get());
 		// populate the input queue.
 		for (unsigned int i = 0;
 				i < actions_at_start;
 				i++) {
 			sm->add_action(
 				std::move(
-					std::make_unique<TestAction>(
-						*TestAction::make_test_action_with_test_txn({}, {}, i))));
+					std::unique_ptr<TestAction>(
+						TestAction::make_test_action_with_test_txn({}, {}, i))));
 		}
 	};
 };	

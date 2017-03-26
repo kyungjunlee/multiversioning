@@ -38,8 +38,6 @@ class BatchAction : public IBatchAction {
         BatchActionState new_state) override;
     virtual BatchActionState atomic_change_state(
         BatchActionState new_state) override;
-    
-    uint64_t action_state;
 
     // TODO: 
     //    Do this after we fill in the interface

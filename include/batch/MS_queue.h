@@ -32,10 +32,10 @@ public:
     QueueElt();
     QueueElt(const Elt& e);
     QueueElt(Elt&& e);
-    Elt* contents;
+    Elt contents;
     QueueElt* next;
     
-    Elt* get_contents();
+    Elt& get_contents();
     QueueElt* get_next_elt();
     bool set_next_elt(QueueElt* ne);
   };
@@ -48,16 +48,18 @@ public:
   
   QueueElt* peek_tail_elt() const;
   QueueElt* peek_head_elt() const;
-  Elt* peek_tail() const;
-  Elt* peek_head() const; 
+  Elt& peek_tail() const;
+  Elt& peek_head() const; 
   
-  Elt* try_pop_head();
+  void pop_head();
   void push_tail(const Elt& e);
   void push_tail(Elt&& e);
 
   // The implicit assumption is that lq is immutable at the time of
   // merging. 
   void merge_queue(MSQueue<Elt>* lq);
+
+  virtual ~MSQueue();
 
 private:
   void push_tail_implem(QueueElt* qe);

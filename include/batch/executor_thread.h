@@ -6,18 +6,22 @@
 
 #include <memory>
 #include <vector>
+#include <pthread.h>
 
 class ExecutorThreadManager;
 class ExecutorThread : public Runnable {
 protected:
   ExecutorThreadManager* exec_manager;
+  uint64_t stop_signal;
 
   ExecutorThread(
       ExecutorThreadManager* manager,
       int m_cpu_number):
     Runnable(m_cpu_number),
-    exec_manager(manager)
+    exec_manager(manager),
+    stop_signal(false)
   {};
+
 public:
   using Runnable::StartWorking;
   using Runnable::Init;
@@ -30,6 +34,12 @@ public:
 
   virtual void add_actions(BatchActions&& actions) = 0;
   virtual std::unique_ptr<BatchActions> try_get_done_batch() = 0;
+  virtual void signal_stop_working() = 0;
+  virtual bool is_stop_requested() = 0;
+
+  virtual ~ExecutorThread() {
+    free(m_rand_state);
+  };
 };
 
 #endif // EXECUTOR_THREAD_H_

@@ -39,6 +39,7 @@ public:
   virtual void set_db_storage_ptr(IDBStorage* db) override;
   virtual void start_working() override;
   virtual void init() override;
+  virtual void stop_working() override;
 
   // implementing the ExecutorThreadManager interface
   virtual unsigned int get_executor_num() override;
@@ -47,6 +48,8 @@ public:
   virtual std::shared_ptr<LockStage> 
     get_current_lock_holder_for(RecordKey key) override;
   virtual void finalize_action(std::shared_ptr<IBatchAction> act) override;
+
+  virtual ~ExecutorManager();
 };
 
 #endif //EXECUTOR_MANAGER_H_

@@ -39,7 +39,8 @@ void SchedulerManager::create_threads() {
 void SchedulerManager::start_working() {
   assert(gs != nullptr);
   for (auto& scheduler_thread_ptr : schedulers) {
-    scheduler_thread_ptr->StartWorking();
+    scheduler_thread_ptr->Run();
+    scheduler_thread_ptr->WaitInit();
   }
 };
 
@@ -48,6 +49,13 @@ void SchedulerManager::init() {
     scheduler_thread_ptr->Init();
   }
 };
+
+void SchedulerManager::stop_working() {
+  for (auto& scheduler_thread_ptr : schedulers) {
+    scheduler_thread_ptr->signal_stop_working();
+    scheduler_thread_ptr->Join();
+  }
+}
 
 SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s) {
   assert(
@@ -58,17 +66,20 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
   //    Consider conditional variables here if scheduling is slow.
   uint64_t h;
   do {
+    if (s->is_stop_requested()) return SchedulerThread::BatchActions();
     h = current_input_scheduler;
     barrier();
   } while (s != schedulers[h].get());
 
-  std::unique_ptr<IBatchAction>* act;
 	SchedulerThread::BatchActions batch(this->conf.batch_size_act);
   for (unsigned int actionsTaken = 0; 
       actionsTaken < this->conf.batch_size_act; 
       actionsTaken ++) {
-    while ((act = this->iq->try_pop_head()) == nullptr);
-    batch[actionsTaken] = std::move(*act);
+    while (this->iq->is_empty()) {
+      if (s->is_stop_requested())  return SchedulerThread::BatchActions();
+    }
+    batch[actionsTaken] = std::move(this->iq->peek_head());
+    this->iq->pop_head();
   }
 
   // formally increment the current_input_scheduler
@@ -94,13 +105,14 @@ void SchedulerManager::signal_exec_threads(
   // convert OrderedWorkloads to ThreadWorkloads.
   std::vector<OrderedWorkload> tw(exec_manager->get_executor_num());
   for (unsigned int i = 0; i < workload.size(); i++) {
-    tw[i].push_back(workload[i]);
+    tw[i % tw.size()].push_back(workload[i]);
   }
 
   // TODO:
   //    Consider conditional variables here if scheduling is slow.
   uint64_t h;
   do {
+    if (s->is_stop_requested()) return;
     h = current_signaling_scheduler;
     barrier();
   } while (s != schedulers[h].get());
@@ -122,6 +134,7 @@ void SchedulerManager::merge_into_global_schedule(
 
   uint64_t h;
   do {
+    if (s->is_stop_requested()) return;
     h = current_merging_scheduler;
     barrier();
   } while (s != schedulers[h].get());
@@ -134,4 +147,9 @@ void SchedulerManager::merge_into_global_schedule(
       h,
       (h+1) % schedulers.size());
   assert(cas_success);
+};
+
+SchedulerManager::~SchedulerManager() {
+  // just to make sure that we are safe on this front.
+  stop_working();
 };

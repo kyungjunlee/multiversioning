@@ -32,14 +32,14 @@ TEST_F(MSQueueTest, push_tailNonConcurrentTest) {
     tmq.push_tail(elts[i]);
 
     // the tail moves while the head remains.
-    ASSERT_EQ(elts[i], *tmq.peek_tail());
-    ASSERT_EQ(elts[0], *tmq.peek_head());
+    ASSERT_EQ(elts[i], tmq.peek_tail());
+    ASSERT_EQ(elts[0], tmq.peek_head());
   }
 
   // The queue is well formed.
   auto curr = tmq.peek_head_elt();
   for (int i = 0; i < 100; i++) {
-    if (i != 99) ASSERT_EQ(elts[i+1], *curr->get_next_elt()->get_contents());
+    if (i != 99) ASSERT_EQ(elts[i+1], curr->get_next_elt()->get_contents());
 
     curr = curr->get_next_elt();
   }
@@ -54,7 +54,7 @@ TEST_F(MSQueueTest, merge_queueNonconcurrentTest) {
   auto checkQueue = [](auto head_elt, int elts){
     auto* curr = head_elt;
     for (unsigned int i = 0; i < elts; i++) {
-      if (i != elts-1) ASSERT_EQ(i, *(curr->get_contents()));
+      if (i != elts-1) ASSERT_EQ(i, curr->get_contents());
 
       curr = curr->get_next_elt();
     }
@@ -63,35 +63,35 @@ TEST_F(MSQueueTest, merge_queueNonconcurrentTest) {
   msQueue->merge_queue(tmq.get());
 
   // should contain all of the elts there 
-  ASSERT_EQ(*msQueue->peek_head(), 0);
-  ASSERT_EQ(*msQueue->peek_tail(), 99);
+  ASSERT_EQ(0, msQueue->peek_head());
+  ASSERT_EQ(99, msQueue->peek_tail());
   checkQueue(msQueue->peek_head_elt(), 100);
 
   // repeated merging should leave the former elements unchanged and add more elements.
   tmq = make_queue(100, 100);
   msQueue->merge_queue(tmq.get());
   
-  ASSERT_EQ(*msQueue->peek_head(), 0);
-  ASSERT_EQ(*msQueue->peek_tail(), 199);
+  ASSERT_EQ(0, msQueue->peek_head());
+  ASSERT_EQ(199, msQueue->peek_tail());
   checkQueue(msQueue->peek_head_elt(), 200);
 }
 
-TEST_F(MSQueueTest, try_pop_headNonconcurrentTest) {
+TEST_F(MSQueueTest, pop_headNonconcurrentTest) {
   auto msQueue = make_queue(2);
 
   auto head = msQueue->peek_head_elt();
   auto tail = msQueue->peek_tail_elt();
   auto next_head = head->get_next_elt();
 
-  ASSERT_EQ(0, *msQueue->try_pop_head());
+  ASSERT_EQ(0, msQueue->peek_head());
+  msQueue->pop_head();
   ASSERT_EQ(next_head, msQueue->peek_head_elt());
   ASSERT_EQ(tail, msQueue->peek_tail_elt());
 
-  ASSERT_EQ(1, *msQueue->try_pop_head());
+  ASSERT_EQ(1, msQueue->peek_head());
+  msQueue->pop_head();
   ASSERT_EQ(nullptr, msQueue->peek_head_elt());
-  ASSERT_EQ(nullptr, msQueue->peek_head());
   ASSERT_EQ(nullptr, msQueue->peek_tail_elt());
-  ASSERT_EQ(nullptr, msQueue->peek_tail());
 }
 
 typedef 
@@ -111,14 +111,16 @@ void runConcurrentTest(pushFunType pushFun, unsigned int line_num) {
   }); 
   // create the consumer
   threads[1] = std::thread([&msQueue, &elts, elts_count, &line_num](){
-    int* currDeqInt;
+    int currDeqInt;
     for (unsigned int i = 0; i < elts_count; i++) {
       // make sure we dequeu
-      while((currDeqInt = msQueue.try_pop_head()) == nullptr) ;
+      while (msQueue.is_empty());
+      currDeqInt = msQueue.peek_head();
 
       // consistent values from dequeueing
-      ASSERT_EQ(elts[i], *currDeqInt) << 
+      ASSERT_EQ(elts[i], currDeqInt) << 
         "From test beginning on line" << line_num;
+      msQueue.pop_head();
     }
   });
 
@@ -126,13 +128,10 @@ void runConcurrentTest(pushFunType pushFun, unsigned int line_num) {
   threads[1].join();
 
   // the queue should be empty by now
+  ASSERT_TRUE(msQueue.is_empty());
   ASSERT_EQ(nullptr, msQueue.peek_head_elt()) <<
     "From test beginning on line" << line_num;
-  ASSERT_EQ(nullptr, msQueue.peek_head()) <<
-    "From test beginning on line" << line_num;
   ASSERT_EQ(nullptr, msQueue.peek_tail_elt()) <<
-    "From test beginning on line" << line_num;
-  ASSERT_EQ(nullptr, msQueue.peek_tail()) <<
     "From test beginning on line" << line_num;
 };
 

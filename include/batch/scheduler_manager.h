@@ -40,6 +40,7 @@ public:
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) override;
   virtual void start_working() override;
   virtual void init() override;
+  virtual void stop_working() override;
 
   // implementing the SchedulerThreadManager interface
 	// TODO:
@@ -54,6 +55,8 @@ public:
 	virtual void merge_into_global_schedule(
       SchedulerThread* s,
       BatchLockTable&& blt) override;
+
+  virtual ~SchedulerManager();
 };
 
 #endif // SCHEDULER_MANAGER_H_

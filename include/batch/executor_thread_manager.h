@@ -18,6 +18,8 @@ class ExecutorThreadManager {
     virtual std::shared_ptr<LockStage>
       get_current_lock_holder_for(RecordKey key) = 0;
     virtual void finalize_action(std::shared_ptr<IBatchAction> act) = 0;
+
+    virtual ~ExecutorThreadManager() {};
 };
 
 #endif // EXECUTOR_THREAD_MANAGER_H_

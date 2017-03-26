@@ -43,8 +43,13 @@ public:
     sched_system->start_working();
     exec_system->start_working(); 
   };
-// TODO:
-//  virtual void stop_system() = 0;
+  
+  virtual void stop_system() {
+    exec_system->stop_working(); 
+    sched_system->stop_working();
+  };
+
+  virtual ~ISupervisor() {};
 };
 
 #endif //SUPERVISOR_INTERFACE_H_

@@ -57,14 +57,21 @@ bool LockStage::finalize_action(std::shared_ptr<IBatchAction> act) {
 
 void LockStage::notify_lock_obtained() { 
   assert(requesters.size() > 0);
-  assert(has_been_given_lock == 0);
+  // Make sure that we never give a lock twice. Without this condition
+  // this may happen in the following scenario:
+  //    1) A scheduling begins to merge in a new lock queue
+  //    2) An execution thread has finished executing a lock stage
+  //    3) Execution thread pops the head
+  //    4) The scheduling thread merges and grants lock
+  //    5) Execution thread attempts to grant lock
+  if (cmp_and_swap(&has_been_given_lock, 0, 1) == false) {
+    return;
+  }
 
   // notify every action within the lock stage.
   for (auto action_ptr : requesters) {
     action_ptr->notify_lock_obtained();
   } 
-  
-  xchgq(&has_been_given_lock, 1);
 };
 
 bool LockStage::has_lock() {

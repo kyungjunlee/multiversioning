@@ -47,7 +47,7 @@ TEST_F(BatchActionTest, AddingToActions) {
 
   ASSERT_EQ(a->get_readset_size(), 2);
   ASSERT_EQ(a->get_writeset_size(), 1);
-
+  delete a;
 }
 
 // create actions with different readset/writeset sizes and compare
@@ -65,6 +65,9 @@ TEST_F(BatchActionTest, ComparingActions) {
   ASSERT_FALSE(*a < *a);//6<6
   ASSERT_FALSE(*b < *c);
   ASSERT_FALSE(*c < *b);
+  delete a;
+  delete b;
+  delete c;
 }
 
 // TODO:

@@ -9,6 +9,8 @@ class Runnable {
 
 private:
         void rand_init();
+        bool was_started = false;
+        static void sigalr_handler(int);
 
 protected:
         volatile uint64_t                     m_start_signal;
@@ -28,7 +30,6 @@ protected:
 
 
 
-
 public:    
   Runnable(int cpu_number);
     
@@ -39,6 +40,9 @@ public:
 
         virtual int gen_random();
 
+  void Join();
+
+  virtual ~Runnable () {};
 };
 
 #endif          //  RUNNABLE_HH_

@@ -19,11 +19,12 @@ protected:
   std::shared_ptr<InputQueue> iq;
   std::shared_ptr<Scheduler> s;
   std::shared_ptr<ExecutorThreadManager> etm;
+  std::shared_ptr<SchedulerThreadManager> stm;
 
   virtual void SetUp() {
     etm = std::make_shared<TestExecutorThreadManager>();
-    s = std::make_shared<Scheduler>(
-      new TestSchedulerThreadManager(etm.get()), 0);    
+    stm = std::make_shared<TestSchedulerThreadManager>(etm.get());
+    s = std::make_shared<Scheduler>(stm.get(), 0);    
   };
 
   virtual void add_test_txn_to_scheduler_batch(
@@ -36,9 +37,9 @@ protected:
     }
 
     s->batch_actions->push_back(
-        std::make_unique<TestAction>(
-          *TestAction::make_test_action_with_test_txn(
-            write_set, read_set, id)));
+        std::move(
+          std::make_unique<TestAction>(
+            new TestTxn(), write_set, read_set, id)));
   }; 
 };
 
@@ -79,7 +80,7 @@ void assert_correct_schedule(
     // transaction in each stage must correspond to what we expect.
     for (auto stage_ids : rec_pair.second) {
       ASSERT_TRUE(curr_blq_elt != nullptr);
-      auto curr_lock_stage_ptr = *curr_blq_elt->get_contents();
+      auto curr_lock_stage_ptr = curr_blq_elt->get_contents();
       auto ids_in_lock_stage = collect_ids_from_lock_stage(curr_lock_stage_ptr); 
       ASSERT_EQ(stage_ids.size(), ids_in_lock_stage.size());
       ASSERT_EQ(stage_ids, ids_in_lock_stage); 
