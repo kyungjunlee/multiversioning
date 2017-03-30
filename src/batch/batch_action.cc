@@ -81,6 +81,6 @@ int BatchAction::rand() {
   return 0;
 }
 
-void BatchAction::Run() {
-  // TODO.
+void BatchAction::Run(IDBStorage* db) {
+  (void) db;
 }

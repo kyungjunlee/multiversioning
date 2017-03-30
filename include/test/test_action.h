@@ -84,7 +84,7 @@ public:
   RecordKeySet* get_readset_handle() {return &readSet;}
   RecordKeySet* get_writeset_handle() {return &writeSet;}
 
-  void Run() override {};
+  void Run(IDBStorage* db) override {(void) db;};
   // inequality calculated based on the overall number of transactions.
   bool operator<(const IBatchAction& ta) const {
     return (get_readset_size() + get_writeset_size() <

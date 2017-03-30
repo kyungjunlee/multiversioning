@@ -2,6 +2,7 @@
 #define BATCH_ACTION_INTERFACE_H_
 
 #include "batch/record_key.h"
+#include "batch/db_storage_interface.h"
 #include "db.h"
 
 #include <stdint.h>
@@ -56,9 +57,7 @@ public:
   virtual BatchActionState atomic_change_state(
       BatchActionState new_state) = 0;
 
-  // TODO: 
-  //    Run must get a handle to the database storage
-  virtual void Run() = 0;
+  virtual void Run(IDBStorage* db) = 0;
 
   virtual bool operator<(const IBatchAction& ba2) const = 0;
 

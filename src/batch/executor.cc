@@ -80,7 +80,7 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
 
   // we successfully claimed the action.
   if (act->ready_to_execute()) {
-    act->Run();
+    act->Run(this->exec_manager->get_db_storage_pointer());
     this->exec_manager->finalize_action(act); 
     bool state_change_success = act->conditional_atomic_change_state(
         BatchActionState::processing,

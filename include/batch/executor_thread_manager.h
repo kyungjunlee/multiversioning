@@ -5,6 +5,7 @@
 #include "batch/batch_action_interface.h"
 #include "batch/lock_stage.h"
 #include "batch/record_key.h"
+#include "batch/db_storage_interface.h"
 
 #include <memory>
 #include <vector>
@@ -13,6 +14,7 @@ class ExecutorThreadManager {
   public:
     typedef std::vector<ExecutorThread::BatchActions> ThreadWorkloads;
 
+    virtual IDBStorage* get_db_storage_pointer() = 0;
     virtual unsigned int get_executor_num() = 0;
     virtual void signal_execution_threads(ThreadWorkloads&& workload) = 0;
     virtual std::shared_ptr<LockStage>

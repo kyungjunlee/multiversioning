@@ -41,7 +41,7 @@ class BatchAction : public IBatchAction {
 
     // TODO: 
     //    Do this after we fill in the interface
-    virtual void Run() override;
+    virtual void Run(IDBStorage* db) override;
 
     virtual bool operator<(const IBatchAction& ba2) const override;
     virtual int rand() override;

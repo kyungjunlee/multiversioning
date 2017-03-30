@@ -18,6 +18,8 @@ public:
   GlobalSchedule gs;
   ExecutorManager exec;
   SchedulerManager sched;
+
+  virtual IDBStorage* get_db_pter() override;
 };
 
 #endif // SUPERVISOR_H_

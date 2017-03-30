@@ -36,6 +36,10 @@ void ExecutorManager::stop_working() {
   }
 };
 
+IDBStorage* ExecutorManager::get_db_storage_pointer() {
+  return db;
+}
+
 unsigned int ExecutorManager::get_executor_num() {
   return executors.size();
 }

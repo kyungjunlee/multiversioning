@@ -32,7 +32,7 @@ void DBStorage::write_record_value(RecordKey key, RecordValue value) {
   
   // avoid using any writes of std::unordered_map to guarantee
   // that we are not changing the structure of the map.
-  memcpy((void*) &elt->first, (const void*) &value, sizeof(RecordValue));
+  memcpy((void*) &elt->second, (const void*) &value, sizeof(RecordValue));
 }
 
 void DBStorage::preallocate_records(DBStorageConfig conf) {

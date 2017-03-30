@@ -42,6 +42,7 @@ public:
   virtual void stop_working() override;
 
   // implementing the ExecutorThreadManager interface
+  virtual IDBStorage* get_db_storage_pointer() override;
   virtual unsigned int get_executor_num() override;
   virtual void signal_execution_threads(
       ExecutorThreadManager::ThreadWorkloads&& workload) override;

@@ -39,6 +39,7 @@ public:
     sched_system->init();
     exec_system->init(); 
   };
+
   virtual void start_system() {
     sched_system->start_working();
     exec_system->start_working(); 
@@ -48,6 +49,8 @@ public:
     exec_system->stop_working(); 
     sched_system->stop_working();
   };
+
+  virtual IDBStorage* get_db_pter() = 0;
 
   virtual ~ISupervisor() {};
 };

@@ -20,3 +20,7 @@ Supervisor::Supervisor(
   // initialize sched system
   sched.set_global_schedule_ptr(&gs);
 };
+
+IDBStorage* Supervisor::get_db_pter() {
+  return &db;
+}
