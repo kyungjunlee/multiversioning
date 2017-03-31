@@ -65,9 +65,23 @@ unsigned int ActionFactory<ActionClass>::get_lock_number(
   return static_cast<unsigned int>(result);
 }
 
-//template <class ActionClass>
-//bool ActionFactory<ActionClass>::configs_passed_are_valid(
-//    ActionSpecification spec) {
+template <class ActionClass>
+bool ActionFactory<ActionClass>::lock_distro_config_is_valid(
+    LockDistributionConfig conf) {
+  if (conf.low_record < 0 || 
+      conf.low_record > conf.high_record ||
+      conf.high_record < 0 ||
+      conf.average_num_locks < 0 ||
+      conf.std_dev_of_num_locks < 0) {
+    return false;
+  }
+
+  return true;
+};
+// TODO:
+//    Uncomment this and add additional checks after hotsets
+//    are added.
+//
 //  // check if hotsets and non-hotsets overlap
 //  auto config_overlap = [](
 //      LockDistributionConfig hotset_conf,
@@ -103,8 +117,10 @@ std::vector<std::unique_ptr<IBatchAction>>
 ActionFactory<ActionClass>::generate_actions (
     ActionSpecification spec,
     unsigned int number_of_actions) {
-  // TODO: 
-  //    assert that spec makes sense -- numbers positive etc.
+  assert(
+      lock_distro_config_is_valid(spec.reads) &&
+      lock_distro_config_is_valid(spec.writes));
+  
   std::vector<std::unique_ptr<IBatchAction>> res;
   for (unsigned int i = 0; i < number_of_actions; i++) {
     auto read_set = get_disjoint_set_of_random_numbers(
