@@ -5,6 +5,7 @@
 #include "batch/batch_action_interface.h"
 #include "batch/batch_action.h"
 #include "test/test_action.h"
+#include "batch/txn_factory.h"
 
 #include <cassert>
 #include <memory>
@@ -19,47 +20,6 @@ private:
   ExecutingSystemConfig exec_conf;
   unsigned int action_num;
   std::vector<std::unique_ptr<IBatchAction>> workload;
-
-  // from - to inclusive on both sides
-  std::unordered_set<unsigned int> get_set_of_random_numbers(
-      unsigned int from,
-      unsigned int to,
-      unsigned int num) {
-    std::random_device rand_gen;
-    std::uniform_int_distribution<unsigned int> distro(from, to);
-    // TODO:
-    //  Assume it doesn't take too long to do this... Change later
-    std::unordered_set<unsigned int> result;
-    while (result.size() < num) {
-      result.insert(distro(rand_gen));
-    }
-
-    return result;
-  }
-
-  void make_random_workload() {
-    assert(action_num > 0);
-    assert(db_conf.tables_definitions.size() > 0);
-    std::random_device rand_gen;
-    unsigned int recs_in_table = db_conf.tables_definitions[0].num_records;
-    std::uniform_int_distribution<unsigned int> table_rand(
-        0, db_conf.tables_definitions.size() - 1);
-    for (unsigned int i = 0; i < action_num; i++) {
-      workload.push_back(std::move(std::make_unique<BatchAction>(new TestTxn())));
-      auto num_set = get_set_of_random_numbers(0, recs_in_table - 1, 10);
-  
-      unsigned int j = 0;
-      for (auto& record_num : num_set) {
-        if ( (j%2) == 0) {
-          workload[i]->add_write_key({record_num, table_rand(rand_gen)});
-        } else {
-          workload[i]->add_read_key({record_num, table_rand(rand_gen)});
-        }
-
-        j++;
-      }
-    }
-  };
 
   bool test_properly_initialized() {
     return 
@@ -120,7 +80,23 @@ public:
        db_conf, sched_conf, exec_conf);
 
     if (workload.size() == 0) {
-      make_random_workload();
+      assert(action_num > 0);
+      assert(db_conf.tables_definitions.size() > 0);
+
+      unsigned int recs_in_table = db_conf.tables_definitions[0].num_records;
+      LockDistributionConfig lock_distro = {
+        .low_record = 0,
+        .high_record = recs_in_table - 1,
+        .average_num_locks = 5,
+        .std_dev_of_num_locks = 0
+      }; 
+      ActionSpecification act_spec = {
+        .writes = lock_distro, 
+        .reads = lock_distro
+      };
+
+      workload = ActionFactory<BatchAction>::generate_actions(
+          act_spec, action_num);
     } else {
       action_num = workload.size();
     }

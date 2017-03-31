@@ -54,7 +54,7 @@ TEST(MemoryTest, SmallTestTwoSchedTwoExec) {
 // Larger Test, two schedulers two executors.
 TEST(MemoryTest, LargerTestTwoSchedTwoExec) {
   DBTestHelper<Supervisor> hp;
-  hp.set_table_info(1, 100)
+  hp.set_table_info(1, 200)
     .set_exec_thread_num(2)
     .set_sched_thread_num(2)
     .set_batch_size(200)
