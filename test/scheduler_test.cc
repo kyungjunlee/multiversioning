@@ -81,7 +81,7 @@ void assert_correct_schedule(
     for (auto stage_ids : rec_pair.second) {
       ASSERT_TRUE(curr_blq_elt != nullptr);
       auto curr_lock_stage_ptr = curr_blq_elt->get_contents();
-      auto ids_in_lock_stage = collect_ids_from_lock_stage(curr_lock_stage_ptr); 
+      auto ids_in_lock_stage = collect_ids_from_lock_stage(*curr_lock_stage_ptr); 
       ASSERT_EQ(stage_ids.size(), ids_in_lock_stage.size());
       ASSERT_EQ(stage_ids, ids_in_lock_stage); 
 

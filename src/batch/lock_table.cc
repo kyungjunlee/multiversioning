@@ -32,16 +32,19 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
       lt_it = lock_table.emplace(elt.first, std::make_shared<LockQueue>()).first;
     }
 
-    auto head_blt = elt.second->peek_head();
+    auto head_blt = *elt.second->peek_head();
     lt_it->second->merge_queue(elt.second.get());
 
     // if the lock stage at the head has NOT been given the lock,
     // we should give it the lock. That means that we have merged into a queue 
     // that was empty and the execution thread must know that this stage
     // has the lock.
-    auto head = lt_it->second->peek_head();
-    barrier();
-    if (head == head_blt && head->has_lock() == false) {
+    auto head_pt = lt_it->second->peek_head();
+    auto head = head_pt == nullptr ? nullptr : *head_pt;
+
+    if (head != nullptr &&
+        head == head_blt && 
+        head->has_lock() == false) {
       head->notify_lock_obtained();
     }
   }
@@ -50,8 +53,9 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
 std::shared_ptr<LockStage> LockTable::get_head_for_record(RecordKey key) {
   auto elt = lock_table.find(key);
   assert(elt != lock_table.end());
+  auto head_pt = elt->second->peek_head();
 
-  return elt->second->is_empty() ? nullptr : elt->second->peek_head();
+  return head_pt == nullptr ? nullptr : *head_pt;
 };
 
 void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
@@ -64,8 +68,9 @@ void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
   lq->pop_head();
 
   // notify the new stage if there is one present.
-  if (!lq->is_empty()) {
-    lq->peek_head()->notify_lock_obtained();
+  auto head_pt = lq->peek_head();
+  if (head_pt != nullptr) {
+    (*head_pt)->notify_lock_obtained();
   }
 }
 
@@ -84,7 +89,7 @@ void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
     for (auto& i : *set) {
       blq = lock_table.emplace(i, std::make_shared<BatchLockQueue>()).first->second;
       if (blq->is_empty() || 
-          blq->peek_tail()->add_to_stage(req, typ) == false) {
+          ((*blq->peek_tail())->add_to_stage(req, typ) == false)) {
         // insertion into the stage failed. Make a new stage and add it in.
         blq->non_concurrent_push_tail(std::move(
               std::make_shared<LockStage>(LockStage({req}, typ))));

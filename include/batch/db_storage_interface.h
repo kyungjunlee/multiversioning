@@ -14,9 +14,13 @@ struct DBStorageConfig {
   std::vector<BatchTableConfig> tables_definitions;
 };
 
-// TODO:
-//    Describe this class. IT IS NON CONCURRENT!!!
-//    NO INSERTIONS
+// IDBStorage
+//
+//    IDBStorage represents the in-memory store of the database. 
+//    It assumes that the number of records within the database does
+//    not change over the lifetime of the database. DBStorage is non
+//    thread safe in the meaning that reads and writes must be coordinated
+//    on a higher level to guarantee no cinflicting writes/reads.
 class IDBStorage {
 public:
   typedef uint64_t RecordValue;

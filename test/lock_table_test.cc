@@ -71,14 +71,14 @@ TEST(LockTable, concurrent_merge_table_test) {
 
   // make sure that every lock stage added by every thread to every queue is present
   // in the global schedule at the end of the day. 
-  LockQueue::QueueElt* currElt;
+  std::shared_ptr<LockQueue::QueueElt> currElt;
   for (unsigned int i = 0; i < thread_num; i++) {
     for (unsigned int j = 0; j < thread_iterations; j++) {
       // iterate over all elt within the batch lock tables of a given thread.
       for (const auto& elt : thread_data[i][j]->get_lock_table_data()) {
         currElt = elt.second->peek_head_elt();
         while (currElt != nullptr) {
-          ASSERT_TRUE(lt.lock_table_contains_stage(elt.first, currElt->get_contents()));
+          ASSERT_TRUE(lt.lock_table_contains_stage(elt.first, *currElt->get_contents()));
           currElt = currElt->get_next_elt();
         }
       }
@@ -87,7 +87,7 @@ TEST(LockTable, concurrent_merge_table_test) {
 
   // make sure that the first lock stage for every lock queue has the lock.
   for (auto& elt : lt.get_lock_table_data()) {
-    ASSERT_TRUE(elt.second->peek_head()->has_lock());
+    ASSERT_TRUE((*elt.second->peek_head())->has_lock());
   } 
 
   ASSERT_EQ(5, lt.get_lock_table_data().size());

@@ -1,13 +1,6 @@
 #ifndef _MS_QUEUE_H_
 #define _MS_QUEUE_H_
 
-// TODO:
-//    - Memory Management. Right now we have memory leakage within the destructor
-//    since the lock stages are never deallocated!
-//    - Overloading of new/delete.
-//    - Memory management within pop. The QueueElt should be released, since we are 
-//    only ever passing the contents.
-
 /*
  *    MS Queue
  *
@@ -19,6 +12,12 @@
  *
  *    The queue implementation is a modified MS-queue implementation that is
  *    lock-free and non-blocking. See https://www.research.ibm.com/people/m/michael/podc-1996.pdf.
+ *
+ *    NOTE:
+ *        We have switched to a locked implementation of a queue since it is
+ *        much easier to implement observer pointers with memory management. The 
+ *        reason for that is smart pointers may not be natively CASed. To actually
+ *        use it well we would have to use std::atomic predicates.
  */
 
 template <typename Elt>
