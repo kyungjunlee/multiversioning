@@ -1,4 +1,4 @@
-#include <common_constants.h>
+#include "common_constants.h"
 
 uint32_t GLOBAL_RECORD_SIZE = 1000;
 uint64_t recordSize = 10;
