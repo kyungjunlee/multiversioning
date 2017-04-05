@@ -2,7 +2,7 @@ CFLAGS=-O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1
 LIBS=-lnuma -lpthread -lrt -lcityhash
 TEST_LIBS=-lgtest
-CXX=g++
+CXX=g++-5
 
 LIBPATH=./libs/lib/
 INC_DIRS=include libs/include
@@ -38,6 +38,7 @@ test:build/tests
 
 build/%.o: src/%.cc $(DEPSDIR)/stamp GNUmakefile
 	@mkdir -p build
+	@mkdir -p build/batch
 	@echo + cc $<
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -c -o $@ $<
 
@@ -65,6 +66,8 @@ build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
 
 $(DEPSDIR)/stamp:
 	@mkdir -p $(DEPSDIR)
+	@mkdir -p $(DEPSDIR)/batch
+	@echo $(DEPSDIR)/batch
 	@touch $@
 
 .PHONY: clean 
