@@ -1,4 +1,11 @@
+#include "batch/executor_system.h"
+#include "batch/scheduler_system.h"
+#include "batch/db_storage_interface.h"
+#include "batch/txn_factory.h"
+
 #include <getopt.h>
+#include <string>
+#include <stdlib.h>
 
 static struct option long_options[] = {
   {"batch_size", required_argument, 0, 0},
@@ -11,6 +18,14 @@ static struct option long_options[] = {
   {"avg_excl_locks", required_argument, 0, 7},
   {"std_dev_excl_locks", required_argument, 0, 8},
   {0, no_argument, 0, 9}
+};
+
+struct ExperimentConfig {
+  SchedulingSystemConfig sched_conf;
+  ExecutingSystemConfig exec_conf;
+  DBStorageConfig db_conf;
+  ActionSpecification act_conf;
+  unsigned int num_txns;
 };
 
 class ArgParse {
@@ -28,6 +43,166 @@ private:
     count
   };
 
-public:
+  typedef std::unordered_map<int, char*> ArgMap;
+  static ArgMap get_arg_map(int argc, char** argv) {
+    ArgMap arg_map;
 
+    int c = 0;
+    while (getopt_long(argc, argv, "", long_options, &c) != -1) {
+      if (c != -1 && arg_map.count(c) == 0) {
+        // correct argument
+        arg_map[c] = optarg;
+      } else if (c == -1) {
+        // argument unknown
+        std::cerr << "arg_parse.h: Unknown argument.\n";
+        exit(-1);
+      } else {
+        // duplicate argument
+        std::cerr << "arg_parse.h: Duplicate argument " << 
+          long_options[c].name << ".\n";
+        exit(-1);
+      }
+    }
+
+    return arg_map;
+  };
+
+  static void check_presence(
+      ArgMap m, 
+      std::string system_name,
+      std::vector<OptionCode> elts) {
+    auto get_error_string = [&m](OptionCode key){
+      int k = static_cast<int>(key);
+      if (m.count(k) == 0) {
+        std::string opt_name(long_options[k].name);
+        return "--" + opt_name + "\n";
+      }
+
+      return std::string("");
+    };
+
+    std::string error_string = "";
+    for (auto& key : elts) {
+      error_string += get_error_string(key);
+    }
+
+    if (error_string.empty()) return;
+
+    std::cerr 
+      << "Missing the following parameters for the " 
+      << system_name
+      << ".\n"
+      << error_string;
+
+    exit(-1);
+  };
+
+  static SchedulingSystemConfig get_sched_conf(ArgMap m) {
+    check_presence(
+        m, "scheduling system", 
+        {OptionCode::batch_size, OptionCode::num_sched_threads});
+
+    SchedulingSystemConfig conf = {
+      .scheduling_threads_count = 
+        (uint32_t) strtoul(
+            m[static_cast<int>(OptionCode::num_sched_threads)], nullptr, 10),
+      .batch_size_act = 
+        (uint32_t) strtoul(
+            m[static_cast<int>(OptionCode::batch_size)], nullptr, 10),
+      .batch_length_sec = 0,
+      .first_pin_cpu_id = 1
+    };
+
+    return conf;
+  };
+
+  static ExecutingSystemConfig get_exec_conf(ArgMap m) {
+    check_presence(
+        m, "executing system", 
+        {OptionCode::num_exec_threads, OptionCode::num_sched_threads});
+
+    ExecutingSystemConfig conf = {
+      .executing_threads_count = 
+        (uint32_t) strtoul(
+            m[static_cast<int>(OptionCode::num_exec_threads)], nullptr, 10),
+      .first_pin_cpu_id = 
+        (uint32_t) strtoul(
+            m[static_cast<int>(OptionCode::num_sched_threads)], nullptr, 10) + 1
+    };
+
+    return conf;
+  };
+
+  static DBStorageConfig get_db_conf(ArgMap m) {
+    check_presence(
+        m, "storage",
+        {OptionCode::num_records});
+
+    DBStorageConfig conf = {{{
+      .table_id = 0, 
+      .num_records = 
+        (uint64_t) strtoul(m[static_cast<int>(OptionCode::num_records)], nullptr, 10)
+    }}};
+
+    return conf;
+  };
+
+  static ActionSpecification get_act_spec(ArgMap m) {
+    check_presence(
+        m, "action specification",
+        {OptionCode::avg_shared_locks,
+          OptionCode::std_dev_shared_locks,
+          OptionCode::avg_excl_locks,
+          OptionCode::std_dev_excl_locks,
+          OptionCode::num_txns});
+
+    // TODO: We for now assume that we are using all elts possible.
+    ActionSpecification as = {
+      .writes = {
+        .low_record = 0,
+        .high_record = 
+          (unsigned int) strtoul(
+              m[static_cast<int>(OptionCode::num_records)], nullptr, 10) - 1,
+        .average_num_locks = 
+          (unsigned int) strtoul(
+              m[static_cast<int>(OptionCode::avg_shared_locks)], nullptr, 10),
+        .std_dev_of_num_locks =
+          (unsigned int) strtoul(
+              m[static_cast<int>(OptionCode::std_dev_shared_locks)], nullptr, 10)
+      },
+      .reads = {
+        .low_record = 0,
+        .high_record = 
+          (unsigned int) strtoul(
+              m[static_cast<int>(OptionCode::num_records)], nullptr, 10) - 1,
+        .average_num_locks = 
+          (unsigned int) strtoul(
+              m[static_cast<int>(OptionCode::avg_excl_locks)], nullptr, 10) - 1,
+        .std_dev_of_num_locks =
+          (unsigned int) strtoul(
+              m[static_cast<int>(OptionCode::std_dev_excl_locks)], nullptr, 10)
+      }
+    };
+
+    return as;
+  };
+public:
+  static ExperimentConfig parse_args(int argc, char** argv) {
+    auto arg_map = get_arg_map(argc, argv);
+
+    check_presence(
+        arg_map, "experiment", {OptionCode::num_txns});
+
+    ExperimentConfig exp_conf = {
+      .sched_conf = get_sched_conf(arg_map),
+      .exec_conf = get_exec_conf(arg_map),
+      .db_conf = get_db_conf(arg_map),
+      .act_conf = get_act_spec(arg_map),
+      .num_txns = 
+        (unsigned int) strtoul(
+            arg_map[static_cast<int>(OptionCode::num_txns)], nullptr, 10)
+    };
+
+    return exp_conf;
+  }; 
 };

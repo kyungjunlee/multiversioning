@@ -34,8 +34,8 @@ all: build/db
 test:CFLAGS+=-DTESTING=1 -DUSE_BACKOFF=1 
 test:build/tests
 
-batch_sim: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1
-batch_sim: build/batch_db
+batch: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1
+batch: build/batch_db
 
 -include $(wildcard $(DEPSDIR)/*.d)
 
@@ -66,7 +66,7 @@ build/db:$(START_OBJECTS) $(OBJECTS)
 
 build/batch_db:$(OBJECTS) $(BATCHING_OBJECTS) $(NON_MAIN_STARTS)
 	@echo $(INCLUDE)
-	@$(CXX) $(CFLAGS) -o $@ start_batch/main.cc -L$(LIBPATH) $(LIBS)
+	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ start_batch/main.cc -L$(LIBPATH) $(LIBS)
 
 build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -o $@ $^ -L$(LIBPATH) $(LIBS) $(TEST_LIBS)
