@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 
     // time_since_epoch
     auto exp_duration_ms = 
-      std::chrono::duration_cast<std::chrono::milliseconds>(time_start - time_end).count();
+      std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
     results.push_back(exp_duration_ms);
   }
 
