@@ -4,7 +4,7 @@
 #include "batch/supervisor.h"
 #include "batch/RMW_batch_action.h"
 
-#include <ctime>
+#include <chrono>
 
 int main(int argc, char** argv) {
   ExperimentConfig exp_conf = ArgParse::parse_args(argc, argv);
@@ -15,9 +15,9 @@ int main(int argc, char** argv) {
     auto workload = 
       ActionFactory<RMWBatchAction>::generate_actions(
           exp_conf.act_conf, exp_conf.num_txns);
-    time_t time_start, time_end;
     std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> outputs;
     unsigned int output_count = 0;
+    std::chrono::system_clock::time_point time_start, time_end;
 
     // set up the system
     Supervisor s(exp_conf.db_conf, exp_conf.sched_conf, exp_conf.exec_conf);
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     barrier();
 
     // save time.
-    time(&time_start);
+    time_start = std::chrono::system_clock::now();
     
     // run the experiment
     s.start_system();
@@ -46,11 +46,14 @@ int main(int argc, char** argv) {
     barrier();
     
     // end of experiment
-    time(&time_end);
+    time_end = std::chrono::system_clock::now();
 
     s.stop_system();
 
-    results.push_back(difftime(time_end, time_start));
+    // time_since_epoch
+    auto exp_duration_ms = 
+      std::chrono::duration_cast<std::chrono::milliseconds>(time_start - time_end).count();
+    results.push_back(exp_duration_ms);
   }
 
   // all of the experiments have finished running. Output the results.

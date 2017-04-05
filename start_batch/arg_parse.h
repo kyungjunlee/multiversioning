@@ -84,7 +84,7 @@ private:
       int k = static_cast<int>(key);
       if (m.count(k) == 0) {
         std::string opt_name(long_options[k].name);
-        return "--" + opt_name + "\n";
+        return "\t--" + opt_name + "\n";
       }
 
       return std::string("");
