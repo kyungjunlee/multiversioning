@@ -19,7 +19,7 @@ private:
     try {
       ofs.open (file_path.c_str(), std::ofstream::out | std::ofstream::app);
     } catch (const std::ofstream::failure& e) {
-      std::cerr << e.what() << ". ERR CODE:" << e.code() << std::endl;
+      std::cerr << e.what() << std::endl; //". ERR CODE:" << e.code() << std::endl;
       exit(-1);
     }
 

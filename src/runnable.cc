@@ -33,8 +33,9 @@ int Runnable::gen_random()
 }
 
 void Runnable::Join() {
-  if (was_started && pthread_kill(m_thread, 0) != ESRCH) {
+  if (was_started) {// && pthread_kill(m_thread, 0) != ESRCH) {
     pthread_join(m_thread, nullptr);
+    was_started = false;
   }
 //    pthread_kill(m_thread, SIGINT);
 //    int result = pthread_cancel(m_thread);
