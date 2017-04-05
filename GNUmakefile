@@ -18,12 +18,14 @@ START_OBJECTS:=$(patsubst start/%.cc,start/%.o,$(START))
 BATCHING:=$(wildcard $(SRC)/batch/*.cc)
 BATCHING_OBJECTS:=$(patsubst src/batch/%.cc,build/batch/%.o,$(BATCHING))
 
+BATCH_DB:=$(wildcard start_batch/*.cc)
+BATCH_DB_OBJECTS:=$(patsubst start_batch/%.cc,start_batch/%.o, $(BATCH_DB))
+
 TEST:=test
 TESTSOURCES:=$(wildcard $(TEST)/*.cc)
 TESTOBJECTS:=$(patsubst test/%.cc,test/%.o,$(TESTSOURCES))
 
 NON_MAIN_STARTS:=$(filter-out start/main.o,$(START_OBJECTS))
-
 
 DEPSDIR:=.deps
 DEPCFLAGS=-MD -MF $(DEPSDIR)/$*.d -MP
@@ -64,9 +66,13 @@ build/db:$(START_OBJECTS) $(OBJECTS)
 	@echo $(INCLUDE)
 	@$(CXX) $(CFLAGS) -o $@ $^ -L$(LIBPATH) $(LIBS)
 
-build/batch_db:$(OBJECTS) $(BATCHING_OBJECTS) $(NON_MAIN_STARTS)
+start_batch/%.o: start_batch/%.cc $(DEPSDIR)/stamp GNUmakefile
+	@echo + cc $<
+	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -Istart_batch -c -o $@ $<
+
+build/batch_db: $(OBJECTS) $(BATCHING_OBJECTS) $(BATCH_DB_OBJECTS) 
 	@echo $(INCLUDE)
-	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ start_batch/main.cc -L$(LIBPATH) $(LIBS)
+	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS)
 
 build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -o $@ $^ -L$(LIBPATH) $(LIBS) $(TEST_LIBS)

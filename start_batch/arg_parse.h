@@ -1,3 +1,6 @@
+#ifndef _ARG_PARSE_H_
+#define _ARG_PARSE_H_
+
 #include "batch/executor_system.h"
 #include "batch/scheduler_system.h"
 #include "batch/db_storage_interface.h"
@@ -17,7 +20,8 @@ static struct option long_options[] = {
   {"std_dev_shared_locks", required_argument, 0, 6},
   {"avg_excl_locks", required_argument, 0, 7},
   {"std_dev_excl_locks", required_argument, 0, 8},
-  {0, no_argument, 0, 9}
+  {"exp_reps", required_argument, 0, 9},
+  {0, no_argument, 0, 10}
 };
 
 struct ExperimentConfig {
@@ -26,6 +30,7 @@ struct ExperimentConfig {
   DBStorageConfig db_conf;
   ActionSpecification act_conf;
   unsigned int num_txns;
+  unsigned int exp_reps;
 };
 
 class ArgParse {
@@ -40,6 +45,7 @@ private:
     std_dev_shared_locks,
     avg_excl_locks,
     std_dev_excl_locks,
+    exp_reps,
     count
   };
 
@@ -191,7 +197,9 @@ public:
     auto arg_map = get_arg_map(argc, argv);
 
     check_presence(
-        arg_map, "experiment", {OptionCode::num_txns});
+        arg_map, "experiment", 
+        {OptionCode::num_txns,
+        OptionCode::exp_reps});
 
     ExperimentConfig exp_conf = {
       .sched_conf = get_sched_conf(arg_map),
@@ -200,9 +208,14 @@ public:
       .act_conf = get_act_spec(arg_map),
       .num_txns = 
         (unsigned int) strtoul(
-            arg_map[static_cast<int>(OptionCode::num_txns)], nullptr, 10)
+            arg_map[static_cast<int>(OptionCode::num_txns)], nullptr, 10),
+      .exp_reps = 
+        (unsigned int) strtoul(
+            arg_map[static_cast<int>(OptionCode::exp_reps)], nullptr, 10)
     };
 
     return exp_conf;
   }; 
 };
+
+#endif // ARG_PARSE_H_
