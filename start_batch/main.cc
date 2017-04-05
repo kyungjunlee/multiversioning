@@ -11,6 +11,9 @@ int main(int argc, char** argv) {
   std::vector<double> results; 
 
   for (unsigned int i = 0; i < exp_conf.exp_reps; i++) {
+    std::string batch_msg("Iteration " + std::to_string(i) + "/" + std::to_string(exp_conf.exp_reps) + ": ");
+    std::cout << std::flush;
+    std::cout << batch_msg << "Setup up the system." << std::endl;
     // declare all of the variables necessary up front.
     auto workload = 
       ActionFactory<RMWBatchAction>::generate_actions(
@@ -25,7 +28,8 @@ int main(int argc, char** argv) {
     s.init_system();
 
     barrier();
-
+    std::cout << batch_msg << "Running the experiment." << std::endl;
+    barrier();
     // save time.
     time_start = std::chrono::system_clock::now();
     
@@ -45,6 +49,7 @@ int main(int argc, char** argv) {
 
     barrier();
     
+    std::cout << batch_msg << "Done." << std::endl;
     // end of experiment
     time_end = std::chrono::system_clock::now();
 
@@ -52,7 +57,7 @@ int main(int argc, char** argv) {
 
     // time_since_epoch
     auto exp_duration_ms = 
-      std::chrono::duration_cast<std::chrono::milliseconds>(time_start - time_end).count();
+      std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
     results.push_back(exp_duration_ms);
   }
 
