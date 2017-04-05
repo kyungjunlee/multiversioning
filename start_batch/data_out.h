@@ -84,10 +84,10 @@ public:
     unsigned int file_path_num = 0;
     while (file_exists(file_path)) {
       std::cerr << "File: " << 
-        file_path << " exists. Attempting to write to: " <<
-        file_path + "_" + std::to_string(file_path_num) << std::endl; 
+        file_path << " exists. Attempting to write to: ";
       
       file_path = write_dir + "/description_" + std::to_string(file_path_num++);
+      std::cerr << file_path << std::endl;
     }
 
     auto file_handle = open_file(file_path);
