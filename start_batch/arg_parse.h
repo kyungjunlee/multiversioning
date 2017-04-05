@@ -21,7 +21,8 @@ static struct option long_options[] = {
   {"avg_excl_locks", required_argument, 0, 7},
   {"std_dev_excl_locks", required_argument, 0, 8},
   {"exp_reps", required_argument, 0, 9},
-  {0, no_argument, 0, 10}
+  {"output_dir", required_argument, 0, 10},
+  {0, no_argument, 0, 11}
 };
 
 struct ExperimentConfig {
@@ -31,6 +32,7 @@ struct ExperimentConfig {
   ActionSpecification act_conf;
   unsigned int num_txns;
   unsigned int exp_reps;
+  std::string output_dir;
 };
 
 class ArgParse {
@@ -46,6 +48,7 @@ private:
     avg_excl_locks,
     std_dev_excl_locks,
     exp_reps,
+    output_dir,
     count
   };
 
@@ -199,7 +202,8 @@ public:
     check_presence(
         arg_map, "experiment", 
         {OptionCode::num_txns,
-        OptionCode::exp_reps});
+        OptionCode::exp_reps,
+        OptionCode::output_dir});
 
     ExperimentConfig exp_conf = {
       .sched_conf = get_sched_conf(arg_map),
@@ -211,7 +215,9 @@ public:
             arg_map[static_cast<int>(OptionCode::num_txns)], nullptr, 10),
       .exp_reps = 
         (unsigned int) strtoul(
-            arg_map[static_cast<int>(OptionCode::exp_reps)], nullptr, 10)
+            arg_map[static_cast<int>(OptionCode::exp_reps)], nullptr, 10),
+      .output_dir = 
+        std::string(arg_map[static_cast<int>(OptionCode::output_dir)])
     };
 
     return exp_conf;

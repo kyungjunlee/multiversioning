@@ -1,4 +1,5 @@
 #include "arg_parse.h"
+#include "data_out.h"
 #include "batch/txn_factory.h"
 #include "batch/supervisor.h"
 #include "batch/RMW_batch_action.h"
@@ -53,6 +54,9 @@ int main(int argc, char** argv) {
   }
 
   // all of the experiments have finished running. Output the results.
+  Out printer(exp_conf);
+  printer.write_results(results);
+  printer.write_exp_description();
 
   return 0;
 }
