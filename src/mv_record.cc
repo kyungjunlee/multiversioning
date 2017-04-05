@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cpuinfo.h>
 #include <iostream>
+#include <common_constants.h>
 
 uint64_t _MVRecord_::INFINITY = 0xFFFFFFFFFFFFFFFF;
 
