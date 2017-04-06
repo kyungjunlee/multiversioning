@@ -186,7 +186,7 @@ private:
               m[static_cast<int>(OptionCode::num_records)], nullptr, 10) - 1,
         .average_num_locks = 
           (unsigned int) strtoul(
-              m[static_cast<int>(OptionCode::avg_excl_locks)], nullptr, 10) - 1,
+              m[static_cast<int>(OptionCode::avg_excl_locks)], nullptr, 10),
         .std_dev_of_num_locks =
           (unsigned int) strtoul(
               m[static_cast<int>(OptionCode::std_dev_excl_locks)], nullptr, 10)
