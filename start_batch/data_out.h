@@ -19,7 +19,7 @@ private:
     try {
       ofs.open (file_path.c_str(), std::ofstream::out | std::ofstream::app);
     } catch (const std::ofstream::failure& e) {
-      std::cerr << e.what() << std::endl; //". ERR CODE:" << e.code() << std::endl;
+      std::cerr << e.what() << std::endl; 
       exit(-1);
     }
 
@@ -83,11 +83,13 @@ public:
     std::string file_path = write_dir + "/description"; 
     unsigned int file_path_num = 0;
     while (file_exists(file_path)) {
-      std::cerr << "File: " << 
-        file_path << " exists. Attempting to write to: ";
-      
       file_path = write_dir + "/description_" + std::to_string(file_path_num++);
       std::cerr << file_path << std::endl;
+    }
+
+    if (file_path_num != 0) {
+      std::cerr << "File existed. Writing to: " << file_path << 
+        " instead to avoid data overwrite.";
     }
 
     auto file_handle = open_file(file_path);
