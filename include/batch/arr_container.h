@@ -25,8 +25,9 @@
 class ArrayContainer : public Container {
 private:
   typedef Container::BatchActions BatchActions; 
-  uint32_t current_min_index;
-  uint32_t current_barrier_index;
+  uint32_t elements_removed_total;
+  uint32_t elements_removed_this_round;
+  uint32_t current_element;
 protected:
   ArrayContainer() = delete;
   ArrayContainer(const ArrayContainer& ac) = delete;

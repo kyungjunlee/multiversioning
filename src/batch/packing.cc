@@ -18,11 +18,11 @@ bool Packer::txn_conflicts(
 
     // pick the smaller set to iterate over.
     if (rs1->size() > rs2->size()) {
-      smaller = rs1;
-      larger = rs2;
-    } else {
       smaller = rs2;
       larger = rs1;
+    } else {
+      smaller = rs1;
+      larger = rs2;
     }
 
     for (auto it = smaller->begin(); it != smaller->end(); it++) {
