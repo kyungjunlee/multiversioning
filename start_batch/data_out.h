@@ -28,22 +28,22 @@ private:
 
   void write_header(std::ofstream& ofs) {
     ofs << 
-      "num_txns, batch_size, num_sched_threads, " <<
-      "num_exec_threads, num_records, avg_shared_locks, " <<
-      "std_dev_shared_locks, avg_excl_locks, std_dev_excl_locks, " <<
+      "num_txns,batch_size,num_sched_threads," <<
+      "num_exec_threads,num_records,avg_shared_locks," <<
+      "std_dev_shared_locks,avg_excl_locks,std_dev_excl_locks," <<
       "result" << std::endl;
   }
 
   void write_result(std::ofstream& ofs, double result) {
     ofs <<
-      config.num_txns << ", " <<
-      config.sched_conf.batch_size_act << ", " <<
-      config.sched_conf.scheduling_threads_count << ", " <<
-      config.exec_conf.executing_threads_count << ", " <<
-      config.db_conf.tables_definitions[0].num_records << ", " <<
-      config.act_conf.reads.average_num_locks << ", " <<
-      config.act_conf.reads.std_dev_of_num_locks << ", " <<
-      config.act_conf.writes.average_num_locks << ", " <<
+      config.num_txns << "," <<
+      config.sched_conf.batch_size_act << "," <<
+      config.sched_conf.scheduling_threads_count << "," <<
+      config.exec_conf.executing_threads_count << "," <<
+      config.db_conf.tables_definitions[0].num_records << "," <<
+      config.act_conf.reads.average_num_locks << "," <<
+      config.act_conf.reads.std_dev_of_num_locks << "," <<
+      config.act_conf.writes.average_num_locks << "," <<
       config.act_conf.writes.std_dev_of_num_locks << ", " <<
       result << std::endl;
   }

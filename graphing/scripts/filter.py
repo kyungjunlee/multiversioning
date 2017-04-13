@@ -9,7 +9,7 @@ def filter(data_frame, cols, col_vals):
     return data_frame
 
 def write(data_frame, path):
-    data_frame.to_csv(path)
+    data_frame.to_csv(path, index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -23,5 +23,5 @@ if __name__ == "__main__":
     parser.add_argument("-out_path", help="Path to out data file", required=True);
 
     args = parser.parse_args()
-    data = pandas.DataFrame.from_csv(args.data_path, sep = "\, ")
+    data = pandas.DataFrame.from_csv(args.data_path, index_col=None)
     write(filter(data, args.cols, args.col_vals), args.out_path);

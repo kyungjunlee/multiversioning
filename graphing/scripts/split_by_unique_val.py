@@ -12,7 +12,7 @@ parser.add_argument("-out_path", help="Path to out data file", required=True);
 
 args = parser.parse_args()
 
-data = pandas.DataFrame.from_csv(args.data_path, sep="\, ");
+data = pandas.DataFrame.from_csv(args.data_path, index_col=None);
 cols = args.cols;
 unique_cols_data = data[cols].groupby(cols).size().reset_index()[cols]
 unique_col_names = list(unique_cols_data.columns.values)
