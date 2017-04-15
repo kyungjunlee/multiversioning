@@ -3,7 +3,7 @@
 
 #include "batch/scheduler.h"
 #include "batch/lock_table.h"
-#include "batch/input_queue.h"
+#include "batch/batched_input_queue.h"
 #include "batch/scheduler_system.h"
 #include "batch/scheduler_thread_manager.h"
 
