@@ -8,7 +8,7 @@ SchedulerManager::SchedulerManager(
   SchedulerThreadManager(exec),
   SchedulingSystem(c)
 {
-  iq = std::make_unique<InputQueue>();
+  iq = std::make_unique<BatchedInputQueue>(c.batch_size_act);
 	current_input_scheduler = 0;
 	current_signaling_scheduler = 0;
 	current_merging_scheduler = 0;
@@ -20,7 +20,7 @@ bool SchedulerManager::system_is_initialized() {
 }
 
 void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
-	iq->push_tail(std::move(act));
+	iq->add_action(std::move(act));
 };
 
 void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
@@ -71,15 +71,9 @@ SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s
     barrier();
   } while (s != schedulers[h].get());
 
-	SchedulerThread::BatchActions batch(this->conf.batch_size_act);
-  for (unsigned int actionsTaken = 0; 
-      actionsTaken < this->conf.batch_size_act; 
-      actionsTaken ++) {
-    while (this->iq->is_empty()) {
-      if (s->is_stop_requested())  return SchedulerThread::BatchActions();
-    }
-    batch[actionsTaken] = std::move(this->iq->peek_head());
-    this->iq->pop_head();
+  InputQueue::BatchActions batch;
+  while ((batch = this->iq->try_get_action_batch()).size() == 0) {
+    if (s->is_stop_requested())  return SchedulerThread::BatchActions();
   }
 
   // formally increment the current_input_scheduler

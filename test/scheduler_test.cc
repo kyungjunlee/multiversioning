@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "batch/scheduler.h"
-#include "batch/input_queue.h"
+#include "batch/input_queue_interface.h"
 #include "test/test_executor_thread_manager.h"
 #include "test/test_scheduler_thread_manager.h"
 #include "test/test_action.h"
