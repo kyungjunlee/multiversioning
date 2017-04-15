@@ -7,6 +7,7 @@
 #include <chrono>
 
 int main(int argc, char** argv) {
+  pin_thread(79);
   ExperimentConfig exp_conf = ArgParse::parse_args(argc, argv);
   std::vector<double> results; 
 
