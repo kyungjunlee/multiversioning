@@ -30,11 +30,20 @@ private:
     ofs << 
       "num_txns,batch_size,num_sched_threads," <<
       "num_exec_threads,num_records,avg_shared_locks," <<
-      "std_dev_shared_locks,avg_excl_locks,std_dev_excl_locks," <<
-      "result" << std::endl;
+      "std_dev_shared_locks,avg_excl_locks,std_dev_excl_locks,";
   }
 
-  void write_result(std::ofstream& ofs, double result) {
+  void write_header_completion_time(std::ofstream& ofs) {
+    write_header(ofs);
+    ofs << "result" << std::endl;
+  }
+
+  void write_header_interim_completion_time(std::ofstream& ofs) {
+    write_header(ofs);
+    ofs << "time_since_start,txn_completed,exp_rep" << std::endl;
+  }
+
+  void write_result_common(std::ofstream& ofs) {
     ofs <<
       config.num_txns << "," <<
       config.sched_conf.batch_size_act << "," <<
@@ -48,6 +57,18 @@ private:
       result << std::endl;
   }
 
+  void write_result(std::ofstream& ofs, std::vector<double> result) {
+    write_result_common(ofs);
+    for (unsigned int i = 0; i < result.size(); i ++) {
+      ofs << result[i];
+      if (i != result.size() - 1) {
+        ofs << ",";
+      }
+    }
+    
+    ofs << std::endl;
+  }
+
 public:
   Out(ExperimentConfig config): 
     write_dir(config.output_dir),
@@ -58,8 +79,8 @@ public:
     assert(write_dir.empty() == false);
   };
 
-  void write_results(std::vector<double> results) {
-    std::string file_path = write_dir + "/data";
+  void write_completion_time_results(std::vector<double> results) {
+    std::string file_path = write_dir + "/completion_time_data";
     bool file_existed = file_exists(file_path);
     auto file_handle = open_file(file_path);
 
@@ -68,12 +89,35 @@ public:
         "Appending results to existing file: " << 
         file_path << std::endl;
     } else {
-      write_header(file_handle);
+      write_header_completion_time(file_handle);
     }
     
     // write data
     for (auto& data : results) {
-      write_result(file_handle, data);
+      write_result(file_handle, {data});
+    }
+
+    file_handle.close();
+  };
+
+  void write_interim_completion_time_results(
+      std::vector<std::vector<std::pair<double, unsigned int>>> res) {
+    std::string file_path = write_dir + "/interim_completion_time_data"; 
+    bool file_existed = file_exists(file_path);
+    auto file_handle = open_file(file_path);
+
+    if (file_existed) {
+      std::cerr << "Appending results to existing file: " <<
+        file_path << std::endl;
+    } else {
+      write_header_interim_completion_time(file_handle);
+    }
+
+    // write data
+    for (unsigned int i = 0; i < res.size(); i++) {
+      for (auto& p : res[i]) {
+        write_result(file_handle, {p.first, (double) p.second, (double) i});
+      }
     }
 
     file_handle.close();
