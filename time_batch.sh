@@ -3,6 +3,8 @@ mkdir -p timing_stuff/data
 
 source experiment_config
 
+make batch
+
 for batch_size_indicator in `seq 0 ${#batch_sizes[@]}`;
 	do for threads_indicator in `seq 0 ${#exec_array[@]}`; 
 		do 
