@@ -1,16 +1,7 @@
 mkdir -p timing_stuff
 mkdir -p timing_stuff/data
 
-exec_array=(8, 8, 16, 8, 16, 32, 16, 32, 32)
-sched_array=(2, 4, 4, 6, 8, 8, 12, 16, 24)
-batch_sizes=(10, 100, 200, 400, 500, 625, 1000, 1250, 2000, 3125, 5000, 6250, 10000)
-exp_reps=5
-shared_lock_num=10
-shared_std_dev=0
-excl_lock_num=10
-excl_std_dev=0
-db_recs=1000
-num_txns=100000
+source experiment_config
 
 for batch_size_indicator in `seq 0 ${#batch_sizes[@]}`;
 	do for threads_indicator in `seq 0 ${#exec_array[@]}`; 

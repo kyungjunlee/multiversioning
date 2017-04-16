@@ -1,5 +1,7 @@
 mkdir -p data
 
+source experiment_config
+
 exec_array=( 8, 8, 16, 8, 16, 32, 16, 32, 32)
 sched_array=(2, 4,  4, 6,  8,  8, 12, 16, 24)
 batch_sizes=(10, 100, 200, 400, 500, 625, 1000, 1250, 2000, 3125, 5000, 6250, 10000)
