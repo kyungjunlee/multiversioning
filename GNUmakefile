@@ -36,7 +36,7 @@ all: build/db
 test:CFLAGS+=-DTESTING=1 -DUSE_BACKOFF=1 
 test:build/tests
 
-batch: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1
+batch: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1 -fno-omit-frame-pointer
 batch: build/batch_db
 
 -include $(wildcard $(DEPSDIR)/*.d)
