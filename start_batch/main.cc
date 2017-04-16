@@ -89,8 +89,14 @@ int main(int argc, char** argv) {
 
   // all of the experiments have finished running. Output the completion_time_results.
   Out printer(exp_conf);
-  printer.write_completion_time_results(completion_time_results);
-  printer.write_interim_completion_time_results(interim_results);
+  if (exp_conf.exps.count("global throughput") > 0) {
+    printer.write_completion_time_results(completion_time_results);
+  } 
+
+  if (exp_conf.exps.count("interim throughput") > 0) {
+    printer.write_interim_completion_time_results(interim_results);
+  }
+
   printer.write_exp_description();
 
   return 0;

@@ -6,6 +6,7 @@
 #include "batch/executor_thread.h"
 
 #include <memory>
+#include <fstream>
 
 // Executing System Config
 //  
