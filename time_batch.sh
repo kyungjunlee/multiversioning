@@ -1,8 +1,16 @@
 mkdir -p timing_stuff
+mkdir -p timing_stuff/data
 
 exec_array=(8, 8, 16, 8, 16, 32, 16, 32, 32)
 sched_array=(2, 4, 4, 6, 8, 8, 12, 16, 24)
 batch_sizes=(10, 100, 200, 400, 500, 625, 1000, 1250, 2000, 3125, 5000, 6250, 10000)
+exp_reps=5
+shared_lock_num=10
+shared_std_dev=0
+excl_lock_num=10
+excl_std_dev=0
+db_recs=1000
+num_txns=100000
 
 for batch_size_indicator in `seq 0 ${#batch_sizes[@]}`;
 	do for threads_indicator in `seq 0 ${#exec_array[@]}`; 
@@ -11,7 +19,7 @@ for batch_size_indicator in `seq 0 ${#batch_sizes[@]}`;
       exec_threads=${exec_array[$threads_indicator]}
       batch_size=${batch_sizes[$batch_size_indicator]}
 
-			perf record -a -g build/batch_db --num_txns 100000 --exp_reps 5 --output_dir data --batch_size $batch_size --num_sched_threads $sched_threads --num_exec_threads $exec_threads --num_records 1000 --avg_shared_locks 10 --std_dev_shared_locks 0 --avg_excl_locks 10 --std_dev_excl_locks 0; 
+			perf record -a -g build/batch_db --num_txns $num_txns --exp_reps $exp_reps --output_dir timing_stuff/data --batch_size $batch_size --num_sched_threads $sched_threads --num_exec_threads $exec_threads --num_records $db_recs --avg_shared_locks $shared_lock_num --std_dev_shared_locks $shared_std_dev --avg_excl_locks $excl_lock_num --std_dev_excl_locks $excl_std_dev; 
 
 			perf script | FlameGraph/stackcollapse-perf.pl > FlameGraph/out.perf-folded
 			FlameGraph/flamegraph.pl FlameGraph/out.perf-folded > timing_stuff/time_perf_${sched_array[$i]}.${exec_array[$i]}.$batch_size.svg 
