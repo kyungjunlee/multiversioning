@@ -1,5 +1,6 @@
 #include "arg_parse.h"
 #include "data_out.h"
+#include "cpuinfo.h"
 #include "batch/txn_factory.h"
 #include "batch/supervisor.h"
 #include "batch/RMW_batch_action.h"
