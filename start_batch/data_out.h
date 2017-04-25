@@ -26,15 +26,17 @@ private:
     return ofs;
   }
 
-  void write_header(std::ofstream& ofs) {
-    ofs << 
-      "num_txns,batch_size,num_sched_threads," <<
-      "num_exec_threads,num_records,avg_shared_locks," <<
-      "std_dev_shared_locks,avg_excl_locks,std_dev_excl_locks," <<
-      "result" << std::endl;
+  void write_header_completion_time(std::ofstream& ofs) {
+    config.print_experiment_header(ofs) << ",";
+    ofs << "result" << std::endl;
   }
 
-  void write_result(std::ofstream& ofs, double result) {
+  void write_header_interim_completion_time(std::ofstream& ofs) {
+    config.print_experiment_header(ofs) << ",";
+    ofs << "time_since_start,txn_completed,exp_rep" << std::endl;
+  }
+
+  void write_result_common(std::ofstream& ofs) {
     ofs <<
       config.num_txns << "," <<
       config.sched_conf.batch_size_act << "," <<
@@ -44,8 +46,21 @@ private:
       config.act_conf.reads.average_num_locks << "," <<
       config.act_conf.reads.std_dev_of_num_locks << "," <<
       config.act_conf.writes.average_num_locks << "," <<
-      config.act_conf.writes.std_dev_of_num_locks << ", " <<
-      result << std::endl;
+      config.act_conf.writes.std_dev_of_num_locks;
+  }
+
+  void write_result(std::ofstream& ofs, std::vector<double> result) {
+    assert(result.size() > 0);
+
+    config.print_experiment_values(ofs) << ",";
+    for (unsigned int i = 0; i < result.size(); i ++) {
+      ofs << result[i];
+      if (i != result.size() - 1) {
+        ofs << ",";
+      }
+    }
+    
+    ofs << std::endl;
   }
 
 public:
@@ -58,8 +73,8 @@ public:
     assert(write_dir.empty() == false);
   };
 
-  void write_results(std::vector<double> results) {
-    std::string file_path = write_dir + "/data";
+  void write_completion_time_results(std::vector<double> results) {
+    std::string file_path = write_dir + "/completion_time_data";
     bool file_existed = file_exists(file_path);
     auto file_handle = open_file(file_path);
 
@@ -68,12 +83,35 @@ public:
         "Appending results to existing file: " << 
         file_path << std::endl;
     } else {
-      write_header(file_handle);
+      write_header_completion_time(file_handle);
     }
     
     // write data
     for (auto& data : results) {
-      write_result(file_handle, data);
+      write_result(file_handle, {data});
+    }
+
+    file_handle.close();
+  };
+
+  void write_interim_completion_time_results(
+      std::vector<std::vector<std::pair<double, unsigned int>>> res) {
+    std::string file_path = write_dir + "/interim_completion_time_data"; 
+    bool file_existed = file_exists(file_path);
+    auto file_handle = open_file(file_path);
+
+    if (file_existed) {
+      std::cerr << "Appending results to existing file: " <<
+        file_path << std::endl;
+    } else {
+      write_header_interim_completion_time(file_handle);
+    }
+
+    // write data
+    for (unsigned int i = 0; i < res.size(); i++) {
+      for (auto& p : res[i]) {
+        write_result(file_handle, {p.first, (double) p.second, (double) i});
+      }
     }
 
     file_handle.close();
@@ -89,56 +127,12 @@ public:
 
     if (file_path_num != 0) {
       std::cerr << "File existed. Writing to: " << file_path << 
-        " instead to avoid data overwrite.";
+        " instead to avoid data overwrite." << std::endl;
     }
 
     auto file_handle = open_file(file_path);
 
-    auto write_desc_row = 
-        [&file_handle](std::string description, unsigned int val) {
-      file_handle.width(40);
-      file_handle << std::left << "\t" + description << std::scientific << val << "\n";
-    };
-
-    file_handle << "GENERAL INFORMATION" << std::endl;
-    write_desc_row("Transaction number:", config.num_txns);
-    write_desc_row("Experiment repetitions:", config.exp_reps);
-    file_handle << std::endl;
-    
-    auto sched_conf = config.sched_conf;
-    file_handle << "SCHEDULING SYSTEM" << std::endl;
-    write_desc_row("Scheduling threads:", sched_conf.scheduling_threads_count);
-    write_desc_row("Batch size (act):", sched_conf.batch_size_act);
-    write_desc_row("Batch length (sec):", sched_conf.batch_length_sec);
-    write_desc_row("First pin cpu id:", sched_conf.first_pin_cpu_id);
-    file_handle << std::endl; 
-
-    auto exec_conf = config.exec_conf;
-    file_handle << "EXECUTING SYSTEM" << std::endl;
-    write_desc_row("Executing threads:", exec_conf.executing_threads_count);
-    write_desc_row("First pin cpu id:", exec_conf.first_pin_cpu_id);
-    file_handle << std::endl;
-
-    auto tables = config.db_conf.tables_definitions;
-    file_handle << "DATABASE STORAGE" << std::endl;
-    write_desc_row("Tables number:", tables.size());
-    write_desc_row("Records in table:", tables[0].num_records);
-    file_handle << std::endl;
-
-    auto reads = config.act_conf.reads;
-    file_handle << "READ LOCKS REQUESTED INFORMATION" << std::endl;
-    write_desc_row("Locks requested from:", reads.low_record);
-    write_desc_row("Locks requested to:", reads.high_record);
-    write_desc_row("Average # of locks requested:", reads.average_num_locks);
-    write_desc_row("Std Dev of # of locks requested:", reads.std_dev_of_num_locks);
-
-    auto writes = config.act_conf.writes;
-    file_handle << "WRITE LOCKS REQUESTED INFORMATION" << std::endl;
-    write_desc_row("Locks requested from:", writes.low_record);
-    write_desc_row("Locks requested to:", writes.high_record);
-    write_desc_row("Average # of locks requested:", writes.average_num_locks);
-    write_desc_row("Std Dev of # of locks requested:", writes.std_dev_of_num_locks);
-  
+    config.print_experiment_info(file_handle);
     file_handle.close();
   };
 };
