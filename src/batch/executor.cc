@@ -37,23 +37,25 @@ void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
 };
 
 void BatchExecutor::process_action_batch() {
-  for (unsigned int i = 0; i < currentBatch->size(); i++) {
-    // attempt to execute the pending actions first. This is because the 
-    // actions "earlier" in the current batch are more likely to not
-    // be blocked by other actions!
-    process_pending();
-
-    assert(currentBatch->at(i) != nullptr);
-    if(!process_action(currentBatch->at(i))) {
-      pending_list->push_back(currentBatch->at(i));        
-      pending_list->size();
-    } 
-  } 
-
-  // make sure that everything within current batch has been successfully executed!
-  while (!pending_list->empty()) {
-    process_pending();
-  }
+//  for (unsigned int i = 0; i < currentBatch->size(); i++) {
+//    // attempt to execute the pending actions first. This is because the 
+//    // actions "earlier" in the current batch are more likely to not
+//    // be blocked by other actions!
+//    process_pending();
+//
+//    assert(currentBatch->at(i) != nullptr);
+//    if(!process_action(currentBatch->at(i))) {
+//      pending_list->push_back(currentBatch->at(i));        
+//      pending_list->size();
+//    } 
+//  } 
+//
+//  // make sure that everything within current batch has been successfully executed!
+//  while (!pending_list->empty()) {
+//    process_pending();
+//  }
+//
+//  THE PROCESSING TAKES NO EFFORT OR TIME. JUST OUTPUT IT.
 
   // put the batch to the output queue!
   output_queue->push_tail(std::move(currentBatch));
