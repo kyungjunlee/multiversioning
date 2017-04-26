@@ -89,7 +89,7 @@ public:
 
     if (file_path_num != 0) {
       std::cerr << "File existed. Writing to: " << file_path << 
-        " instead to avoid data overwrite.";
+        " instead to avoid data overwrite." << std::endl;
     }
 
     auto file_handle = open_file(file_path);
