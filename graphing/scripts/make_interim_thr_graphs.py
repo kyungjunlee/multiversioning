@@ -32,8 +32,9 @@ file_index = 0
 for df in split_data:
     utility.exec_gnuplot_script(
         "inter_throughput.gp",
-        ["path"],
-        ["\"" + utility.get_tmp_dir_path() + "/tmp" + str(file_index) + "\""]
+        ["path", "out_path"],
+        ["\"" + utility.get_tmp_dir_path() + "/tmp" + str(file_index) + "\"",
+        "\"" + args.out_path + "\""]
     );
     file_index += 1
 

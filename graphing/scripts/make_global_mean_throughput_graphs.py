@@ -24,7 +24,8 @@ for df in split_data:
 
 utility.exec_gnuplot_script(
         "mean_throughput_batch_size.gp", 
-        ["path", "num_graphs"], 
-        ["\"" + utility.get_tmp_dir_path() + "\"", len(split_data)]) 
+        ["path", "num_graphs", "out_path"], 
+        ["\"" + utility.get_tmp_dir_path() + "\"", len(split_data),
+            "\"" + args.out_path +"\""]) 
 
 utility.destroy_tmp_dir_and_files()

@@ -1,13 +1,13 @@
 # Expected Params:
 #   1. path -- the directory in which the tmp files live.
-
+#   2. out_path -- the directory into which to write.
 set datafile separator ","
 set nokey
 
 # Get the meta-data necessary for output names
 sched_num = system('tail -n +2 '.path.' | cut -f 5 -d "," | sort | uniq');
 exec_num = system('tail -n +2 '.path.' | cut -f 6 -d "," | sort | uniq');
-set output "interim_time_series_s".sched_num.".e.".exec_num
+set output out_path."/interim_time_series_s".sched_num.".e.".exec_num
 
 # Get the meta-data necessary for layouts
 batch_sizes = system('tail -n +2 '.path.' | cut -f 4 -d "," | sort -V | uniq');
