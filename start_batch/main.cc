@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
   std::vector<double> results; 
 
   for (unsigned int i = 0; i < exp_conf.exp_reps; i++) {
-    std::string batch_msg("Iteration " + std::to_string(i) + "/" + std::to_string(exp_conf.exp_reps) + ": ");
+    std::string batch_msg("Iteration " + std::to_string(i + 1) + "/" + std::to_string(exp_conf.exp_reps) + ": ");
     std::cout << std::flush;
     std::cout << batch_msg << "Setup up the system." << std::endl;
     // declare all of the variables necessary up front.
