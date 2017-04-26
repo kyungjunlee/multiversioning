@@ -110,8 +110,8 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
       } 
     };
     
-    execute_blockers(act->get_writeset_handle());
-    execute_blockers(act->get_readset_handle());
+//    execute_blockers(act->get_writeset_handle());
+//    execute_blockers(act->get_readset_handle());
     
     // unlock the action so that someone else may attempt to execute it.
     bool state_change_success = act->conditional_atomic_change_state(
