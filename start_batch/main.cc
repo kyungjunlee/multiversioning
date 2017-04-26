@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
       // TODO:
       //    Make the frequency a variable.
       // save the time elapsed every 20% of the batch done
-      if (output_count >= exp_conf.num_txns * 0.2 * (interim_results[i].size() + 1)) {
+      if (output_count >= exp_conf.num_txns * 0.1 * (interim_results[i].size() + 1)) {
         time_end = std::chrono::system_clock::now();
         // if this is slow, move it to outside of the test and push a vector of 
         // times and counts instead.
