@@ -100,8 +100,9 @@ private:
     std::cerr 
       << "Missing the following parameters for the " 
       << system_name
-      << ".\n"
-      << error_string;
+      << "." << std::endl
+      << error_string
+      << std::endl;
 
     exit(-1);
   };

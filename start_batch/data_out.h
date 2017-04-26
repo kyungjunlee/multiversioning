@@ -44,7 +44,7 @@ private:
       config.act_conf.reads.average_num_locks << "," <<
       config.act_conf.reads.std_dev_of_num_locks << "," <<
       config.act_conf.writes.average_num_locks << "," <<
-      config.act_conf.writes.std_dev_of_num_locks << ", " <<
+      config.act_conf.writes.std_dev_of_num_locks << "," <<
       result << std::endl;
   }
 
