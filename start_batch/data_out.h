@@ -53,19 +53,7 @@ private:
       config.act_conf.reads.average_num_locks << "," <<
       config.act_conf.reads.std_dev_of_num_locks << "," <<
       config.act_conf.writes.average_num_locks << "," <<
-      config.act_conf.writes.std_dev_of_num_locks <<;
-  }
-
-  void write_result(std::ofstream& ofs, std::vector<double> result) {
-    write_result_common(ofs);
-    for (unsigned int i = 0; i < result.size(); i ++) {
-      ofs << result[i];
-      if (i != result.size() - 1) {
-        ofs << ",";
-      }
-    }
-    
-    ofs << std::endl;
+     config.act_conf.writes.std_dev_of_num_locks;
   }
 
 public:
