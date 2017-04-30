@@ -4,11 +4,13 @@
 set datafile separator ","
 set key autotitle columnhead
 set term png size 1200, 750
-batch_size = system('tail -n +2 '.path.' | cut -f 4 -d "," | uniq'); 
-set output out_path."/inst_exec_graph_b".batch_size
 
-set title sprintf("Batch Size: %s", batch_size)
-set ylabel "Completion Time [ms]"
+batch_sizes = system('tail -n +2 '.path.' | cut -f 4 -d "," | sort | uniq'); 
+set output out_path."/inst_exec_graph"
+
+set ylabel "Throughput [txns/ms]"
 set xlabel "Scheduling Threads"
-plot path using 1:2:3 with errorbars 
+set title "Throughput at instant execution"
 
+get_data_for(batch_size) = sprintf("<awk -F, '{if (\$4 == %s) print}' %s", batch_size, path)
+plot for [batch_size in batch_sizes] get_data_for(batch_size) using 1:2:3 with errorbars title batch_size
