@@ -4,8 +4,8 @@ source experiment_config
 
 make batch;
 
-for threads_indicator in `seq 0 ${#exec_array[@]}`; 
-  do for batch_size_indicator in `seq 0 ${#batch_sizes[@]}`;
+for threads_indicator in `seq 0 $((${#exec_array[@]} - 1))`; 
+  do for batch_size_indicator in `seq 0 $((${#batch_sizes[@]} - 1))`;
 		do 
       sched_threads=${sched_array[$threads_indicator]}
       exec_threads=${exec_array[$threads_indicator]}
