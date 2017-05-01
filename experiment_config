@@ -8,4 +8,3 @@ excl_lock_num=10
 excl_std_dev=0
 db_recs=1000
 num_txns=100000
-exp_type="global_throughput interim_throughput"
