@@ -2,6 +2,7 @@
 #define BATCH_ACTION_FACTORY_H_
 
 #include "batch/batch_action_interface.h"
+#include "batch/static_memory_pool_interface.h"
 
 #include <memory>
 #include <vector>
@@ -50,10 +51,16 @@ private:
       std::unordered_set<unsigned int> constraining_set = {});
   static unsigned int get_lock_number(LockDistributionConfig conf);
   static bool lock_distro_config_is_valid(LockDistributionConfig spec);
+  static std::unique_ptr<IBatchAction, std::function<void (IBatchAction*)>>
+    alloc_action(
+      IStaticMemoryPool* txn_mem_pool,
+      IStaticMemoryPool* act_mem_pool);
 public:
   static std::vector<std::unique_ptr<IBatchAction>> generate_actions(
       ActionSpecification spec,
-      unsigned int number_of_actions);
+      unsigned int number_of_actions, 
+      IStaticMemoryPool* txn_mem_pool = nullptr,
+      IStaticMemoryPool* act_mem_pool = nullptr);
 };
 
 #include "batch/txn_factory_impl.h"

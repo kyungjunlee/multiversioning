@@ -113,15 +113,48 @@ bool ActionFactory<ActionClass>::lock_distro_config_is_valid(
 //};
 
 template <class ActionClass>
+std::unique_ptr<IBatchAction, std::function<void (IBatchAction*)>>
+ActionFactory<ActionClass>::alloc_action(
+    IStaticMemoryPool* txn_mem_pool,
+    IStaticMemoryPool* act_mem_pool) {
+  if (act_mem_pool == nullptr || txn_mem_pool == nullptr) {
+    auto ac = new ActionClass(new TestTxn());
+    return std::unique_ptr<ActionClass, std::function<void (IBatchAction*)>>(
+        ac, [](IBatchAction* iba){
+          ActionClass* ac = static_cast<ActionClass*>(iba);
+          delete ac;
+        });
+  }
+
+  void* act_mem = act_mem_pool->allocate(sizeof(ActionClass));
+  void* txn_mem = txn_mem_pool->allocate(sizeof(TestTxn));
+
+  auto act_destructor = [&txn_mem_pool, &act_mem_pool, &txn_mem]
+    (IBatchAction* iba){
+      // must manually free the reference to the txn memory since destructors
+      // are NOT currently being called here!
+      ActionClass* ac = static_cast<ActionClass*>(iba);
+      txn_mem_pool->free((void*) txn_mem);
+      act_mem_pool->free((void*) ac);
+  };
+
+  ActionClass* act = new(act_mem) ActionClass(new(txn_mem) TestTxn());
+  return std::unique_ptr<ActionClass, std::function<void (IBatchAction*)>>(
+        act, act_destructor);
+}
+
+template <class ActionClass>
 std::vector<std::unique_ptr<IBatchAction>>
 ActionFactory<ActionClass>::generate_actions (
     ActionSpecification spec,
-    unsigned int number_of_actions) {
+    unsigned int number_of_actions,
+    IStaticMemoryPool* txn_mem_pool,
+    IStaticMemoryPool* act_mem_pool) {
   assert(
       lock_distro_config_is_valid(spec.reads) &&
       lock_distro_config_is_valid(spec.writes));
   
-  std::vector<std::unique_ptr<IBatchAction>> res;
+  std::vector<std::unique_ptr<IBatchAction>> res(number_of_actions);
   for (unsigned int i = 0; i < number_of_actions; i++) {
     auto read_set = get_disjoint_set_of_random_numbers(
         spec.reads.low_record,
@@ -135,11 +168,9 @@ ActionFactory<ActionClass>::generate_actions (
         read_set);
 
     // construct the action
-    std::unique_ptr<IBatchAction> act = std::make_unique<ActionClass>(new TestTxn());
-    for (auto& key : read_set) act->add_read_key(key);
-    for (auto& key : write_set) act->add_write_key(key);
-
-    res.push_back(std::move(act));
+    res[i] = std::move(alloc_action(txn_mem_pool, act_mem_pool));
+    for (auto& key : read_set) res[i]->add_read_key(key);
+    for (auto& key : write_set) res[i]->add_write_key(key);
   }
 
   return res;
