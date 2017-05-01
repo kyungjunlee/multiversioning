@@ -25,10 +25,23 @@ private:
   uint64_t txns_completed;
   bool print_debug;
 
+  void print_debug_info(std::string text_segment) {
+    print_debug_info(std::vector<std::string>{text_segment});
+  };
+
+  void print_debug_info(std::vector<std::string> text_segment) {
+    if (!print_debug) return;
+  
+    for (auto& str : text_segment) {
+      std::cout.width(50);
+      std::cout << str << std::flush;
+    }
+  };
+
   void do_warm_up_run() {
     assert(txns_completed == 0);
     assert(warm_up_workload.size() > 0);
-    if (print_debug) std::cout << "Beginning warm up run ... " << std::flush;
+    print_debug_info("Beginning warm up run ... ");
     
     // we make sure all of the transactions have gone through the DB at least once.
     std::chrono::system_clock::time_point first_point;
@@ -51,9 +64,9 @@ private:
 
       if (txns_completed == 0) {
         first_point = std::chrono::system_clock::now();
-        std::cout << "\n\tFirst transaction through after: " << 
-          time_period_ms(time_start, first_point) <<
-          " ms" << std::endl;
+        print_debug_info(
+            {"\n\tFirst transaction through after: ", 
+            std::to_string(time_period_ms(time_start, first_point)) + "ms\n"});
       }
 
       txns_completed += o->size();
@@ -63,9 +76,9 @@ private:
     barrier();
     assert(txns_completed == txns_num);
     time_end = std::chrono::system_clock::now();
-    std::cout << "\tWarm up finished within: " << 
-      time_period_ms(time_start, time_end) <<
-      " ms" << std::endl;
+    print_debug_info(
+      {"\tWarm up finished within: ",
+      std::to_string(time_period_ms(time_start, time_end)) + "ms\n"});
     txns_completed = 0;
   };
 
@@ -131,12 +144,14 @@ private:
     // stop system
     s.stop_system();
 
-    if (print_debug) {
-      std::cout << "Input Time\t\t\t Output Time \t\t\t Measure Time \n" <<
-        time_period_ms(all_start, input_stop) << "\t\t\t" <<
-        time_period_ms(all_start, output_stop) << "\t\t\t" <<
-        time_period_ms(all_start, measure_stop) << std::endl;
-    }
+    print_debug_info ({ 
+      "Input Time",
+      "Output Time",
+      "Measure Time",
+      std::to_string(time_period_ms(all_start, input_stop)) + "ms",
+      std::to_string(time_period_ms(all_start, output_stop)) + "ms",
+      std::to_string(time_period_ms(all_start, measure_stop)) + "ms\n"
+    });
 
     return results;
   };
@@ -146,18 +161,31 @@ private:
   };
 
   void initialize() { 
-    if (print_debug) std::cout << "Creating workload ... " << std::flush;
+    auto print_OK_time = [this]() {
+     print_debug_info(
+        "[ O K ] (" + std::to_string(time_period_ms(time_start, time_end)) + ")\n");
+    };
+
+    print_debug_info("Creating workload ... ");
     time_start = std::chrono::system_clock::now();
     workload = ActionFactory<RMWBatchAction>::generate_actions(
       conf.act_conf, conf.num_txns);
+    time_end = std::chrono::system_clock::now();
+    print_OK_time();
+
+    print_debug_info("Creating warm up workload ... ");
     // TODO: Make this a parameter...
+    time_start = std::chrono::system_clock::now();
     warm_up_workload = ActionFactory<RMWBatchAction>::generate_actions(
       conf.act_conf, conf.num_txns);
-    if(print_debug) std::cout << " [ OK ]\n";
+    time_end = std::chrono::system_clock::now();
+    print_OK_time();
 
-    if (print_debug) std::cout << "Initializing supervisor ... " << std::flush;
+    print_debug_info("Initializing supervisor ... ");
+    time_start = std::chrono::system_clock::now();
     s.init_system();
-    if (print_debug) std::cout << " [ OK ]\n";
+    time_end = std::chrono::system_clock::now();
+    print_OK_time();
   };
 
 public:
