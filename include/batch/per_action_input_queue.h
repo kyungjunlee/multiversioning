@@ -55,6 +55,10 @@ public:
   virtual void add_action(std::unique_ptr<IBatchAction>&& act) override {
     MSQueue<std::unique_ptr<IBatchAction>>::push_tail(std::move(act));
   };
+
+  // flushing does not do anything since the queue is per-action 
+  // any way. 
+  virtual void flush() override {}
 };
 
 #endif

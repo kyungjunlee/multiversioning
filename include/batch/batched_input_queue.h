@@ -15,13 +15,19 @@ class Scheduler;
 /*
  *  Batched Input Queue
  *    
- *    Implementation of the input queue for hte system in which actions
+ *    Implementation of the input queue for the system in which actions
  *    are stored in batches and are returned on request.
  */
 class BatchedInputQueue : 
   private MSQueue<std::vector<std::unique_ptr<IBatchAction>>>,
   public InputQueue
 {
+private:
+  // private container for the batch before it is visible to the
+  // execution threads. Necessary to make sure that adding transactions
+  // is thread safe!
+  std::vector<std::unique_ptr<IBatchAction>> currentBatch;
+
 public:
   BatchedInputQueue(uint32_t batch_size): 
     MSQueue<std::vector<std::unique_ptr<IBatchAction>>>(),
@@ -37,17 +43,22 @@ public:
   };
 
   virtual void add_action(std::unique_ptr<IBatchAction>&& act) override {
+    assert(this->batch_size > 0);
     // It is not necessary to create a new batch to put into the queue. 
     // This action will fit into the existing element.
-    if (!this->is_empty() && this->peek_tail().size() < this->batch_size) {
-      this->peek_tail().push_back(std::move(act));
+    if (this->currentBatch.size() < this->batch_size - 1) {
+      currentBatch.push_back(std::move(act));
       return;
     }
 
-    // It is necessary to create a batch to put into the queue. 
-    InputQueue::BatchActions batch;
-    batch.push_back(std::move(act));
-    this->push_tail(std::move(batch));
+    // push the batch into queue and prepare the container for reuse.
+    this->currentBatch.push_back(std::move(act));
+    this->flush();
+  };
+
+  virtual void flush() override {
+    this->push_tail(std::move(currentBatch));
+    this->currentBatch.clear();
   };
 };
 
