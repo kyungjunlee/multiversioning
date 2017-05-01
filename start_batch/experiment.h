@@ -148,6 +148,9 @@ private:
     time_start = std::chrono::system_clock::now();
     workload = ActionFactory<RMWBatchAction>::generate_actions(
       conf.act_conf, conf.num_txns);
+    // TODO: Make this a parameter...
+    warm_up_workload = ActionFactory<RMWBatchAction>::generate_actions(
+      conf.act_conf, conf.num_txns);
     if(print_debug) std::cout << " [ OK ]\n";
 
     if (print_debug) std::cout << "Initializing supervisor ... " << std::flush;
