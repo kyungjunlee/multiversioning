@@ -33,7 +33,7 @@ private:
 
   void write_header_interim_completion_time(std::ofstream& ofs) {
     config.print_experiment_header(ofs) << ",";
-    ofs << "time_since_start,txn_completed" << std::endl;
+    ofs << "time_period,txn_completed" << std::endl;
   }
 
   void write_result_common(std::ofstream& ofs) {

@@ -51,7 +51,7 @@ private:
 
       if (txns_completed == 0) {
         first_point = std::chrono::system_clock::now();
-        std::cout << "\tFirst transaction through after: " << 
+        std::cout << "\n\tFirst transaction through after: " << 
           time_period_ms(time_start, first_point) <<
           " ms" << std::endl;
       }
@@ -78,6 +78,7 @@ private:
     auto measure_throughput = [&]() {
       pin_thread(78);
       unsigned int current_measurement = 0;
+      unsigned int former_measurement = 0;
       while(!end_of_measurement) {
         time_start = std::chrono::system_clock::now();
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -87,7 +88,8 @@ private:
         results.push_back(
             std::make_pair(
               time_period_ms(time_start, time_end),
-              current_measurement));
+              current_measurement - former_measurement));
+        former_measurement = current_measurement;
       }
       measure_stop = std::chrono::system_clock::now();
     };
