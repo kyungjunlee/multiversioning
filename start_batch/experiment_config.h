@@ -14,7 +14,6 @@ struct ExperimentConfig {
   unsigned int num_txns;
   unsigned int exp_reps;
   std::string output_dir;
-  std::unordered_set<std::string> exps;
 
   std::ofstream& print_experiment_header(std::ofstream& ofs) {
     ofs << "num_txns,batch_size,num_sched_threads," <<
@@ -57,16 +56,6 @@ struct ExperimentConfig {
     ofs << "GENERAL INFORMATION" << std::endl;
     write_desc_row("Transaction number:", num_txns);
     write_desc_row("Experiment repetitions:", exp_reps);
-    write_desc_of_a_row("Experiments run:");
-    std::string experiments_run = "";
-    for (auto& exp : exps) {
-      if (experiments_run != "") {
-        experiments_run += ",";
-      }
-      
-      experiments_run += exp;
-    }
-    write_desc_of_a_row("Experiments run") << experiments_run << std::endl;
     
     ofs << "SCHEDULING SYSTEM" << std::endl;
     write_desc_row("Scheduling threads:", sched_conf.scheduling_threads_count);

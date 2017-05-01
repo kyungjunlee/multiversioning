@@ -22,8 +22,7 @@ static struct option long_options[] = {
   {"std_dev_excl_locks", required_argument, 0, 8},
   {"exp_reps", required_argument, 0, 9},
   {"output_dir", required_argument, 0, 10},
-  {"exp_type", required_argument, 0, 11},
-  {0, no_argument, 0, 12}
+  {0, no_argument, 0, 11}
 };
 
 class ArgParse {
@@ -40,7 +39,6 @@ private:
     std_dev_excl_locks,
     exp_reps,
     output_dir,
-    exp_type,
     count
   };
 
@@ -58,35 +56,14 @@ private:
         std::cerr << "arg_parse.h: Unknown argument.\n";
         exit(-1);
       } else {
-        if (long_options[c].name == std::string("exp_type")) {
-          arg_map[c] = (char*) (std::string(arg_map[c]) + " " + std::string(optarg)).c_str();
-        } else {
-          // duplicate argument
-          std::cerr << "arg_parse.h: Duplicate argument " << 
-            long_options[c].name << ".\n";
-          exit(-1);
-        }
+        // duplicate argument
+        std::cerr << "arg_parse.h: Duplicate argument " << 
+          long_options[c].name << ".\n";
+        exit(-1);
       }
     }
 
     return arg_map;
-  };
-
-  static void check_value_in_legal_options(
-      std::string err_string,
-      std::string value,
-      std::unordered_set<std::string> legal_options) {
-    if (legal_options.count(value) == 0) {
-      std::cerr << "Illegal value: " << value <<
-        " for: " << err_string << ". Legal values are:" <<
-        std::endl;
-
-      for (auto& elt : legal_options) {
-        std::cerr << "--" << elt << std::endl;
-      }
-
-      exit(-1);
-    }
   };
 
   static void check_presence(
@@ -211,30 +188,6 @@ private:
     return as;
   };
 
-  static std::unordered_set<std::string> get_experiment_types(ArgMap m) {
-    check_presence(
-        m, "experiment types",
-        {OptionCode::exp_type});
-
-    std::string exps = m[static_cast<int>(OptionCode::exp_type)];
-    if (exps.back() != ' ') exps.push_back(' ');
-
-    std::string tmp = "";
-    std::unordered_set<std::string> res;
-    for (unsigned int i = 0; i < exps.length(); i++) {
-      if (exps[i] == ' ') {
-        check_value_in_legal_options("exp type", tmp, legal_experiment_types);
-        res.insert(tmp);
-        tmp = "";
-        continue;
-      }
-
-      tmp += exps[i];
-    }
-
-    return res;
-  };
-
 public:
   static const std::unordered_set<std::string> legal_experiment_types;
 
@@ -245,8 +198,7 @@ public:
         arg_map, "experiment", 
         {OptionCode::num_txns,
         OptionCode::exp_reps,
-        OptionCode::output_dir,
-        OptionCode::exp_type});
+        OptionCode::output_dir});
 
     ExperimentConfig exp_conf = {
       .sched_conf = get_sched_conf(arg_map),
@@ -260,17 +212,11 @@ public:
         (unsigned int) strtoul(
             arg_map[static_cast<int>(OptionCode::exp_reps)], nullptr, 10),
       .output_dir = 
-        std::string(arg_map[static_cast<int>(OptionCode::output_dir)]),
-      .exps = get_experiment_types(arg_map)
+        std::string(arg_map[static_cast<int>(OptionCode::output_dir)])
     };
 
     return exp_conf;
   }; 
 };
-
-const std::unordered_set<std::string> ArgParse::legal_experiment_types = {
-    "global_throughput",
-    "interim_throughput"
-  };
 
 #endif // ARG_PARSE_H_
