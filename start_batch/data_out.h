@@ -33,7 +33,7 @@ private:
 
   void write_header_interim_completion_time(std::ofstream& ofs) {
     config.print_experiment_header(ofs) << ",";
-    ofs << "time_since_start,txn_completed,exp_rep" << std::endl;
+    ofs << "time_since_start,txn_completed" << std::endl;
   }
 
   void write_result_common(std::ofstream& ofs) {
@@ -95,7 +95,7 @@ public:
   };
 
   void write_interim_completion_time_results(
-      std::vector<std::vector<std::pair<double, unsigned int>>> res) {
+      std::vector<std::pair<double, unsigned int>> res) {
     std::string file_path = write_dir + "/interim_completion_time_data"; 
     bool file_existed = file_exists(file_path);
     auto file_handle = open_file(file_path);
@@ -108,10 +108,8 @@ public:
     }
 
     // write data
-    for (unsigned int i = 0; i < res.size(); i++) {
-      for (auto& p : res[i]) {
-        write_result(file_handle, {p.first, (double) p.second, (double) i});
-      }
+    for (auto& p : res) {
+      write_result(file_handle, {p.first, (double) p.second});
     }
 
     file_handle.close();
