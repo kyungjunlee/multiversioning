@@ -33,7 +33,7 @@ private:
     if (!print_debug) return;
   
     for (auto& str : text_segment) {
-      std::cout.width(50);
+      std::cout.width(20);
       std::cout << str << std::flush;
     }
   };
