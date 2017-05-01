@@ -147,7 +147,7 @@ private:
     print_debug_info ({ 
       "Input Time",
       "Output Time",
-      "Measure Time",
+      "Measure Time\n",
       std::to_string(time_period_ms(all_start, input_stop)) + "ms",
       std::to_string(time_period_ms(all_start, output_stop)) + "ms",
       std::to_string(time_period_ms(all_start, measure_stop)) + "ms\n"
