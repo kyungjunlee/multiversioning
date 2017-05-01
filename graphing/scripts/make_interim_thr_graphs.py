@@ -11,10 +11,10 @@ parser.add_argument("-out_path", help="Path to out data file", required=True);
 args = parser.parse_args()
 
 data = utility.read_data_in(args.data_path)
-gr = data.groupby(['num_sched_threads', 'num_exec_threads', 'batch_size', 'exp_rep']).diff()
-gr.time_since_start.fillna(data.time_since_start, inplace=True)
-gr.txn_completed.fillna(data.txn_completed, inplace=True)
-data['throughput'] = gr['txn_completed'] / gr['time_since_start']
+gr = data.groupby(['num_sched_threads', 'num_exec_threads', 'batch_size'])
+data['time'] = gr['time_period'].transform(pandas.Series.cumsum);
+
+data['throughput'] = data['txn_completed'] / data['time_period']
 split_data = utility.split_by_unique_vals(
         data, ['num_sched_threads', 'num_exec_threads'])
 
@@ -23,7 +23,7 @@ for df in split_data:
     limited_data = utility.get_plot_format(
             df, 
             [
-                'time_since_start', 'throughput', 'exp_rep', 
+                'time', 'throughput',
                 'batch_size', 'num_sched_threads', 'num_exec_threads'
             ])
     utility.write_to_tmp(limited_data)
