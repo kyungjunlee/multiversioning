@@ -37,6 +37,7 @@ public:
 
   // implementing the SchedulingSystem interface
 	virtual void add_action(std::unique_ptr<IBatchAction>&& act) override;
+  virtual void flush_actions() override;
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) override;
   virtual void start_working() override;
   virtual void init() override;

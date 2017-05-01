@@ -23,6 +23,10 @@ void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
 	iq->add_action(std::move(act));
 };
 
+void SchedulerManager::flush_actions() {
+  iq->flush();
+};
+
 void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
   this->gs = gs;
 }
