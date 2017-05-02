@@ -166,7 +166,7 @@ private:
     // this is poor-mans ceil.
     unsigned int thread_num = actions_num / 200000 + (actions_num % acts_per_thread == 0);
 
-    std::vector<std::vector<std::unique_ptr<IBatchAction>>> thread_actions;
+    std::vector<std::vector<std::unique_ptr<IBatchAction>>> thread_actions{thread_num};
     std::thread threads[thread_num];
 
     auto thread_alloc = [&actions_num, &thread_actions, &acts_per_thread, this](unsigned int i) {
@@ -176,8 +176,7 @@ private:
         to_produce = actions_num - (i+1) * acts_per_thread;
       }
 
-      thread_actions[i] = std::move(
-        ActionFactory<RMWBatchAction>::generate_actions(
+      thread_actions[i] = std::move(ActionFactory<RMWBatchAction>::generate_actions(
            this->conf.act_conf, to_produce));
     };
 
