@@ -172,7 +172,7 @@ private:
     auto thread_alloc = [&actions_num, &thread_actions, &acts_per_thread, this](unsigned int i) {
       // uneven division.
       unsigned int to_produce = acts_per_thread;
-      if ( actions_num - (i+1) * acts_per_thread < acts_per_thread) {
+      if (actions_num - i * acts_per_thread < acts_per_thread) {
         to_produce = actions_num - (i+1) * acts_per_thread;
       }
 
