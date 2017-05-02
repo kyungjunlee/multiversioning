@@ -24,7 +24,7 @@ protected:
   virtual void SetUp() {
     etm = std::make_shared<TestExecutorThreadManager>();
     stm = std::make_shared<TestSchedulerThreadManager>(etm.get());
-    s = std::make_shared<Scheduler>(stm.get(), 0);    
+    s = std::make_shared<Scheduler>(stm.get(), 0, 0);    
   };
 
   virtual void add_test_txn_to_scheduler_batch(
@@ -32,11 +32,11 @@ protected:
       IBatchAction::RecordKeySet read_set,
       uint64_t id) {
     // allocate the object if that didn't happen yet.
-    if (s->batch_actions == nullptr) {
-      s->batch_actions = std::make_unique<Scheduler::BatchActions>();
+    if (s->batch_actions->batch == nullptr) {
+      s->batch_actions->batch = std::make_unique<std::vector<std::unique_ptr<IBatchAction>>>();
     }
 
-    s->batch_actions->push_back(
+    s->batch_actions->batch->push_back(
         std::move(
           std::make_unique<TestAction>(
             new TestTxn(), write_set, read_set, id)));

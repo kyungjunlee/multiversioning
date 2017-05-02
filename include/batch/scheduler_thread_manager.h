@@ -1,8 +1,12 @@
 #ifndef SCHEDULER_THREAD_MANAGER_H_
 #define SCHEDULER_THREAD_MANAGER_H_
 
+#include "batch/batch_action_interface.h"
 #include "batch/scheduler_thread.h"
 #include "batch/executor_thread_manager.h"
+
+#include <vector>
+#include <memory>
 
 // Scheduler Thread Manager
 //
@@ -13,21 +17,19 @@
 //    the global schedule and the execution threads input queues.
 class SchedulerThreadManager {
   public:
-    ExecutorThreadManager* exec_manager;
-    /*
-     * An ordered workload is a batch workload that is "ordered" in the sense
-     * that the less likely to collide transactions are first. Think of this
-     * as a flattenned out hierarchy of packings (appended packings);
-     */
     typedef std::vector<std::shared_ptr<IBatchAction>> OrderedWorkload;
+    ExecutorThreadManager* exec_manager;
 
     SchedulerThreadManager(ExecutorThreadManager* exec): exec_manager(exec) {};
-    virtual SchedulerThread::BatchActions request_input(SchedulerThread* s) = 0;
-    virtual void signal_exec_threads(
+    virtual SchedulerThreadBatch request_input(SchedulerThread* s) = 0;
+    // The workload below should be ordered in the sense that the less likely
+    // to collide transactions should be present in the front of the workload.
+    // You may think of this requirement as a flattenned out hierarchical packing
+    // (appended to one another).
+    virtual void hand_batch_to_execution(
         SchedulerThread* s,
-        OrderedWorkload&& workload) = 0;
-    virtual void merge_into_global_schedule(
-        SchedulerThread* s,
+        uint64_t batch_id,
+        OrderedWorkload&& workload,
         BatchLockTable&& blt) = 0;
     
     virtual ~SchedulerThreadManager(){};

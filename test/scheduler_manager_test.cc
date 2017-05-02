@@ -5,6 +5,7 @@
 
 #include <thread>
 #include <memory>
+#include <algorithm>
 
 class SchedulerManagerTest :
   public testing::Test,
@@ -39,14 +40,14 @@ protected:
 };	
 
 void assertBatchIsCorrect(
-		SchedulerThread::BatchActions&& batch,
+		std::unique_ptr<std::vector<std::unique_ptr<IBatchAction>>>&& batch,
 		unsigned int expected_size,
 		unsigned int begin_id,
 		unsigned int line) {
-	ASSERT_EQ(expected_size, batch.size());
+	ASSERT_EQ(expected_size, batch->size());
 	TestAction* act;
 	for (unsigned int i = begin_id; i < begin_id + expected_size; i++) {
-		act = static_cast<TestAction*>(batch[i - begin_id].get());
+		act = static_cast<TestAction*>((*batch)[i - begin_id].get());
 		ASSERT_EQ(i, act->get_id()) <<
 			"Error within test starting at line" << line;
 	}
@@ -54,8 +55,8 @@ void assertBatchIsCorrect(
 
 TEST_F(SchedulerManagerTest, obtain_batchNonConcurrentTest) {
 	auto batch = sm->request_input(sm->schedulers[0].get());
-	assertBatchIsCorrect(std::move(batch), batch_size, 0, __LINE__);	
-	EXPECT_EQ(1, sm->current_input_scheduler);
+	assertBatchIsCorrect(std::move(batch.batch), batch_size, 0, __LINE__);	
+  ASSERT_EQ(batch.batch_id, 0);
 };
 
 typedef std::function<void (int)> concurrentFun;
@@ -71,42 +72,55 @@ void runConcurrentTest(
 }	
 
 concurrentFun get_obtain_batch_test_fun(
-    std::shared_ptr<SchedulerManager> sm,
-    uint32_t batch_size, 
+    std::vector<SchedulerThreadBatch>& batches,
+    std::shared_ptr<SchedulerManager> sm, 
     int line) {
-  return [sm, batch_size, line](int i) {
-    auto batch = sm->request_input(sm->schedulers[i].get());
-    assertBatchIsCorrect(
-        std::move(batch),
-        batch_size,
-        batch_size * i,
-        line);
+  return [&batches, sm, line](int i) {
+    batches[i] = sm->request_input(sm->schedulers[i].get());
   };
 }
 
-// obtain batch Concurrent No State Overflow Test
-//    Does not check whether the state of schedulers not yet waiting
-//    is changed.
-TEST_P(SchedulerManagerTest, obtain_batchConcurrentNSOFTest) {
+void doObtainBatchTest(
+    unsigned int thread_count,
+    unsigned int batch_size,
+    std::shared_ptr<SchedulerManager> sm) {
+  std::vector<SchedulerThreadBatch> batches(thread_count);
+
   runConcurrentTest(
-      get_obtain_batch_test_fun(sm, batch_size, __LINE__),
-      scheduling_threads_count - 1);
+      get_obtain_batch_test_fun(batches, sm,  __LINE__),
+      thread_count);
+
+  std::sort(batches.begin(), batches.end(), 
+      [] (const SchedulerThreadBatch& stb1, const SchedulerThreadBatch& stb2) {
+        return stb1.batch_id > stb2.batch_id;
+      });
+
+  for (unsigned int i = 0; i < thread_count; i++) {
+    ASSERT_EQ(i, batches[i].batch_id);
+    assertBatchIsCorrect(
+      std::move(batches[i].batch),
+      batch_size,
+      i * batch_size,
+      __LINE__
+    );
+  }
+};
+
+TEST_P(SchedulerManagerTest, obtain_batchConcurrentTest1) {
+  doObtainBatchTest(scheduling_threads_count - 1, batch_size, sm);
 }
 
-// obtain batch Concurrent State Overflow Test
-//    Makes sure that the state of a thead that is not waiting 
-//    for input does not get changed preemptively.
-TEST_P(SchedulerManagerTest, obtain_batchConcurrentSOFTest) {
-  runConcurrentTest(
-      get_obtain_batch_test_fun(sm, batch_size, __LINE__),
-      scheduling_threads_count);
+TEST_P(SchedulerManagerTest, obtain_batchConcurrentTest2) {
+  doObtainBatchTest(scheduling_threads_count, batch_size, sm);
 }
 
 concurrentFun get_signal_exec_threads_test_fun(
     std::shared_ptr<SchedulerManager> sm) {
-  return [sm](int i){
+  return [sm](int i) {
     SchedulerManager::OrderedWorkload workload; 
-    sm->signal_exec_threads(sm->schedulers[i].get(), std::move(workload)); 
+    BatchLockTable blt;
+    sm->hand_batch_to_execution(
+        sm->schedulers[i].get(), i, std::move(workload), std::move(blt)); 
   };  
 };
 
@@ -126,7 +140,6 @@ TEST_P(SchedulerManagerTest, signal_execution_threadsConcurrentSOFTest) {
   TestExecutorThreadManager* tetm = 
     static_cast<TestExecutorThreadManager*>(sm->exec_manager);
   ASSERT_EQ(scheduling_threads_count, tetm->signal_execution_threads_called);
-
 };
 
 INSTANTIATE_TEST_CASE_P(

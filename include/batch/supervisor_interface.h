@@ -28,6 +28,7 @@ public:
     for(auto& act_ptr : workload) {
       sched_system->add_action(std::move(act_ptr));
     }
+    sched_system->flush_actions();
   };
 
   virtual std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>> 

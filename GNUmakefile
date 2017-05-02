@@ -1,4 +1,4 @@
-CFLAGS= -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
+CFLAGS= -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1
 LIBS=-lnuma -lpthread -lrt -lcityhash
 TEST_LIBS=-lgtest
@@ -71,7 +71,6 @@ start_batch/%.o: start_batch/%.cc $(DEPSDIR)/stamp GNUmakefile
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -Istart_batch -c -o $@ $<
 
 build/batch_db: $(OBJECTS) $(BATCHING_OBJECTS) $(BATCH_DB_OBJECTS) 
-	@echo $(INCLUDE)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS)
 
 build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
@@ -86,4 +85,4 @@ $(DEPSDIR)/stamp:
 .PHONY: clean 
 
 clean:
-	rm -rf build $(DEPSDIR) $(TESTOBJECTS) start/*.o
+	rm -rf build $(DEPSDIR) $(TESTOBJECTS) start/*.o test/*.o start_batch/*.o 

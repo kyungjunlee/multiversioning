@@ -1,4 +1,5 @@
 #include "batch/scheduler_manager.h"
+#include "batch/mutex_rw_guard.h"
 
 #include <utility>
 
@@ -6,12 +7,14 @@ SchedulerManager::SchedulerManager(
     SchedulingSystemConfig c,
     ExecutorThreadManager* exec):
   SchedulerThreadManager(exec),
-  SchedulingSystem(c)
+  SchedulingSystem(c),
+  input_batch_id(0),
+  handed_batch_id(0),
+  pending_batches(c.scheduling_threads_count)
 {
   iq = std::make_unique<BatchedInputQueue>(c.batch_size_act);
-	current_input_scheduler = 0;
-	current_signaling_scheduler = 0;
-	current_merging_scheduler = 0;
+  pthread_rwlock_init(&input_lock, NULL);
+  pthread_rwlock_init(&handing_lock, NULL);
 	create_threads();
 };
 
@@ -36,7 +39,7 @@ void SchedulerManager::create_threads() {
       i < this->conf.scheduling_threads_count; 
       i++) {
 		schedulers.push_back(
-			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i));
+			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
   }
 };
 
@@ -61,90 +64,89 @@ void SchedulerManager::stop_working() {
   }
 }
 
-SchedulerThread::BatchActions SchedulerManager::request_input(SchedulerThread* s) {
+SchedulerThreadBatch SchedulerManager::request_input(SchedulerThread* s) {
   assert(
-      s != nullptr &&
-      system_is_initialized());
+    s != nullptr &&
+    system_is_initialized());
   
-  // TODO:
-  //    Consider conditional variables here if scheduling is slow.
-  uint64_t h;
-  do {
-    if (s->is_stop_requested()) return SchedulerThread::BatchActions();
-    h = current_input_scheduler;
-    barrier();
-  } while (s != schedulers[h].get());
+  // blocks until lock is granted.
+  MutexRWGuard g(&input_lock, LockType::exclusive, true);
+  while(g.is_locked() == false && s->is_stop_requested()) {
+    g.write_trylock();
+  } 
 
   InputQueue::BatchActions batch;
   while ((batch = this->iq->try_get_action_batch()).size() == 0) {
-    if (s->is_stop_requested())  return SchedulerThread::BatchActions();
+    if (s->is_stop_requested()) {
+      return {
+        .batch = std::make_unique<std::vector<std::unique_ptr<IBatchAction>>>(),
+        .batch_id = 0
+      };
+    }
   }
 
-  // formally increment the current_input_scheduler
-	bool cas_success = false;
-  cas_success = cmp_and_swap(
-      &current_input_scheduler,
-      h,
-      (h + 1) % schedulers.size());
-  assert(cas_success);
+  SchedulerThreadBatch result = {
+    .batch = std::make_unique<std::vector<std::unique_ptr<IBatchAction>>>(std::move(batch)),
+    .batch_id = input_batch_id ++ 
+  };
 
-	return batch;
+	return result;
 };
 
-// TODO:
-//    Tests for signal_exec_threads
-void SchedulerManager::signal_exec_threads(
+void SchedulerManager::hand_batch_to_execution(
     SchedulerThread* s,
-    OrderedWorkload&& workload) {
+    uint64_t batch_id,
+    OrderedWorkload&& workload,
+    BatchLockTable&& blt) {
   assert(
       s != nullptr &&
       system_is_initialized());
 
-  // convert OrderedWorkloads to ThreadWorkloads.
-  std::vector<OrderedWorkload> tw(exec_manager->get_executor_num());
+  // convert the given workload.batch to format accepted by the execution system.
+  ExecutorThreadManager::ThreadWorkloads tw(exec_manager->get_executor_num());
   for (unsigned int i = 0; i < workload.size(); i++) {
     tw[i % tw.size()].push_back(workload[i]);
   }
 
-  // TODO:
-  //    Consider conditional variables here if scheduling is slow.
-  uint64_t h;
-  do {
-    if (s->is_stop_requested()) return;
-    h = current_signaling_scheduler;
-    barrier();
-  } while (s != schedulers[h].get());
+  // we don't need a lock to access s's pending batches queue. That is because
+  // we are the only producer and consumer must hold the handing_lock. 
+  pending_batches.pending_queues[s->get_thread_id()].push_tail({
+    .id = batch_id,
+    .blt = std::move(blt),
+    .tw = std::move(tw)
+  });
 
-  exec_manager->signal_execution_threads(std::move(tw));
+  // Attempt to begin handing batches if one may get the lock.
+  MutexRWGuard g(&handing_lock, LockType::exclusive, true);
+  if (g.is_locked() == false) return;
 
-  // formally increment the current signaling scheduler
-  bool cas_success = cmp_and_swap(
-      &current_signaling_scheduler,
-      h,
-      (h+1) % schedulers.size());
-  assert(cas_success);
-};
+  // Lock has been granted.
+  unsigned int failed_attempts = 0;
+  unsigned int queues_num = pending_batches.pending_queues.size();
+  unsigned int round_robin_counter = s->get_thread_id();
+  // continue until we have attempted everything round-robin and failed on each.
+  while (failed_attempts < queues_num) {
+    // move the counters ahead assuming failure.
+    auto& current_queue = pending_batches.pending_queues[round_robin_counter];
+    round_robin_counter ++;
+    round_robin_counter %= queues_num;
+    failed_attempts ++;
 
-void SchedulerManager::merge_into_global_schedule(
-    SchedulerThread* s,
-    BatchLockTable&& blt) {
-  assert(s != nullptr);
+    if (current_queue.is_empty()) continue;
+    if (current_queue.peek_head().id != handed_batch_id) continue;
 
-  uint64_t h;
-  do {
-    if (s->is_stop_requested()) return;
-    h = current_merging_scheduler;
-    barrier();
-  } while (s != schedulers[h].get());
+    auto current_head = current_queue.peek_head();
+    // the current batch is the one that should be handed over!
+    gs->merge_into_global_schedule(std::move(current_head.blt));
+    exec_manager->signal_execution_threads(std::move(current_head.tw));
 
-  gs->merge_into_global_schedule(std::move(blt));
-
-  // formally increment the current merging scheduler
-  bool cas_success = cmp_and_swap(
-      &current_merging_scheduler,
-      h,
-      (h+1) % schedulers.size());
-  assert(cas_success);
+    // advance the current queue
+    current_queue.pop_head();
+    // advance the handed counter
+    handed_batch_id ++;
+    // reset failures
+    failed_attempts = 0;
+  }
 };
 
 SchedulerManager::~SchedulerManager() {

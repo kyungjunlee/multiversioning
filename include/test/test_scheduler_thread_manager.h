@@ -10,31 +10,25 @@ public:
   {};
 
   uint64_t request_input_called = 0;
-  uint64_t signal_exec_threads_called = 0;
-  uint64_t merge_into_global_schedule_called = 0;
+  uint64_t hand_batch_called = 0;
 
-  SchedulerThread::BatchActions request_input(SchedulerThread* s) override {
+  SchedulerThreadBatch request_input(SchedulerThread* s) override {
     (void) s;
     request_input_called ++;
-    return SchedulerThread::BatchActions();
+    return SchedulerThreadBatch{};
   };
 
-  void signal_exec_threads(
-      SchedulerThread* s,
-      OrderedWorkload&& workload) override {
-    (void) s;
-    (void) workload;
-    signal_exec_threads_called ++;
-  };
-
-  void merge_into_global_schedule(
-      SchedulerThread* s,
+  void hand_batch_to_execution(
+      SchedulerThread* d,
+      uint64_t batch_id,
+      OrderedWorkload&& workload,
       BatchLockTable&& blt) override {
-    (void) s;
+    (void) d;
+    (void) batch_id;
+    (void) workload;
     (void) blt;
-    merge_into_global_schedule_called ++;
+    hand_batch_called ++;
   };
-
 };
 
 #endif // TEST_SCHEDULER_THREAD_MANAGER_H_

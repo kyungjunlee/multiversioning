@@ -15,10 +15,14 @@ private:
   bool locked;
 public:
   MutexRWGuard(pthread_rwlock_t* lock, LockType type);
+  MutexRWGuard(pthread_rwlock_t* lock, LockType type, bool try_lock);
 
+  bool is_locked();
   void unlock();
+  bool write_trylock();
   void write_lock();
   void read_lock();
+  bool read_trylock();
 
   ~MutexRWGuard();
 };

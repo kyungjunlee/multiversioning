@@ -7,18 +7,22 @@
 
 Scheduler::Scheduler(
     SchedulerThreadManager* manager,
-    int m_cpu_number):
-  SchedulerThread(manager, m_cpu_number)
+    int m_cpu_number,
+    uint64_t thread_id):
+  SchedulerThread(manager, m_cpu_number, thread_id)
 {};
 
 void Scheduler::StartWorking() {
   while(!is_stop_requested()) {
     // get the batch actions
-    batch_actions = std::make_unique<BatchActions>(
+    batch_actions = std::make_unique<SchedulerThreadBatch>(
         std::move(this->manager->request_input(this)));
     process_batch();
-    this->manager->merge_into_global_schedule(this, std::move(lt));
-    this->manager->signal_exec_threads(this, std::move(workloads));
+    this->manager->hand_batch_to_execution(
+        this, 
+        batch_actions->batch_id, 
+        std::move(workloads), 
+        std::move(lt));
   }
 };
 
@@ -26,9 +30,9 @@ void Scheduler::Init() {
 };
 
 void Scheduler::process_batch() {
-  workloads = std::vector<std::shared_ptr<IBatchAction>>(batch_actions->size());
+  workloads = SchedulerThreadManager::OrderedWorkload(batch_actions->batch->size());
   lt = BatchLockTable();
-  ArrayContainer ac(std::move(batch_actions));
+  ArrayContainer ac(std::move(batch_actions->batch));
 
   // populate the batch lock table and workloads
   unsigned int curr_workload_item = 0;

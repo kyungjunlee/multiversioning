@@ -18,14 +18,15 @@
 //            - StartWorking 
 //            - Init
 class Scheduler : public SchedulerThread {
+private:
+  uint64_t thread_id;
 public:
-  typedef SchedulerThread::BatchActions BatchActions;
-
   Scheduler(
       SchedulerThreadManager* manager,
-      int m_cpu_number);
+      int m_cpu_number,
+      uint64_t thread_id);
 
-  std::unique_ptr<BatchActions> batch_actions;
+  std::unique_ptr<SchedulerThreadBatch> batch_actions;
   BatchLockTable lt;
   SchedulerThreadManager::OrderedWorkload workloads;
 
