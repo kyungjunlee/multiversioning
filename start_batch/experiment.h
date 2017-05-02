@@ -165,8 +165,6 @@ private:
     unsigned int actions_num = conf.num_txns;
     // this is poor-mans ceil.
     unsigned int thread_num = actions_num / acts_per_thread + (actions_num % acts_per_thread != 0);
-    std::cout << thread_num << "\n";
-
     std::vector<std::vector<std::unique_ptr<IBatchAction>>> thread_actions{thread_num};
     std::thread threads[thread_num];
 
@@ -176,7 +174,6 @@ private:
       if (actions_num - i * acts_per_thread < acts_per_thread) {
         to_produce = actions_num - i * acts_per_thread;
       }
-      std::cout << to_produce << "\n";
 
       thread_actions[i] = std::move(ActionFactory<RMWBatchAction>::generate_actions(
            this->conf.act_conf, to_produce));
