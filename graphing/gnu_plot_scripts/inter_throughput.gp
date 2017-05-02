@@ -7,14 +7,15 @@ set datafile separator ","
 # Get the meta-data necessary for output names
 sched_num = system('tail -n +2 '.path.' | cut -f 4 -d "," | sort | uniq');
 exec_num = system('tail -n +2 '.path.' | cut -f 5 -d "," | sort | uniq');
-set output out_path."/interim_time_series_s".sched_num.".e.".exec_num
+set output out_path."/throughput_in_time_s".sched_num.".e.".exec_num
 
 # Get the meta-data necessary for layouts
 batch_sizes = system('tail -n +2 '.path.' | cut -f 3 -d "," | sort -V | uniq');
 
-set term png size 1200, 900
+set term png size 1200, 750
 set style data linespoints
 
+set key title "batch sizes"
 set ylabel "throughput [txn/ms]"
 set xlabel "time since start [ms]"
 # Plot
