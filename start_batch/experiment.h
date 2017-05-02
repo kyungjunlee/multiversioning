@@ -161,10 +161,11 @@ private:
   };
 
   std::vector<std::unique_ptr<IBatchAction>> allocate_actions() {
-    unsigned int acts_per_thread = 200000;
+    unsigned int acts_per_thread = 500000;
     unsigned int actions_num = conf.num_txns;
     // this is poor-mans ceil.
-    unsigned int thread_num = actions_num / 200000 + (actions_num % acts_per_thread == 0);
+    unsigned int thread_num = actions_num / acts_per_thread + (actions_num % acts_per_thread != 0);
+    std::cout << thread_num << "\n";
 
     std::vector<std::vector<std::unique_ptr<IBatchAction>>> thread_actions{thread_num};
     std::thread threads[thread_num];
@@ -173,8 +174,9 @@ private:
       // uneven division.
       unsigned int to_produce = acts_per_thread;
       if (actions_num - i * acts_per_thread < acts_per_thread) {
-        to_produce = actions_num - (i+1) * acts_per_thread;
+        to_produce = actions_num - i * acts_per_thread;
       }
+      std::cout << to_produce << "\n";
 
       thread_actions[i] = std::move(ActionFactory<RMWBatchAction>::generate_actions(
            this->conf.act_conf, to_produce));
@@ -191,7 +193,6 @@ private:
     // merge all of the above into a single vector
     std::vector<std::unique_ptr<IBatchAction>> res;
     for (auto& vec : thread_actions) {
-      assert(vec.size() == acts_per_thread);
       for (auto& act : vec) {
         res.push_back(std::move(act));
       }
