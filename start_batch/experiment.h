@@ -160,6 +160,48 @@ private:
     return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count(); 
   };
 
+  std::vector<std::unique_ptr<IBatchAction>> allocate_actions() {
+    unsigned int acts_per_thread = 200000;
+    unsigned int actions_num = conf.num_txns;
+    // this is poor-mans ceil.
+    unsigned int thread_num = actions_num / 200000 + (actions_num % acts_per_thread == 0);
+
+    std::vector<std::vector<std::unique_ptr<IBatchAction>>> thread_actions;
+    std::thread threads[thread_num];
+
+    auto thread_alloc = [&actions_num, &thread_actions, &acts_per_thread, this](unsigned int i) {
+      // uneven division.
+      unsigned int to_produce = acts_per_thread;
+      if ( actions_num - (i+1) * acts_per_thread < acts_per_thread) {
+        to_produce = actions_num - (i+1) * acts_per_thread;
+      }
+
+      thread_actions[i] = std::move(
+        ActionFactory<RMWBatchAction>::generate_actions(
+           this->conf.act_conf, to_produce));
+    };
+
+    for (unsigned int i = 0; i < thread_num; i++) {
+      threads[i] = std::thread(thread_alloc, i);
+    }
+
+    for (unsigned int i = 0; i < thread_num; i++) {
+      threads[i].join();
+    }
+
+    // merge all of the above into a single vector
+    std::vector<std::unique_ptr<IBatchAction>> res;
+    for (auto& vec : thread_actions) {
+      assert(vec.size() == acts_per_thread);
+      for (auto& act : vec) {
+        res.push_back(std::move(act));
+      }
+    }
+
+    assert(res.size() == actions_num);
+    return res;
+  };
+
   void initialize() { 
     auto print_OK_time = [this]() {
      print_debug_info(
@@ -168,16 +210,14 @@ private:
 
     print_debug_info("Creating workload ... ");
     time_start = std::chrono::system_clock::now();
-    workload = ActionFactory<RMWBatchAction>::generate_actions(
-      conf.act_conf, conf.num_txns);
+    workload = allocate_actions();
     time_end = std::chrono::system_clock::now();
     print_OK_time();
 
     print_debug_info("Creating warm up workload ... ");
     // TODO: Make this a parameter...
     time_start = std::chrono::system_clock::now();
-    warm_up_workload = ActionFactory<RMWBatchAction>::generate_actions(
-      conf.act_conf, conf.num_txns);
+    warm_up_workload = allocate_actions();
     time_end = std::chrono::system_clock::now();
     print_OK_time();
 
