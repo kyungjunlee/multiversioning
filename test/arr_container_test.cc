@@ -18,8 +18,7 @@ protected:
 
   virtual void SetUp() {
     // prep the actions
-    std::unique_ptr<Container::BatchActions> actions 
-      = std::make_unique<Container::BatchActions>();
+    Container::BatchActions actions;
     
     for (unsigned int i = 0; i < ACTIONS_NUM; i++) {
       std::unique_ptr<TestAction> ta = std::make_unique<TestAction>(new TestTxn());
@@ -33,7 +32,7 @@ protected:
         ta->add_read_key(j);
       }
 
-      actions->push_back(std::move(ta));
+      actions.push_back(std::move(ta));
     }
     
     // make the container

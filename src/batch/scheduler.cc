@@ -15,12 +15,11 @@ Scheduler::Scheduler(
 void Scheduler::StartWorking() {
   while(!is_stop_requested()) {
     // get the batch actions
-    batch_actions = std::make_unique<SchedulerThreadBatch>(
-        std::move(this->manager->request_input(this)));
+    batch_actions = std::move(this->manager->request_input(this));
     process_batch();
     this->manager->hand_batch_to_execution(
         this, 
-        batch_actions->batch_id, 
+        batch_actions.batch_id, 
         std::move(workloads), 
         std::move(lt));
   }
@@ -30,9 +29,9 @@ void Scheduler::Init() {
 };
 
 void Scheduler::process_batch() {
-  workloads = SchedulerThreadManager::OrderedWorkload(batch_actions->batch->size());
+  workloads = SchedulerThreadManager::OrderedWorkload(batch_actions.batch.size());
   lt = BatchLockTable();
-  ArrayContainer ac(std::move(batch_actions->batch));
+  ArrayContainer ac(std::move(batch_actions.batch));
 
   // populate the batch lock table and workloads
   unsigned int curr_workload_item = 0;

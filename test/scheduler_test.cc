@@ -31,12 +31,8 @@ protected:
       IBatchAction::RecordKeySet write_set,
       IBatchAction::RecordKeySet read_set,
       uint64_t id) {
-    // allocate the object if that didn't happen yet.
-    if (s->batch_actions->batch == nullptr) {
-      s->batch_actions->batch = std::make_unique<std::vector<std::unique_ptr<IBatchAction>>>();
-    }
 
-    s->batch_actions->batch->push_back(
+    s->batch_actions.batch.push_back(
         std::move(
           std::make_unique<TestAction>(
             new TestTxn(), write_set, read_set, id)));

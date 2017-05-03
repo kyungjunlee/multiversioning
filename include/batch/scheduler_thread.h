@@ -11,7 +11,7 @@
 struct SchedulerThreadBatch { 
   typedef Container::BatchActions BatchActions;
 
-  std::unique_ptr<BatchActions> batch;
+  BatchActions batch;
   uint64_t batch_id;
 };
 

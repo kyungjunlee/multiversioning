@@ -12,6 +12,7 @@ class SchedulerManagerTest :
   public testing::WithParamInterface<int> {
 protected:
   std::shared_ptr<SchedulerManager> sm;
+  std::shared_ptr<IGlobalSchedule> gs;
   std::shared_ptr<ExecutorThreadManager> etm;
 	const uint32_t batch_size = 100;
 	const uint32_t batch_length_sec = 0;
@@ -25,8 +26,10 @@ protected:
 	const unsigned int actions_at_start = batch_size * scheduling_threads_count;
 
 	virtual void SetUp() {
+    gs = std::make_shared<GlobalSchedule>();
     etm = std::make_shared<TestExecutorThreadManager>();
 		sm = std::make_shared<SchedulerManager>(this->conf, etm.get());
+    sm->gs = gs.get();
 		// populate the input queue.
 		for (unsigned int i = 0;
 				i < actions_at_start;
@@ -40,14 +43,14 @@ protected:
 };	
 
 void assertBatchIsCorrect(
-		std::unique_ptr<std::vector<std::unique_ptr<IBatchAction>>>&& batch,
+		std::vector<std::unique_ptr<IBatchAction>>&& batch,
 		unsigned int expected_size,
 		unsigned int begin_id,
 		unsigned int line) {
-	ASSERT_EQ(expected_size, batch->size());
+	ASSERT_EQ(expected_size, batch.size());
 	TestAction* act;
 	for (unsigned int i = begin_id; i < begin_id + expected_size; i++) {
-		act = static_cast<TestAction*>((*batch)[i - begin_id].get());
+		act = static_cast<TestAction*>(batch[i - begin_id].get());
 		ASSERT_EQ(i, act->get_id()) <<
 			"Error within test starting at line" << line;
 	}
@@ -92,7 +95,7 @@ void doObtainBatchTest(
 
   std::sort(batches.begin(), batches.end(), 
       [] (const SchedulerThreadBatch& stb1, const SchedulerThreadBatch& stb2) {
-        return stb1.batch_id > stb2.batch_id;
+        return stb1.batch_id < stb2.batch_id;
       });
 
   for (unsigned int i = 0; i < thread_count; i++) {
@@ -127,7 +130,12 @@ concurrentFun get_signal_exec_threads_test_fun(
 TEST_P(SchedulerManagerTest, signal_execution_threadsConcurrentNSOFTest) {
   runConcurrentTest(
       get_signal_exec_threads_test_fun(sm),
-      scheduling_threads_count - 1);
+      scheduling_threads_count - 2);
+
+  // run another thread to make sure that everything has been pushed through (race cond)
+  std::thread g (get_signal_exec_threads_test_fun(sm), scheduling_threads_count - 2);
+  g.join();
+
   TestExecutorThreadManager* tetm = 
     static_cast<TestExecutorThreadManager*>(sm->exec_manager);
   ASSERT_EQ(scheduling_threads_count - 1, tetm->signal_execution_threads_called);
@@ -136,7 +144,11 @@ TEST_P(SchedulerManagerTest, signal_execution_threadsConcurrentNSOFTest) {
 TEST_P(SchedulerManagerTest, signal_execution_threadsConcurrentSOFTest) {
   runConcurrentTest(
       get_signal_exec_threads_test_fun(sm),
-      scheduling_threads_count);
+      scheduling_threads_count - 1);
+  // run another thread to make sure that everything has been pushed through (race cond)
+  std::thread g (get_signal_exec_threads_test_fun(sm), scheduling_threads_count - 1);
+  g.join();
+
   TestExecutorThreadManager* tetm = 
     static_cast<TestExecutorThreadManager*>(sm->exec_manager);
   ASSERT_EQ(scheduling_threads_count, tetm->signal_execution_threads_called);

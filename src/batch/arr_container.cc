@@ -1,15 +1,15 @@
 #include <batch/arr_container.h>
 #include <algorithm>
 
-ArrayContainer::ArrayContainer(std::unique_ptr<BatchActions> actions):
+ArrayContainer::ArrayContainer(BatchActions&& actions):
     Container(std::move(actions)),
     elements_removed_total(0),
     elements_removed_this_round(0),
     current_element(0)
 {
   std::sort(
-      this->actions_uptr->begin(),
-      this->actions_uptr->end(),
+      this->actions.begin(),
+      this->actions.end(),
       // NOTE: this makes use of an overloaded < operator for Actions!
       [](
         std::unique_ptr<IBatchAction> const& a, 
@@ -18,8 +18,8 @@ ArrayContainer::ArrayContainer(std::unique_ptr<BatchActions> actions):
 };
 
 bool ArrayContainer::arr_is_empty() {
-  return current_element >= this->actions_uptr->size() ||
-    (*this->actions_uptr)[current_element] == nullptr;
+  return current_element >= this->actions.size() ||
+    this->actions[current_element] == nullptr;
 }
 
 IBatchAction* ArrayContainer::peek_curr_elt() {
@@ -28,24 +28,24 @@ IBatchAction* ArrayContainer::peek_curr_elt() {
   }
 
   // return the pointer within unique_ptr of the right elt.
-  return ((*this->actions_uptr)[current_element].get());
+  return this->actions[current_element].get();
 }
 
 std::unique_ptr<IBatchAction> ArrayContainer::take_curr_elt() {
-  if (arr_is_empty() || current_element == this->actions_uptr->size()) return nullptr;
+  if (arr_is_empty() || current_element == this->actions.size()) return nullptr;
 
   elements_removed_this_round ++;
   elements_removed_total ++;
   current_element ++;
-  return std::move((*this->actions_uptr)[current_element - 1]);
+  return std::move(this->actions[current_element - 1]);
 }
 
 void ArrayContainer::advance_to_next_elt() {
   // if something has been deleted this round, move the element to the "head"
   // of contiguous unremoved space.
   if (elements_removed_this_round > 0) {
-    (*this->actions_uptr)[current_element - elements_removed_this_round] =
-      std::move((*this->actions_uptr)[current_element]);
+    this->actions[current_element - elements_removed_this_round] =
+      std::move(this->actions[current_element]);
   }
 
   current_element ++;
@@ -57,5 +57,5 @@ void ArrayContainer::sort_remaining() {
 }
 
 uint32_t ArrayContainer::get_remaining_count() {
-  return this->actions_uptr->size() - elements_removed_total;
+  return this->actions.size() - elements_removed_total;
 }

@@ -35,7 +35,7 @@ protected:
   bool arr_is_empty();
 
 public:
-  ArrayContainer(std::unique_ptr<BatchActions> actions);
+  ArrayContainer(BatchActions&& actions);
 
   IBatchAction* peek_curr_elt() override;
   std::unique_ptr<IBatchAction> take_curr_elt() override;

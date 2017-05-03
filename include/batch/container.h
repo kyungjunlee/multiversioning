@@ -19,12 +19,12 @@ class Container {
 public:
   typedef std::vector<std::unique_ptr<IBatchAction>> BatchActions;
 protected:
-  std::unique_ptr<BatchActions> actions_uptr;
+  BatchActions actions;
 
   Container() = delete;
   Container(const Container& c) = delete;
-  Container(std::unique_ptr<BatchActions> actions):
-    actions_uptr(std::move(actions))
+  Container(BatchActions&& actions):
+    actions(std::move(actions))
   {};
 
 public:

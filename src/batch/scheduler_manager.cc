@@ -71,26 +71,33 @@ SchedulerThreadBatch SchedulerManager::request_input(SchedulerThread* s) {
   
   // blocks until lock is granted.
   MutexRWGuard g(&input_lock, LockType::exclusive, true);
-  while(g.is_locked() == false && s->is_stop_requested()) {
+  while(g.is_locked() == false && !s->is_stop_requested()) {
     g.write_trylock();
   } 
 
+  // avoid returning inconsistent data
+  if (g.is_locked() == false) {
+    return SchedulerThreadBatch {
+      .batch = std::vector<std::unique_ptr<IBatchAction>>(),
+      .batch_id = 0
+    };
+  }
+
+  assert(g.is_locked() == true);
   InputQueue::BatchActions batch;
   while ((batch = this->iq->try_get_action_batch()).size() == 0) {
     if (s->is_stop_requested()) {
-      return {
-        .batch = std::make_unique<std::vector<std::unique_ptr<IBatchAction>>>(),
+      return SchedulerThreadBatch {
+        .batch = std::vector<std::unique_ptr<IBatchAction>>(),
         .batch_id = 0
       };
     }
   }
 
-  SchedulerThreadBatch result = {
-    .batch = std::make_unique<std::vector<std::unique_ptr<IBatchAction>>>(std::move(batch)),
+  return SchedulerThreadBatch ({
+    .batch = std::move(batch),
     .batch_id = input_batch_id ++ 
-  };
-
-	return result;
+  });
 };
 
 void SchedulerManager::hand_batch_to_execution(
@@ -120,12 +127,14 @@ void SchedulerManager::hand_batch_to_execution(
   MutexRWGuard g(&handing_lock, LockType::exclusive, true);
   if (g.is_locked() == false) return;
 
+  assert(g.is_locked() == true);
+  assert(pending_batches.pending_queues.size() == schedulers.size());
   // Lock has been granted.
   unsigned int failed_attempts = 0;
   unsigned int queues_num = pending_batches.pending_queues.size();
   unsigned int round_robin_counter = s->get_thread_id();
   // continue until we have attempted everything round-robin and failed on each.
-  while (failed_attempts < queues_num) {
+  while (failed_attempts <= queues_num) {
     // move the counters ahead assuming failure.
     auto& current_queue = pending_batches.pending_queues[round_robin_counter];
     round_robin_counter ++;

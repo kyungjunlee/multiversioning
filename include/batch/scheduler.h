@@ -26,7 +26,7 @@ public:
       int m_cpu_number,
       uint64_t thread_id);
 
-  std::unique_ptr<SchedulerThreadBatch> batch_actions;
+  SchedulerThreadBatch batch_actions;
   BatchLockTable lt;
   SchedulerThreadManager::OrderedWorkload workloads;
 

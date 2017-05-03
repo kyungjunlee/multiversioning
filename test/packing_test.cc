@@ -22,8 +22,7 @@ protected:
   }
 
   void finalizeAddingActions() {
-    std::unique_ptr<Container::BatchActions> actions 
-      = std::make_unique<Container::BatchActions>();
+    Container::BatchActions actions;
     
     for (unsigned int i = 0; i < readSets.size(); i++) {
       // treat the index as id.
@@ -32,7 +31,7 @@ protected:
       for (auto j : readSets[i]) ta->add_read_key(j);
       for (auto j : writeSets[i]) ta->add_write_key(j);
 
-      actions->push_back(std::move(ta));
+      actions.push_back(std::move(ta));
     }
 
     testContainer = std::make_unique<ArrayContainer>(std::move(actions));
