@@ -58,8 +58,10 @@ void assertBatchIsCorrect(
 
 TEST_F(SchedulerManagerTest, obtain_batchNonConcurrentTest) {
 	auto batch = sm->request_input(sm->schedulers[0].get());
-	assertBatchIsCorrect(std::move(batch.batch), batch_size, 0, __LINE__);	
-  ASSERT_EQ(batch.batch_id, 0);
+  // at this stage we may only assert the existance of the batch since 
+  // there are no guarantees made about the order in which batches
+  // are assigned to threads.
+  ASSERT_EQ(batch_size, batch.batch.size());
 };
 
 typedef std::function<void (int)> concurrentFun;
@@ -86,7 +88,8 @@ concurrentFun get_obtain_batch_test_fun(
 void doObtainBatchTest(
     unsigned int thread_count,
     unsigned int batch_size,
-    std::shared_ptr<SchedulerManager> sm) {
+    std::shared_ptr<SchedulerManager> sm,
+    bool expect_full_order = true) {
   std::vector<SchedulerThreadBatch> batches(thread_count);
 
   runConcurrentTest(
@@ -98,19 +101,25 @@ void doObtainBatchTest(
         return stb1.batch_id < stb2.batch_id;
       });
 
+  unsigned int expected_id = 0;
   for (unsigned int i = 0; i < thread_count; i++) {
-    ASSERT_EQ(i, batches[i].batch_id);
+    if (expect_full_order) {
+      expected_id = i;
+      ASSERT_EQ(i, batches[i].batch_id);
+    } else {
+      expected_id = batches[i].batch_id;
+    }
     assertBatchIsCorrect(
       std::move(batches[i].batch),
       batch_size,
-      i * batch_size,
+      expected_id * batch_size,
       __LINE__
     );
   }
 };
 
 TEST_P(SchedulerManagerTest, obtain_batchConcurrentTest1) {
-  doObtainBatchTest(scheduling_threads_count - 1, batch_size, sm);
+  doObtainBatchTest(scheduling_threads_count - 1, batch_size, sm, false);
 }
 
 TEST_P(SchedulerManagerTest, obtain_batchConcurrentTest2) {

@@ -10,6 +10,18 @@
 #include <vector>
 #include <memory>
 
+// ThreadInputQueue
+//
+//    A single consumer, single producer queue used to pass batches
+//    to scheduling threads to avoid contention on shared data structures.
+//    The queue is filled by one of the scheduling threads when there 
+//    is opportunity for it. Please see request_input for more 
+//    information.
+class ThreadInputQueue : public MSQueue<SchedulerThreadBatch> {
+  private:
+      using MSQueue<SchedulerThreadBatch>::merge_queue;
+}; 
+
 //  AwaitingBatch
 //
 //    An internal representation of all the data necessary for handing
@@ -42,6 +54,14 @@ struct AwaitingSchedulerBatches {
   std::vector<HandingQueue> pending_queues;
 };
 
+struct ThreadInputQueues {
+  ThreadInputQueues(unsigned int thread_number) {
+    queues.resize(thread_number);
+  }
+
+  std::vector<ThreadInputQueue> queues;
+};
+
 //  Scheduler Manager
 //
 //  Scheduler Manager is the actual implementation of Scheduling System and
@@ -55,6 +75,7 @@ private:
   bool system_is_initialized();
   void create_threads();
 public:
+  ThreadInputQueues thread_input;
   uint64_t input_batch_id;
   pthread_rwlock_t input_lock;
   uint64_t handed_batch_id;
