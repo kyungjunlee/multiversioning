@@ -36,6 +36,7 @@ public:
   // threads. Notice that this is necessary if the implementation of input queue
   // performs any form of batching.
   virtual void flush() = 0;
+  virtual bool is_empty() = 0;
 
   virtual ~InputQueue() {};
 };

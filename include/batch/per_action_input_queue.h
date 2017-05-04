@@ -56,6 +56,10 @@ public:
     MSQueue<std::unique_ptr<IBatchAction>>::push_tail(std::move(act));
   };
 
+  virtual bool is_empty() override {
+    return MSQueue<std::unique_ptr<IBatchAction>>::is_empty();
+  };
+
   // flushing does not do anything since the queue is per-action 
   // any way. 
   virtual void flush() override {}

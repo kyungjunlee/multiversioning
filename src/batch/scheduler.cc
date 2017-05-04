@@ -38,7 +38,7 @@ void Scheduler::process_batch() {
   std::vector<std::unique_ptr<IBatchAction>> packing;
   while (ac.get_remaining_count() != 0) {
     // get packing
-    packing = Packer::get_packing(&ac);
+    packing = std::move(Packer::get_packing(&ac));
     ac.sort_remaining();
     // translate a packing into lock request
     for (std::unique_ptr<IBatchAction>& act : packing) {

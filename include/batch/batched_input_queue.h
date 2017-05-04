@@ -34,7 +34,8 @@ public:
     InputQueue(batch_size) {};
 
   virtual InputQueue::BatchActions try_get_action_batch() override {
-    if (this->is_empty()) return InputQueue::BatchActions();
+    if (MSQueue<std::vector<std::unique_ptr<IBatchAction>>>::is_empty()) 
+      return InputQueue::BatchActions();
 
     auto return_value = std::move(this->peek_head());
     this->pop_head();
@@ -54,6 +55,10 @@ public:
     // push the batch into queue and prepare the container for reuse.
     this->currentBatch.push_back(std::move(act));
     this->flush();
+  };
+
+  virtual bool is_empty() override {
+    return MSQueue<std::vector<std::unique_ptr<IBatchAction>>>::is_empty();
   };
 
   virtual void flush() override {

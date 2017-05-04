@@ -50,7 +50,11 @@ Packer::BatchActions Packer::get_packing(Container* c) {
   RecordKeySet held_ex_locks;
   RecordKeySet held_sh_locks; 
 
+  // TODO: Does this help or hinder?
+  // over-reserve memory to be able to fit every elt within container
+  // if such is the need.
   BatchActions actions_in_packing;
+  actions_in_packing.reserve(c->get_remaining_count());
   IBatchAction* next_action;
   std::unique_ptr<IBatchAction> action;
 

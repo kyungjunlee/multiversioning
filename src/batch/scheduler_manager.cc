@@ -181,42 +181,53 @@ void SchedulerManager::hand_batch_to_execution(
 
   assert(g.is_locked() == true);
   assert(pending_batches.pending_queues.size() == schedulers.size());
-  // Lock has been granted.
-  unsigned int queues_num = pending_batches.pending_queues.size();
 
-  // pass all of the queues and insert into the vector
-  for (unsigned int i = 0; i < queues_num; i++) {
-    auto& current_queue = pending_batches.pending_queues[i]; 
-    while (current_queue.is_empty() == false) {
-      sorted_pending_batches.push_back(current_queue.peek_head());
-      current_queue.pop_head();
-    }
-  }
+  auto pass_workloads_on = [this]() {
+    // Lock has been granted.
+    unsigned int queues_num = pending_batches.pending_queues.size();
 
-  // sort the vector
-  std::sort(sorted_pending_batches.begin(), sorted_pending_batches.end(), 
-      [](AwaitingBatch& aw1, AwaitingBatch& aw2) {
-        return aw1.id < aw2.id;    
-    });
-  
-  // attempt to finalize as many as we can.
-  unsigned processed_batches = 0;
-  for (; processed_batches < sorted_pending_batches.size(); processed_batches++) {
-    auto& curr_awaiting_batch = sorted_pending_batches[processed_batches];
-    if (curr_awaiting_batch.id != handed_batch_id) {
-      break;
+    // pass all of the queues and insert into the vector
+    for (unsigned int i = 0; i < queues_num; i++) {
+      auto& current_queue = pending_batches.pending_queues[i]; 
+      while (current_queue.is_empty() == false) {
+        sorted_pending_batches.push_back(current_queue.peek_head());
+        current_queue.pop_head();
+      }
     }
+
+    // sort the vector
+    std::sort(sorted_pending_batches.begin(), sorted_pending_batches.end(), 
+        [](AwaitingBatch& aw1, AwaitingBatch& aw2) {
+          return aw1.id < aw2.id;    
+      });
     
-    gs->merge_into_global_schedule(std::move(curr_awaiting_batch.blt));
-    exec_manager->signal_execution_threads(std::move(curr_awaiting_batch.tw));
-    handed_batch_id ++;
-  } 
+    // attempt to finalize as many as we can.
+    unsigned processed_batches = 0;
+    for (; processed_batches < sorted_pending_batches.size(); processed_batches++) {
+      auto& curr_awaiting_batch = sorted_pending_batches[processed_batches];
+      if (curr_awaiting_batch.id != handed_batch_id) {
+        break;
+      }
+      
+      gs->merge_into_global_schedule(std::move(curr_awaiting_batch.blt));
+      exec_manager->signal_execution_threads(std::move(curr_awaiting_batch.tw));
+      handed_batch_id ++;
+    } 
 
-  // erase processed elements.
-  if (processed_batches > 0) {
-    sorted_pending_batches.erase(
-        sorted_pending_batches.begin(), 
-        sorted_pending_batches.begin() + processed_batches);
+    // erase processed elements.
+    if (processed_batches > 0) {
+      sorted_pending_batches.erase(
+          sorted_pending_batches.begin(), 
+          sorted_pending_batches.begin() + processed_batches);
+    }
+  };
+
+  pass_workloads_on();
+  // make sure we don't block.
+  if (iq->is_empty() && 
+      thread_input.queues[s->get_thread_id()].is_empty() &&
+      s->is_stop_requested() == false) {
+    pass_workloads_on();
   }
 };
 
