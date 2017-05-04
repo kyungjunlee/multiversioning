@@ -2,6 +2,7 @@
 #include "batch/mutex_rw_guard.h"
 
 #include <utility>
+#include <algorithm>
 
 SchedulerManager::SchedulerManager(
     SchedulingSystemConfig c,
@@ -170,31 +171,41 @@ void SchedulerManager::hand_batch_to_execution(
   assert(g.is_locked() == true);
   assert(pending_batches.pending_queues.size() == schedulers.size());
   // Lock has been granted.
-  unsigned int failed_attempts = 0;
   unsigned int queues_num = pending_batches.pending_queues.size();
-  unsigned int round_robin_counter = s->get_thread_id();
-  // continue until we have attempted everything round-robin and failed on each.
-  while (failed_attempts <= queues_num) {
-    // move the counters ahead assuming failure.
-    auto& current_queue = pending_batches.pending_queues[round_robin_counter];
-    round_robin_counter ++;
-    round_robin_counter %= queues_num;
-    failed_attempts ++;
 
-    if (current_queue.is_empty()) continue;
-    if (current_queue.peek_head().id != handed_batch_id) continue;
+  // pass all of the queues and insert into the vector
+  for (unsigned int i = 0; i < queues_num; i++) {
+    auto& current_queue = pending_batches.pending_queues[i]; 
+    while (current_queue.is_empty() == false) {
+      sorted_pending_batches.push_back(current_queue.peek_head());
+      current_queue.pop_head();
+    }
+  }
 
-    auto current_head = current_queue.peek_head();
-    // the current batch is the one that should be handed over!
-    gs->merge_into_global_schedule(std::move(current_head.blt));
-    exec_manager->signal_execution_threads(std::move(current_head.tw));
-
-    // advance the current queue
-    current_queue.pop_head();
-    // advance the handed counter
+  // sort the vector
+  std::sort(sorted_pending_batches.begin(), sorted_pending_batches.end(), 
+      [](AwaitingBatch& aw1, AwaitingBatch& aw2) {
+        return aw1.id < aw2.id;    
+    });
+  
+  // attempt to finalize as many as we can.
+  unsigned processed_batches = 0;
+  for (; processed_batches < sorted_pending_batches.size(); processed_batches++) {
+    auto& curr_awaiting_batch = sorted_pending_batches[processed_batches];
+    if (curr_awaiting_batch.id != handed_batch_id) {
+      break;
+    }
+    
+    gs->merge_into_global_schedule(std::move(curr_awaiting_batch.blt));
+    exec_manager->signal_execution_threads(std::move(curr_awaiting_batch.tw));
     handed_batch_id ++;
-    // reset failures
-    failed_attempts = 0;
+  } 
+
+  // erase processed elements.
+  if (processed_batches > 0) {
+    sorted_pending_batches.erase(
+        sorted_pending_batches.begin(), 
+        sorted_pending_batches.begin() + processed_batches);
   }
 };
 

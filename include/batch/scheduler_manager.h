@@ -80,6 +80,10 @@ public:
   pthread_rwlock_t input_lock;
   uint64_t handed_batch_id;
   AwaitingSchedulerBatches pending_batches;
+  // this is a sorted vector of awaiting batches that is synchronized
+  // on the handing lock. It is introduced to reduce the overhead of 
+  // finding the correct batch for merging.
+  std::vector<AwaitingBatch> sorted_pending_batches;
   pthread_rwlock_t handing_lock;
   
   std::unique_ptr<InputQueue> iq;
