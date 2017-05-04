@@ -10,7 +10,7 @@ public:
   unsigned int get_current_lock_holder_for_called = 0;
 
   IDBStorage* get_db_storage_pointer() override { return nullptr; }
-  unsigned int get_executor_num() override { return 0; }
+  unsigned int get_executor_num() override { return 2; }
   void signal_execution_threads(
       ExecutorThreadManager::ThreadWorkloads&& workload) override {
     (void) workload;

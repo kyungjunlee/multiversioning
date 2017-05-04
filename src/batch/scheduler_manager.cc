@@ -151,9 +151,20 @@ void SchedulerManager::hand_batch_to_execution(
       system_is_initialized());
 
   // convert the given workload.batch to format accepted by the execution system.
-  ExecutorThreadManager::ThreadWorkloads tw(exec_manager->get_executor_num());
+  unsigned exec_number = exec_manager->get_executor_num();
+  assert(exec_number > 0);
+  ExecutorThreadManager::ThreadWorkloads tw(exec_number);
+  
+  // initialize the memory all at once.
+  unsigned int mod = workload.size() % exec_number;
+  unsigned int per_exec_thr_size = workload.size() / exec_number;
+  for (unsigned int i = 0; i < tw.size(); i++) {
+    // notice that the "+ (mod < i)" takes care of unequal division among thread.
+    tw[i].resize(per_exec_thr_size + (i < mod));
+  }
+
   for (unsigned int i = 0; i < workload.size(); i++) {
-    tw[i % tw.size()].push_back(workload[i]);
+    tw[i % exec_number][i / exec_number] = workload[i];
   }
 
   // we don't need a lock to access s's pending batches queue. That is because

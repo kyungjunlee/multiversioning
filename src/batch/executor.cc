@@ -44,7 +44,7 @@ void BatchExecutor::process_action_batch() {
     process_pending();
 
     assert(currentBatch->at(i) != nullptr);
-    if(!process_action(currentBatch->at(i))) {
+    if (!process_action(currentBatch->at(i))) {
       pending_list->push_back(currentBatch->at(i));        
       pending_list->size();
     } 
