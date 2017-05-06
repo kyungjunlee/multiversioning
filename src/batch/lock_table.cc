@@ -80,7 +80,17 @@ void LockTable::allocate_mem_for(RecordKey key) {
   assert(insert_res.second);
 };
 
-BatchLockTable::BatchLockTable() {}
+BatchLockTable::BatchLockTable() {
+  // TODO: 
+  //    Make the pre-reserved space a function of the batch size and the 
+  //    DB size. This would require much more information passing ...
+  //    For now we estimate that 1000 is good enough. It definitely 
+  //    is for our experiments at the moment being.
+  //
+  //    This should reduce the number of calls to "malloc"-style system
+  //    procedures and reduce the cost of rehashing.
+  lock_table.reserve(1000);
+}
 
 void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
   auto add_request = [this, &req](
