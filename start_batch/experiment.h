@@ -215,7 +215,7 @@ private:
     print_OK_time();
 
     print_debug_info("Creating warm up workload ... ");
-    // TODO: Make this a parameter...
+    // TODO: Make the size of this a parameter...
     time_start = std::chrono::system_clock::now();
     warm_up_workload = allocate_actions();
     time_end = std::chrono::system_clock::now();
