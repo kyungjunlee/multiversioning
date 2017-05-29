@@ -8,7 +8,12 @@ LockStage::LockStage():
     l_type(LockType::shared),
     requesters({}),
     has_been_given_lock(false)
-  {};
+{
+  // TODO:
+  //    Figure out how much space to reserve up front 
+  //    in this place. It might be better to do more...
+  requesters.reserve(10);
+};
 
 LockStage::LockStage(
       RequestingActions requesters,
@@ -17,9 +22,9 @@ LockStage::LockStage(
     l_type(lt),
     requesters(requesters),
     has_been_given_lock(false)
-  {
-    assert(!(lt == LockType::exclusive && requesters.size() > 1));
-  };
+{
+  assert(!(lt == LockType::exclusive && requesters.size() > 1));
+};
 
 bool LockStage::add_to_stage(std::shared_ptr<IBatchAction> txn, LockType lt) {
   // can only add to a stage when both the request and the stage are shared

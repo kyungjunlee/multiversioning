@@ -10,7 +10,6 @@
 
 // Experiment
 //    
-//
 //  Class that controls the experiment, performs initialization, measurements and 
 //  data dumps when necessary.
 class Experiment {
@@ -23,6 +22,7 @@ private:
   TimePoint time_start, time_end;
   Supervisor s;
   uint64_t txns_completed;
+  unsigned int expected_output_elts;
   bool print_debug;
 
   void print_debug_info(std::string text_segment) {
@@ -58,6 +58,7 @@ private:
     barrier();
 
     std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
+    output.reserve(expected_output_elts);
     while (txns_completed < txns_num) {
       auto o = s.get_output();
       if (o == nullptr) continue;
@@ -87,6 +88,7 @@ private:
 
     uint64_t end_of_measurement = 0;
     std::vector<std::pair<double, unsigned int>> results;
+    results.reserve(300);
     TimePoint all_start, input_stop, output_stop, measure_stop;
     auto measure_throughput = [&]() {
       pin_thread(78);
@@ -116,6 +118,7 @@ private:
     auto get_output = [&]() {
       pin_thread(76);
       std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
+      output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();
       uint64_t cur_txns_completed = txns_completed;
       assert(cur_txns_completed == 0);
@@ -212,7 +215,7 @@ private:
     print_OK_time();
 
     print_debug_info("Creating warm up workload ... ");
-    // TODO: Make this a parameter...
+    // TODO: Make the size of this a parameter...
     time_start = std::chrono::system_clock::now();
     warm_up_workload = allocate_actions();
     time_end = std::chrono::system_clock::now();
@@ -223,6 +226,14 @@ private:
     s.init_system();
     time_end = std::chrono::system_clock::now();
     print_OK_time();
+    
+    // the number of output elts is the number of all batches times the 
+    // number of executing threads since we partition every workload among 
+    // all the executing threads. Of course, this is an upper bound which
+    // assumes batch_size > number of exec threads
+    expected_output_elts = 
+      conf.num_txns / conf.sched_conf.batch_size_act * 
+        conf.exec_conf.executing_threads_count;
   };
 
 public:
