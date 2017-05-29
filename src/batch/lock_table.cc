@@ -22,15 +22,13 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
   LockTableType::iterator lt_it;
   // merge queue by queue
   for (auto& elt : blt.lock_table) {
-    if (memory_preallocated) {
-      // if memory has been preallocated, make sure that we never attempt
-      // to access non-existant record
-      lt_it = lock_table.find(elt.first);
-      assert(lt_it != lock_table.end());
-    } else {
-      // otherwise making records is alright
-      lt_it = lock_table.emplace(elt.first, LockQueue()).first;
+    if (!memory_preallocated) {
+      // this defualt-constructs the lock queue without any move or copy instructions.
+      lock_table[elt.first];
     }
+
+    lt_it = lock_table.find(elt.first);
+    assert(lt_it != lock_table.end());
 
     auto head_blt = *elt.second.peek_head();
     lt_it->second.merge_queue(&elt.second);
@@ -63,7 +61,7 @@ void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
   assert(elt != lock_table.end());
 
   // Lock Queue
-  auto lq = elt->second;
+  auto& lq = elt->second;
   // Pop the old lock stage
   lq.pop_head();
 
