@@ -63,7 +63,7 @@ public:
 //    easily merged into the global LockTable.
 class BatchLockTable {
 public:
-  typedef std::unordered_map<RecordKey, std::shared_ptr<BatchLockQueue>> LockTableType;
+  typedef std::unordered_map<RecordKey, BatchLockQueue> LockTableType;
 protected:
   LockTableType lock_table;
 public:

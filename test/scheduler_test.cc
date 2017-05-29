@@ -71,7 +71,7 @@ void assert_correct_schedule(
     auto blq = blt_elt->second; 
 
     // head of the queue musn't be null.
-    auto curr_blq_elt = blq->peek_head_elt();
+    auto curr_blq_elt = blq.peek_head_elt();
 
     // transaction in each stage must correspond to what we expect.
     for (auto stage_ids : rec_pair.second) {

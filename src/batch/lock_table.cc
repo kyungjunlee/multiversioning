@@ -32,8 +32,8 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
       lt_it = lock_table.emplace(elt.first, std::make_shared<LockQueue>()).first;
     }
 
-    auto head_blt = *elt.second->peek_head();
-    lt_it->second->merge_queue(elt.second.get());
+    auto head_blt = *elt.second.peek_head();
+    lt_it->second->merge_queue(&elt.second);
 
     // if the lock stage at the head has NOT been given the lock,
     // we should give it the lock. That means that we have merged into a queue 
@@ -80,18 +80,22 @@ void LockTable::allocate_mem_for(RecordKey key) {
   assert(insert_res.second);
 };
 
-BatchLockTable::BatchLockTable() {}
+BatchLockTable::BatchLockTable() {
+  // reserve memory so that we don't rehash and re-allocate on the fly
+  // TODO:
+  //  Tune how much memory is reserved?
+  lock_table.reserve(1024);
+}
 
 void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
   auto add_request = [this, &req](
       IBatchAction::RecordKeySet* set, LockType typ) {
-    std::shared_ptr<BatchLockQueue> blq;
     for (auto& i : *set) {
-      blq = lock_table.emplace(i, std::make_shared<BatchLockQueue>()).first->second;
-      if (blq->is_empty() || 
-          ((*blq->peek_tail())->add_to_stage(req, typ) == false)) {
+      BatchLockQueue& blq = lock_table.emplace(i, BatchLockQueue()).first->second;
+      if (blq.is_empty() || 
+          ((*blq.peek_tail())->add_to_stage(req, typ) == false)) {
         // insertion into the stage failed. Make a new stage and add it in.
-        blq->non_concurrent_push_tail(std::move(
+        blq.non_concurrent_push_tail(std::move(
               std::make_shared<LockStage>(LockStage({req}, typ))));
       }
     }

@@ -76,7 +76,7 @@ TEST(LockTable, concurrent_merge_table_test) {
     for (unsigned int j = 0; j < thread_iterations; j++) {
       // iterate over all elt within the batch lock tables of a given thread.
       for (const auto& elt : thread_data[i][j]->get_lock_table_data()) {
-        currElt = elt.second->peek_head_elt();
+        currElt = elt.second.peek_head_elt();
         while (currElt != nullptr) {
           ASSERT_TRUE(lt.lock_table_contains_stage(elt.first, *currElt->get_contents()));
           currElt = currElt->get_next_elt();
