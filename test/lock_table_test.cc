@@ -87,7 +87,7 @@ TEST(LockTable, concurrent_merge_table_test) {
 
   // make sure that the first lock stage for every lock queue has the lock.
   for (auto& elt : lt.get_lock_table_data()) {
-    ASSERT_TRUE((*elt.second->peek_head())->has_lock());
+    ASSERT_TRUE((*elt.second.peek_head())->has_lock());
   } 
 
   ASSERT_EQ(5, lt.get_lock_table_data().size());

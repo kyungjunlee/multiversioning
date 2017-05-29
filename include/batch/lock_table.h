@@ -30,7 +30,7 @@ class BatchLockTable;
 //    This should only be done after we have seen that this reduced throughput by a lot.
 class LockTable {
 public:
-  typedef std::unordered_map<RecordKey, std::shared_ptr<LockQueue>> LockTableType;
+  typedef std::unordered_map<RecordKey, LockQueue> LockTableType;
 protected:
   LockTableType lock_table;
   // TODO:

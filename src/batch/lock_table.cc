@@ -29,17 +29,17 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
       assert(lt_it != lock_table.end());
     } else {
       // otherwise making records is alright
-      lt_it = lock_table.emplace(elt.first, std::make_shared<LockQueue>()).first;
+      lt_it = lock_table.emplace(elt.first, LockQueue()).first;
     }
 
     auto head_blt = *elt.second.peek_head();
-    lt_it->second->merge_queue(&elt.second);
+    lt_it->second.merge_queue(&elt.second);
 
     // if the lock stage at the head has NOT been given the lock,
     // we should give it the lock. That means that we have merged into a queue 
     // that was empty and the execution thread must know that this stage
     // has the lock.
-    auto head_pt = lt_it->second->peek_head();
+    auto head_pt = lt_it->second.peek_head();
     auto head = head_pt == nullptr ? nullptr : *head_pt;
 
     if (head != nullptr &&
@@ -53,7 +53,7 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
 std::shared_ptr<LockStage> LockTable::get_head_for_record(RecordKey key) {
   auto elt = lock_table.find(key);
   assert(elt != lock_table.end());
-  auto head_pt = elt->second->peek_head();
+  auto head_pt = elt->second.peek_head();
 
   return head_pt == nullptr ? nullptr : *head_pt;
 };
@@ -65,10 +65,10 @@ void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
   // Lock Queue
   auto lq = elt->second;
   // Pop the old lock stage
-  lq->pop_head();
+  lq.pop_head();
 
   // notify the new stage if there is one present.
-  auto head_pt = lq->peek_head();
+  auto head_pt = lq.peek_head();
   if (head_pt != nullptr) {
     (*head_pt)->notify_lock_obtained();
   }
@@ -76,7 +76,7 @@ void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
 
 void LockTable::allocate_mem_for(RecordKey key) {
   auto insert_res = lock_table.insert(
-      std::make_pair(key, std::make_shared<LockQueue>()));  
+      std::make_pair(key, LockQueue()));  
   assert(insert_res.second);
 };
 

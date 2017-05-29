@@ -22,7 +22,7 @@ class TestLockTable : public LockTable {
       //
       // We need to use the test lock stage class to access the type
       // of the lock easily.
-      std::shared_ptr<LockQueue::QueueElt> curr = lq->second->peek_head_elt();
+      std::shared_ptr<LockQueue::QueueElt> curr = lq->second.peek_head_elt();
       while (curr != nullptr) {
         if (*ls == **curr->get_contents()) return true;
 
