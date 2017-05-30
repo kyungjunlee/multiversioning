@@ -127,7 +127,8 @@ private:
         if (o == nullptr) continue;
 
         cur_txns_completed = txns_completed;
-        cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o->size());  
+        bool res = cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o->size());  
+        assert(res);
         output.push_back(std::move(o));
       }
 
