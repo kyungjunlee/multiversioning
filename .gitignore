@@ -13,7 +13,7 @@ nohup.out
 *.sw[a-z]
 tags
 data*
-timing*
+time*
 FlameGraph*
 notes*
 graphing/ENV*
