@@ -190,7 +190,7 @@ void SchedulerManager::hand_batch_to_execution(
     for (unsigned int i = 0; i < queues_num; i++) {
       auto& current_queue = pending_batches.pending_queues[i]; 
       while (current_queue.is_empty() == false) {
-        sorted_pending_batches.push_back(current_queue.peek_head());
+        sorted_pending_batches.push_back(std::move(current_queue.peek_head()));
         current_queue.pop_head();
       }
     }
