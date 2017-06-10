@@ -55,11 +55,11 @@ namespace TimeSpscQueue {
     
     auto exec_and_add_to_table = [&tp](
         std::string row_name,
-        std::function<double (unsigned int)> fun){
+        std::function<double (unsigned int)> fun) {
       tp.add_row();
       tp.add_to_last_row(row_name);
 
-      auto time_and_add = [&fun, &tp](unsigned int reps){
+      auto time_and_add = [&fun, &tp](unsigned int reps) {
         double result = fun(reps);
         double per_fun_exec = result/reps;
         std::stringstream ss;
