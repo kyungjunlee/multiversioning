@@ -21,8 +21,8 @@ BATCHING_OBJECTS:=$(patsubst src/batch/%.cc,build/batch/%.o,$(BATCHING))
 BATCH_DB:=$(wildcard start_batch/*.cc)
 BATCH_DB_OBJECTS:=$(patsubst start_batch/%.cc,start_batch/%.o, $(BATCH_DB))
 
-TIMING:=$(wildcard time_batch/*.cc)
-TIMING_OBJECTS:=$(patsubst time_batch/%.cc,time_batch/%.o,$(TIMING))
+TIMING:=$(wildcard time_elts/*.cc)
+TIMING_OBJECTS:=$(patsubst time_elts/%.cc,time_elts/%.o,$(TIMING))
 
 TEST:=test
 TESTSOURCES:=$(wildcard $(TEST)/*.cc)
@@ -76,9 +76,12 @@ start_batch/%.o: start_batch/%.cc $(DEPSDIR)/stamp GNUmakefile
 	@echo + cc $<
 	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -Istart_batch -c -o $@ $<
 
+time_elts/%.o: time_elts/%.cc $(DEPSDIR)/stamp GNUmakefile
+	@echo + cc $<
+	@$(CXX) $(CFLAGS) $(DEPCFLAGS) $(INCLUDE) -Itime_elts -c -o $@ $<
+
 build/time_elements: $(OBJECTS) $(BATCHING_OBJECTS) $(TIMING_OBJECTS)
-	@echo $(TIMING_OBJECTS)
-	@$(CXX) $(CFLAGS) $(INCLUDE) -Itime_batch -o $@ $^ -L$(LIBPATH) $(LIBS)
+	@$(CXX) $(CFLAGS) $(INCLUDE) -Itime_elts -o $@ $^ -L$(LIBPATH) $(LIBS)
 
 build/batch_db: $(OBJECTS) $(BATCHING_OBJECTS) $(BATCH_DB_OBJECTS) 
 	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS)
