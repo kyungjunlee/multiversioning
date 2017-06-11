@@ -7,6 +7,7 @@
 #include "batch/record_key.h"
 
 #include <unordered_map>
+#include <map>
 #include <mutex>
 
 // TODO:
@@ -48,6 +49,8 @@ public:
   LockTable();
   LockTable(DBStorageConfig db_conf);
   void merge_batch_table(BatchLockTable& blt);
+  // from and to are both inclusive.
+  void merge_batch_table_for(BatchLockTable& blt, RecordKey from, RecordKey to);
   
   std::shared_ptr<LockStage> get_head_for_record(RecordKey key);
   void pass_lock_to_next_stage_for(RecordKey key);
@@ -63,7 +66,7 @@ public:
 //    easily merged into the global LockTable.
 class BatchLockTable {
 public:
-  typedef std::unordered_map<RecordKey, BatchLockQueue> LockTableType;
+  typedef std::map<RecordKey, BatchLockQueue> LockTableType;
 protected:
   LockTableType lock_table;
 public:

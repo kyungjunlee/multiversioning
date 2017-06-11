@@ -78,12 +78,7 @@ void LockTable::allocate_mem_for(RecordKey key) {
   assert(insert_res.second);
 };
 
-BatchLockTable::BatchLockTable() {
-  // reserve memory so that we don't rehash and re-allocate on the fly
-  // TODO:
-  //  Tune how much memory is reserved?
-  lock_table.reserve(1024);
-}
+BatchLockTable::BatchLockTable() {}
 
 void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
   auto add_request = [this, &req](
