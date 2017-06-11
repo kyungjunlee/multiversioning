@@ -33,9 +33,7 @@ void LockTable::merge_batch_table_for(
     BatchLockTable& blt,
     RecordKey from,
     RecordKey to) {
-  std::lock_guard<std::mutex> lock(merge_batch_table_mutex);
-
-  // now we are the only thread merging into the global schedule.
+  
   LockTableType::iterator lt_it;
   BatchLockTable::LockTableType::iterator lo, hi;
   lo = blt.lock_table.lower_bound(from);

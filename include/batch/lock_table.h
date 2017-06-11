@@ -21,33 +21,22 @@ class BatchLockTable;
 //    way to add elements to lock table is to merge in a BatchLockTable which represents
 //    transaction schedule of a batch.
 //
-//    Currently we only allow a single scheduling thread to merge a BatchLockTable into
-//    a LockTable and a scheduling thread will block within merge_batch_table until
-//    it is able to merge. 
-//
-//    TODO: this behavior may be changed to (for instance) add
-//    the BLTs to a queue. Then, a thread does not exit merge_batch_table until said
-//    queue is empty and all the other scheduling threads may continue working on schedules.
-//    This should only be done after we have seen that this reduced throughput by a lot.
+//  NOTE:
+//    This lock table implementation is NOT inherently multithreaded and precautions must
+//    be taken to ensure that data is not corrupted. Notice also that merge_batch_table_for
+//    may be called concurrently if at no point are the ranges overlapping across function
+//    invocations.
 class LockTable {
 public:
   typedef std::unordered_map<RecordKey, LockQueue> LockTableType;
 
 protected:
   LockTableType lock_table;
-  // TODO:
-  //    Do we even need this mutex? We are assuring that the higher-level
-  //    objects coordinate among themselves. Right?
-  std::mutex merge_batch_table_mutex;
   bool memory_preallocated;
 
   void allocate_mem_for(RecordKey key);
 
 public:
-  // TODO:
-  //    Make sure that the lock table has all of the necessary queues allocated up front
-  //    before anything merges into it. That way we can avoid emplacing new queues
-  //    at run time!
   LockTable();
   LockTable(DBStorageConfig db_conf);
   void merge_batch_table(BatchLockTable& blt);

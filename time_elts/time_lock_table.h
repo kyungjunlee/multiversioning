@@ -7,12 +7,14 @@
 #include "batch/txn_factory.h"
 #include "batch/RMW_batch_action.h"
 #include "batch/batch_action_interface.h"
+#include "batch/SPSC_MR_queue.h"
 #include "time_utilities.h"
 
 #include <vector>
 #include <memory>
 #include <sstream>
 #include <iomanip>
+#include <thread>
 
 #define DB_TABLES 1
 #define DB_RECORDS 1000
@@ -30,9 +32,10 @@ namespace TimeLockTable {
 
     return db_conf;
   };
+    
+  std::vector<std::unique_ptr<IBatchAction>> prepare_actions(
+      unsigned int txns_num) {
 
-  double time_merge(unsigned int txns_in_batch, unsigned int batches) {
-    // prepare actions.
     LockDistributionConfig ldc = {
       .low_record = 0,
       .high_record = 999,
@@ -45,11 +48,18 @@ namespace TimeLockTable {
       .reads = ldc
     };
 
-    std::vector<std::unique_ptr<IBatchAction>> actions = 
-      ActionFactory<RMWBatchAction>::generate_actions(as, batches * txns_in_batch); 
+    return ActionFactory<RMWBatchAction>::generate_actions(as, txns_num); 
+  };
+
+  std::vector<BatchLockTable> prepare_blts(
+      std::vector<std::unique_ptr<IBatchAction>>&& actions,
+      unsigned int txns_in_batch,
+      unsigned int batches) {
+    assert(actions.size() == txns_in_batch * batches);
 
     std::vector<BatchLockTable> blts;
     blts.reserve(batches);
+    
     // Use scheduler class to create the necessary blts.
     Scheduler st(nullptr, 0, 0);
     for (unsigned int i = 0; i < batches; i++) {
@@ -63,11 +73,19 @@ namespace TimeLockTable {
       st.process_batch();
       blts.push_back(std::move(st.lt));
     }
+    
+    return blts; 
+  };
+
+  double time_merge(
+      const unsigned int txns_in_batch, 
+      const unsigned int batches) {
+    auto actions = prepare_actions(txns_in_batch * batches);
+    auto blts = prepare_blts(std::move(actions), txns_in_batch, batches); 
 
     // Get the lock table into which we will be merging.
     LockTable lt(get_db_config());
 
-    // now we have the corrects blts and we may proceed to time the merging process.
     auto time_it = [&blts, &lt]() {
       for (unsigned int i = 0; i < blts.size(); i++) {
         lt.merge_batch_table(blts[i]);
@@ -76,6 +94,62 @@ namespace TimeLockTable {
 
     return TimeUtilities::time_function_ms(time_it); 
   };
+
+  double time_merge_concurrent(
+      const unsigned int txns_in_batch, 
+      const unsigned int batches,
+      const unsigned int merging_threads = 2) {
+    auto actions = prepare_actions(txns_in_batch * batches);
+    auto blts = prepare_blts(std::move(actions), txns_in_batch, batches);
+
+    LockTable lt(get_db_config());
+    std::thread threads[merging_threads];
+    SPSCMRQueue<BatchLockTable> queues[merging_threads];
+    // fill up the initial input queue.
+    for (unsigned int i = 0; i < blts.size(); i++) {
+      queues[0].push_tail(std::move(blts[i]));
+    }
+
+    // prepare the correct function.
+    const unsigned int recs_per_thread = DB_RECORDS / merging_threads;
+    auto merge = 
+      [&queues, &batches, &lt, &merging_threads, &recs_per_thread]
+      (unsigned int i) 
+        {
+          // Every thread takes care of about DB_RECORDS / merging_threads 
+          // records. 
+          RecordKey lo(recs_per_thread * i);
+          RecordKey hi(recs_per_thread * (i+1) - 1);
+          if (i == merging_threads - 1) {
+            hi.key = DB_RECORDS - 1;
+          }
+
+          for (unsigned int j = 0; j < batches; j++) {
+            // wait for input
+            while (queues[i].is_empty());
+
+            auto& curr_blt = *queues[i].peek_head();
+            lt.merge_batch_table_for(curr_blt, lo, hi);
+            if (i != merging_threads - 1) {
+              queues[i+1].push_tail(std::move(curr_blt));
+            }
+
+            queues[i].pop_head();
+          }
+        };
+
+      auto time_it = [&]() {
+        for (unsigned int i = 0; i < merging_threads; i++) {
+          threads[i] = std::thread(merge, i);
+        }
+
+        for (unsigned int i = 0; i < merging_threads; i++) {
+          threads[i].join();
+        }
+      };
+
+      return TimeUtilities::time_function_ms(time_it);
+  }; 
 
   void time_lock_table() {
     TablePrinter tp;
@@ -107,7 +181,7 @@ namespace TimeLockTable {
       }
     };
 
-    auto get_fun_for = [](unsigned int txns){
+    auto get_merge_fun_for = [](unsigned int txns) {
       return [txns](unsigned int batches) {
         return time_merge(txns, batches);
       };
@@ -116,7 +190,23 @@ namespace TimeLockTable {
     for (auto& txn_num : {10, 100, 1000, 2000}) {
       exec_and_add_to_table(
           std::to_string(txn_num) + " txns per batch",
-          get_fun_for(txn_num));
+          get_merge_fun_for(txn_num));
+    }
+
+    auto get_conc_merge_fun_for = []
+      (unsigned int thread_num, unsigned int txns) {
+        return [txns, thread_num](unsigned int batches) {
+          return time_merge_concurrent(txns, batches, thread_num);
+        };
+      };
+
+    for (auto& thread_num : {2, 3, 4}) {
+      for (auto& txn_num : {10, 100, 1000, 2000}) {
+        exec_and_add_to_table(
+          std::to_string(thread_num) +
+          " threads, " + std::to_string(txn_num) + " txns per batch",
+          get_conc_merge_fun_for(thread_num, txn_num));
+      }
     }
 
     tp.print_table();
