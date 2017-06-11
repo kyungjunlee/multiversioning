@@ -49,6 +49,7 @@ namespace TimeLockTable {
       ActionFactory<RMWBatchAction>::generate_actions(as, batches * txns_in_batch); 
 
     std::vector<BatchLockTable> blts;
+    blts.reserve(batches);
     // Use scheduler class to create the necessary blts.
     Scheduler st(nullptr, 0, 0);
     for (unsigned int i = 0; i < batches; i++) {
@@ -112,7 +113,7 @@ namespace TimeLockTable {
       };
     }; 
 
-    for (auto& txn_num : {10, 100, 1000, 2000, 3000}) {
+    for (auto& txn_num : {10, 100, 1000, 2000}) {
       exec_and_add_to_table(
           std::to_string(txn_num) + " txns per batch",
           get_fun_for(txn_num));

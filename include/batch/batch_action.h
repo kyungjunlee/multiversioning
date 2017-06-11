@@ -11,7 +11,10 @@ class BatchAction : public IBatchAction {
     RecordKeySet readset;
     RecordKeySet writeset;
   public:
-    BatchAction(txn* t): IBatchAction(t) {};
+    BatchAction(txn* t): IBatchAction(t) {
+      readset.reserve(10);
+      writeset.reserve(10);
+    };
 
     // override the translator functions
     virtual void *write_ref(uint64_t key, uint32_t table) override;

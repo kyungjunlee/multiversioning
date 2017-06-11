@@ -51,7 +51,7 @@ void LockTable::merge_batch_table_for(
     lt_it = lock_table.find(elt->first);
     assert(lt_it != lock_table.end());
 
-    auto head_blt = *elt->second.peek_head();
+    auto& head_blt = *elt->second.peek_head();
     lt_it->second.merge_queue(&elt->second);
 
     // if the lock stage at the head has NOT been given the lock,
@@ -59,10 +59,10 @@ void LockTable::merge_batch_table_for(
     // that was empty and the execution thread must know that this stage
     // has the lock.
     auto head_pt = lt_it->second.peek_head();
-    auto head = head_pt == nullptr ? nullptr : *head_pt;
+    if (head_pt == nullptr) return;
 
-    if (head != nullptr &&
-        head == head_blt && 
+    auto& head = *head_pt;
+    if (head == head_blt && 
         head->has_lock() == false) {
       head->notify_lock_obtained();
     }
