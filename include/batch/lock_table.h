@@ -32,6 +32,7 @@ class BatchLockTable;
 class LockTable {
 public:
   typedef std::unordered_map<RecordKey, LockQueue> LockTableType;
+
 protected:
   LockTableType lock_table;
   // TODO:
@@ -41,6 +42,7 @@ protected:
   bool memory_preallocated;
 
   void allocate_mem_for(RecordKey key);
+
 public:
   // TODO:
   //    Make sure that the lock table has all of the necessary queues allocated up front
@@ -67,8 +69,10 @@ public:
 class BatchLockTable {
 public:
   typedef std::map<RecordKey, BatchLockQueue> LockTableType;
+
 protected:
   LockTableType lock_table;
+
 public:
   BatchLockTable();
   void insert_lock_request(std::shared_ptr<IBatchAction> request);
