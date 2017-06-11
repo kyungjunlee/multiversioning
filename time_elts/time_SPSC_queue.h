@@ -60,7 +60,12 @@ namespace TimeSpscQueue {
       tp.add_to_last_row(row_name);
 
       auto time_and_add = [&fun, &tp](unsigned int reps) {
-        double result = fun(reps);
+        double result = 0;
+        for (unsigned int i = 0; i < 5; i++) {
+          result += fun(reps);
+        }
+        result = result/5;
+
         double per_fun_exec = result/reps;
         std::stringstream ss;
         ss << std::fixed << std::setprecision(6) << 
