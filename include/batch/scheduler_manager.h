@@ -11,8 +11,6 @@
 #include <vector>
 #include <memory>
 
-#define HORIZONTAL_MERGE_SHARDING_STAGES 3
-
 // ThreadInputQueue
 //
 //    A single consumer, single producer queue used to pass batches
