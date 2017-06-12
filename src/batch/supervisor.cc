@@ -8,7 +8,7 @@ Supervisor::Supervisor(
   db(db_conf),
   gs(db_conf),
   exec(exec_conf),
-  sched(sched_conf, &this->exec)
+  sched(sched_conf, db_conf, &this->exec)
 {
   this->sched_system = &sched;
   this->exec_system = &exec;

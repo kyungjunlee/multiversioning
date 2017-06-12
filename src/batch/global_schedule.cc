@@ -7,8 +7,15 @@ GlobalSchedule::GlobalSchedule(DBStorageConfig db_conf): lt(db_conf) {};
 
 inline
 void GlobalSchedule::merge_into_global_schedule(
-    BatchLockTable&& blt) {
+    BatchLockTable& blt) {
   lt.merge_batch_table(blt);
+};
+
+inline void GlobalSchedule::merge_into_global_schedule_for(
+    BatchLockTable& blt,
+    const RecordKey& from,
+    const RecordKey& to) {
+  lt.merge_batch_table_for(blt, from, to);
 };
 
 std::shared_ptr<LockStage> GlobalSchedule::get_stage_holding_lock_for(

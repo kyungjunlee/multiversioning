@@ -23,12 +23,18 @@ protected:
 		batch_size,
 		scheduling_threads_count
 	};
+  const DBStorageConfig db_conf = {
+    .tables_definitions = {{
+      .table_id = 0,
+      .num_records = 1000
+    }}
+  }; 
 	const unsigned int actions_at_start = batch_size * scheduling_threads_count;
 
 	virtual void SetUp() {
     gs = std::make_shared<GlobalSchedule>();
     etm = std::make_shared<TestExecutorThreadManager>();
-		sm = std::make_shared<SchedulerManager>(this->conf, etm.get());
+		sm = std::make_shared<SchedulerManager>(this->conf, this->db_conf, etm.get());
     sm->gs = gs.get();
 		// populate the input queue.
 		for (unsigned int i = 0;

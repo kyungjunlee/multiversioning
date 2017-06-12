@@ -23,7 +23,6 @@ struct SchedulerThreadBatch {
 class SchedulerThreadManager;
 class SchedulerThread : public Runnable {
   protected:
-    SchedulerThreadManager* manager;
     uint64_t stop_signal;
     uint64_t thread_id;
     
@@ -32,14 +31,16 @@ class SchedulerThread : public Runnable {
         int m_cpu_number,
         uint64_t thread_id): 
       Runnable(m_cpu_number),
-      manager(manager),
       stop_signal(false),
-      thread_id(thread_id)
+      thread_id(thread_id),
+      manager(manager)
     {};
 
   public:
     using Runnable::StartWorking;
     using Runnable::Init;
+
+    SchedulerThreadManager* manager;
 
     virtual uint64_t get_thread_id() { return thread_id; };
     virtual void signal_stop_working() = 0;

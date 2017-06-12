@@ -20,7 +20,11 @@ public:
   // preallocates all memory needed by the global schedule.
   GlobalSchedule(DBStorageConfig db_conf);
 
-  void merge_into_global_schedule(BatchLockTable&& blt) override;
+  void merge_into_global_schedule(BatchLockTable& blt) override;
+  void merge_into_global_schedule_for(
+      BatchLockTable& blt,
+      const RecordKey& from,
+      const RecordKey& to) override;
 
   std::shared_ptr<LockStage> get_stage_holding_lock_for(
       RecordKey key) override;

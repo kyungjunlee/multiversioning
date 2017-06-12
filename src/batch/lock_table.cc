@@ -31,8 +31,8 @@ void LockTable::merge_batch_table(BatchLockTable& blt) {
 
 void LockTable::merge_batch_table_for(
     BatchLockTable& blt,
-    RecordKey from,
-    RecordKey to) {
+    const RecordKey& from,
+    const RecordKey& to) {
   
   LockTableType::iterator lt_it;
   BatchLockTable::LockTableType::iterator lo, hi;

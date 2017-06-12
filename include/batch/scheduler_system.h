@@ -3,6 +3,7 @@
 
 #include "batch/global_schedule.h"
 #include "batch/batch_action_interface.h"
+#include "batch/db_storage_interface.h"
 
 #include <memory>
 
@@ -26,8 +27,14 @@ struct SchedulingSystemConfig {
 class SchedulingSystem {
 protected:
   SchedulingSystemConfig conf;
+  DBStorageConfig db_conf;
 public:
-  SchedulingSystem(SchedulingSystemConfig c): conf(c) {};
+  SchedulingSystem(
+      SchedulingSystemConfig c,
+      DBStorageConfig db_c): 
+    conf(c),
+    db_conf(db_c)
+  {};
 
   // Add actions to the system. The effect may be delayed from the perspective
   // of scheduling threads if the implementation of scheduling system provides

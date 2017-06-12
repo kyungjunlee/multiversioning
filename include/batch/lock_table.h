@@ -41,7 +41,10 @@ public:
   LockTable(DBStorageConfig db_conf);
   void merge_batch_table(BatchLockTable& blt);
   // from and to are both inclusive.
-  void merge_batch_table_for(BatchLockTable& blt, RecordKey from, RecordKey to);
+  void merge_batch_table_for(
+      BatchLockTable& blt, 
+      const RecordKey& from, 
+      const RecordKey& to);
   
   std::shared_ptr<LockStage> get_head_for_record(RecordKey key);
   void pass_lock_to_next_stage_for(RecordKey key);
