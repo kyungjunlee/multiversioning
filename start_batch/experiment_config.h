@@ -12,7 +12,6 @@ struct ExperimentConfig {
   DBStorageConfig db_conf;
   ActionSpecification act_conf;
   unsigned int num_txns;
-  unsigned int exp_reps;
   std::string output_dir;
 
   std::ofstream& print_experiment_header(std::ofstream& ofs) {
@@ -55,7 +54,6 @@ struct ExperimentConfig {
 
     ofs << "GENERAL INFORMATION" << std::endl;
     write_desc_row("Transaction number:", num_txns);
-    write_desc_row("Experiment repetitions:", exp_reps);
     
     ofs << "SCHEDULING SYSTEM" << std::endl;
     write_desc_row("Scheduling threads:", sched_conf.scheduling_threads_count);

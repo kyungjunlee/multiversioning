@@ -17,6 +17,7 @@ struct SchedulingSystemConfig {
   // we pin threads within scheduling system sequentially 
   // starting at this cpu.
   uint32_t first_pin_cpu_id;
+  uint32_t num_table_merging_shard;
 };
 
 // Scheduling System
