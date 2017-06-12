@@ -16,32 +16,51 @@ LockTable::LockTable(DBStorageConfig db_conf):
 } 
 
 void LockTable::merge_batch_table(BatchLockTable& blt) {
-  std::lock_guard<std::mutex> lock(merge_batch_table_mutex);
+  auto smallest_it = blt.lock_table.begin();
+  auto biggest_it = blt.lock_table.rbegin();
+  if (smallest_it == blt.lock_table.end() || 
+      biggest_it == blt.lock_table.rend()) {
+    return;
+  }
 
-  // now we are the only thread merging into the global schedule.
+  merge_batch_table_for(
+      blt, 
+      smallest_it->first, 
+      biggest_it->first);
+}
+
+void LockTable::merge_batch_table_for(
+    BatchLockTable& blt,
+    RecordKey from,
+    RecordKey to) {
+  
   LockTableType::iterator lt_it;
+  BatchLockTable::LockTableType::iterator lo, hi;
+  lo = blt.lock_table.lower_bound(from);
+  hi = blt.lock_table.upper_bound(to);
+
   // merge queue by queue
-  for (auto& elt : blt.lock_table) {
+  for (auto& elt = lo; elt != hi; elt++) {
     if (!memory_preallocated) {
       // this defualt-constructs the lock queue without any move or copy instructions.
-      lock_table[elt.first];
+      lock_table[elt->first];
     }
 
-    lt_it = lock_table.find(elt.first);
+    lt_it = lock_table.find(elt->first);
     assert(lt_it != lock_table.end());
 
-    auto head_blt = *elt.second.peek_head();
-    lt_it->second.merge_queue(&elt.second);
+    auto& head_blt = *elt->second.peek_head();
+    lt_it->second.merge_queue(&elt->second);
 
     // if the lock stage at the head has NOT been given the lock,
     // we should give it the lock. That means that we have merged into a queue 
     // that was empty and the execution thread must know that this stage
     // has the lock.
     auto head_pt = lt_it->second.peek_head();
-    auto head = head_pt == nullptr ? nullptr : *head_pt;
+    if (head_pt == nullptr) return;
 
-    if (head != nullptr &&
-        head == head_blt && 
+    auto& head = *head_pt;
+    if (head == head_blt && 
         head->has_lock() == false) {
       head->notify_lock_obtained();
     }
@@ -78,12 +97,7 @@ void LockTable::allocate_mem_for(RecordKey key) {
   assert(insert_res.second);
 };
 
-BatchLockTable::BatchLockTable() {
-  // reserve memory so that we don't rehash and re-allocate on the fly
-  // TODO:
-  //  Tune how much memory is reserved?
-  lock_table.reserve(1024);
-}
+BatchLockTable::BatchLockTable() {}
 
 void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
   auto add_request = [this, &req](

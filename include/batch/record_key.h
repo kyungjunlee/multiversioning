@@ -21,6 +21,7 @@ class RecordKey {
     RecordKey(uint64_t key, uint64_t table_id = DEFAULT_TABLE_ID);
 
     bool operator==(const RecordKey &other) const;
+    bool operator<(const RecordKey &other) const;
 };
 
 namespace std {

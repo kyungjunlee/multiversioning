@@ -7,3 +7,8 @@ RecordKey::RecordKey(uint64_t key, uint64_t table_id): key(key), table_id(table_
 bool RecordKey::operator==(const RecordKey& other) const {
   return (key == other.key && table_id == other.table_id);
 }
+
+bool RecordKey::operator<(const RecordKey& other) const {
+  // Order tables increasingly and order records by key within tables.
+  return (table_id < other.table_id || key < other.key);
+}
