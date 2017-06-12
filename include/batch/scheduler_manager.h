@@ -54,12 +54,32 @@ struct AwaitingSchedulerBatches {
   std::vector<HandingQueue> pending_queues;
 };
 
-struct ThreadInputQueues {
-  ThreadInputQueues(unsigned int thread_number) {
-    queues.resize(thread_number);
-  }
-
+// Thread Input Queues
+//
+// Every scheduler worker has its own input queue. The queue is populated
+// by a scheduler worker which has obtained the proper lock. Thus, every
+// worker obtains input from its own queue with little contention on 
+// global objects.
+class ThreadInputQueues {
+private: 
+  pthread_rwlock_t input_lock;
+  uint64_t input_batch_id;
   std::vector<ThreadInputQueue> queues;
+  BatchedInputQueue iq;
+
+public:
+  ThreadInputQueues(
+      unsigned int thread_number,
+      unsigned int batch_size_act);
+  
+  void add_action(std::unique_ptr<IBatchAction>&& act);
+  void flush_actions();
+  bool unassigned_input_exists();
+
+  bool input_awaits(SchedulerThread* s);
+  ThreadInputQueue& get_my_queue(SchedulerThread* s);
+  SchedulerThreadBatch get_batch_from_my_queue(SchedulerThread* s);
+  void assign_inputs(SchedulerThread* s);
 };
 
 //  Scheduler Manager
@@ -76,9 +96,14 @@ private:
   void create_threads();
 public:
   ThreadInputQueues thread_input;
-  uint64_t input_batch_id;
-  pthread_rwlock_t input_lock;
+
+  // TODO:
+  //    Refactoring for better encapsulation. This is confusing to
+  //    anyone but me right now.
+  //
+  // To maintain ordering of batches handed to execution
   uint64_t handed_batch_id;
+  // For scheduler workers to register created batch schedules.
   AwaitingSchedulerBatches pending_batches;
   // this is a sorted vector of awaiting batches that is synchronized
   // on the handing lock. It is introduced to reduce the overhead of 
@@ -86,7 +111,6 @@ public:
   std::vector<AwaitingBatch> sorted_pending_batches;
   pthread_rwlock_t handing_lock;
   
-  std::unique_ptr<InputQueue> iq;
 	std::vector<std::shared_ptr<SchedulerThread>> schedulers;
   IGlobalSchedule* gs;
 
@@ -108,6 +132,7 @@ public:
 	//    by using a timer. For now we assume high-load within the 
 	//    simulations so that timeout never happens.
   SchedulerThreadBatch request_input(SchedulerThread* s) override;
+
   // In our implementation this overload will merge into global schedule
   // and signal the execution threads.
   void hand_batch_to_execution(

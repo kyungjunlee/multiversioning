@@ -4,18 +4,104 @@
 #include <utility>
 #include <algorithm>
 
+ThreadInputQueues::ThreadInputQueues(
+    unsigned int thread_number,
+    unsigned int batch_size_act):
+  input_batch_id(0),
+  iq(batch_size_act)
+{
+  pthread_rwlock_init(&input_lock, NULL);
+  queues.resize(thread_number);
+};
+
+void ThreadInputQueues::add_action(std::unique_ptr<IBatchAction>&& act) {
+  iq.add_action(std::move(act));
+};
+
+void ThreadInputQueues::flush_actions() {
+  iq.flush();
+};
+
+bool ThreadInputQueues::unassigned_input_exists() {
+  return iq.is_empty() == false;
+};
+
+ThreadInputQueue& ThreadInputQueues::get_my_queue(SchedulerThread* s) {
+  return queues[s->get_thread_id()];
+};
+
+bool ThreadInputQueues::input_awaits(SchedulerThread* s) {
+  return get_my_queue(s).is_empty() == false;
+};
+
+SchedulerThreadBatch ThreadInputQueues::get_batch_from_my_queue(
+    SchedulerThread* s) {
+  auto& my_queue = queues[s->get_thread_id()];
+  // busy wait until input from my own queue available.
+  while (my_queue.is_empty()) {
+    if (s->is_stop_requested()) {
+      return SchedulerThreadBatch {
+        .batch = std::vector<std::unique_ptr<IBatchAction>>(),
+        .batch_id = 0
+      };
+    }
+  }
+
+  SchedulerThreadBatch batch = std::move(my_queue.peek_head());
+  my_queue.pop_head();
+  return batch;
+};
+
+void ThreadInputQueues::assign_inputs(SchedulerThread* s) {
+  MutexRWGuard g(&input_lock, LockType::exclusive, true);
+  
+  if (g.is_locked() == false) {
+    // The lock is not granted. There must be a different thread assigning
+    // inputs to all of the threads.
+    return; 
+  }
+
+  // Lock is granted. Assign inputs.
+  InputQueue::BatchActions actions;
+  unsigned int thread_count = queues.size();
+  for (unsigned int i = 0; i < thread_count; i++) {
+    auto& cur_queue = queues[i]; 
+    if (cur_queue.is_empty() == false) continue;
+
+    while((actions = iq.try_get_action_batch()).size() == 0) {
+      // No input to the system available.
+      if (input_awaits(s)) {
+        // if the distributing thread has unfinished work, stop waiting
+        // and continue execution.
+        return;
+      }
+
+     // Otherwise busy wait until input arrives or until 
+     // system is shut down.
+     if (s->is_stop_requested()) {
+        return;
+      }
+    }
+
+    // Input to the system exists, assign it.
+    cur_queue.push_tail({
+        .batch = std::move(actions),
+        .batch_id = input_batch_id ++ 
+    });
+  } 
+};
+
 SchedulerManager::SchedulerManager(
     SchedulingSystemConfig c,
     ExecutorThreadManager* exec):
   SchedulerThreadManager(exec),
   SchedulingSystem(c),
-  thread_input(c.scheduling_threads_count),
-  input_batch_id(0),
+  thread_input(
+      c.scheduling_threads_count,
+      c.batch_size_act),
   handed_batch_id(0),
   pending_batches(c.scheduling_threads_count)
 {
-  iq = std::make_unique<BatchedInputQueue>(c.batch_size_act);
-  pthread_rwlock_init(&input_lock, NULL);
   pthread_rwlock_init(&handing_lock, NULL);
 	create_threads();
 };
@@ -25,11 +111,11 @@ bool SchedulerManager::system_is_initialized() {
 }
 
 void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
-	iq->add_action(std::move(act));
+	thread_input.add_action(std::move(act));
 };
 
 void SchedulerManager::flush_actions() {
-  iq->flush();
+  thread_input.flush_actions();
 };
 
 void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
@@ -70,75 +156,13 @@ SchedulerThreadBatch SchedulerManager::request_input(SchedulerThread* s) {
   assert(
     s != nullptr &&
     system_is_initialized());
+
+  if (thread_input.input_awaits(s)) {
+    return thread_input.get_batch_from_my_queue(s);
+  }
  
-  SchedulerThreadBatch batch;
-  auto& my_in_queue = thread_input.queues[s->get_thread_id()];
-  auto get_batch_from_my_queue = [this, &s, &my_in_queue](){
-    SchedulerThreadBatch batch;
-    batch = std::move(my_in_queue.peek_head());
-    my_in_queue.pop_head();
-    return batch;
-  };
-
-  // input awaits for us.
-  if (my_in_queue.is_empty() == false) {
-    return get_batch_from_my_queue();
-  }
-
-  MutexRWGuard g(&input_lock, LockType::exclusive, true);
-  // lock is not granted. There is a thread that is attempting to give us input.
-  if (g.is_locked() == false) {
-    // spin until we get a batch
-    while(my_in_queue.is_empty()) {
-      if (s->is_stop_requested()) {
-        return SchedulerThreadBatch {
-          .batch = std::vector<std::unique_ptr<IBatchAction>>(),
-          .batch_id = 0
-        };
-      }
-    }
-    
-    return get_batch_from_my_queue();
-  }
-
-  // if lock is granted, but current thread got input, it shouldn't 
-  // attempt to give input.
-  if (my_in_queue.is_empty() == false) {
-    g.unlock(); 
-    return get_batch_from_my_queue();
-  } 
-
-  // lock is granted and our input queue is empty. Give threads input.
-  assert(g.is_locked());
-  InputQueue::BatchActions actions;
-  unsigned int my_id = s->get_thread_id();
-  unsigned int thread_count = conf.scheduling_threads_count;
-  for (unsigned int i = 0; i < thread_count; i++) {
-    // assign input to the current thread last. This avoids the edge condition
-    // of blocking the system on the last batch because there is no more input
-    // but the current thread tries to give input instead of finishing its own
-    // work.
-    auto& cur_queue = thread_input.queues[(i + my_id + 1) % thread_count]; 
-    if (cur_queue.is_empty() == false) continue;
-
-    // busy wait for input
-    while((actions = iq->try_get_action_batch()).size() == 0) {
-      if (s->is_stop_requested()) {
-        return SchedulerThreadBatch {
-          .batch = std::vector<std::unique_ptr<IBatchAction>>(),
-          .batch_id = 0
-        };
-      }
-    }
-
-    // assign input.
-    cur_queue.push_tail({
-        .batch = std::move(actions),
-        .batch_id = input_batch_id ++ 
-    });
-  } 
-
-  return get_batch_from_my_queue();
+  thread_input.assign_inputs(s);
+  return thread_input.get_batch_from_my_queue(s);
 };
 
 void SchedulerManager::hand_batch_to_execution(
@@ -224,8 +248,8 @@ void SchedulerManager::hand_batch_to_execution(
 
   pass_workloads_on();
   // make sure we don't block.
-  if (iq->is_empty() && 
-      thread_input.queues[s->get_thread_id()].is_empty() &&
+  if (thread_input.unassigned_input_exists() && 
+      thread_input.input_awaits(s) == false &&
       s->is_stop_requested() == false) {
     pass_workloads_on();
   }
