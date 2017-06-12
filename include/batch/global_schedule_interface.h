@@ -19,8 +19,8 @@ public:
   // in the range [from, to];
   virtual void merge_into_global_schedule_for(
       BatchLockTable& blt,
-      RecordKey from,
-      RecordKey to) = 0;
+      const RecordKey& from,
+      const RecordKey& to) = 0;
 
   // executor thread manager interface:
   virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(

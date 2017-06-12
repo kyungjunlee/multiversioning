@@ -109,7 +109,7 @@ SchedulerManager::SchedulerManager(
       c.scheduling_threads_count,
       c.batch_size_act),
   pending_batches(c.scheduling_threads_count),
-  handed_batch_id(0),
+  sorted_pending_batches(),
   records_per_stage(
       db_c.tables_definitions[0].num_records /\
       (HORIZONTAL_MERGE_SHARDING_STAGES - 1)),
@@ -121,7 +121,6 @@ SchedulerManager::SchedulerManager(
   assert(db_c.tables_definitions.size() == 1);
   assert(db_c.tables_definitions[0].table_id == 0);
 
-  pthread_rwlock_init(&collection_lock, NULL);
 	create_threads();
 };
 
@@ -246,7 +245,7 @@ void SchedulerManager::process_created_batches() {
 };
 
 void SchedulerManager::collect_awaiting_batches() {
-  MutexRWGuard g(&collection_lock, LockType::exclusive, true);
+  MutexRWGuard g(&sorted_pending_batches.lck, LockType::exclusive, true);
   if (g.is_locked() == false) return;
   assert(g.is_locked());
   
@@ -258,34 +257,37 @@ void SchedulerManager::collect_awaiting_batches() {
   for (unsigned int i = 0; i < queues_num; i++) {
     auto& current_queue = pending_batches.pending_queues[i];
     while (current_queue.is_empty() == false) {
-      sorted_pending_batches.push_back(std::move(current_queue.peek_head()));
+      sorted_pending_batches
+        .batches
+        .push_back(std::move(current_queue.peek_head()));
       current_queue.pop_head();
     }
   }
 
   // sort the vector
-  std::sort(sorted_pending_batches.begin(), sorted_pending_batches.end(), 
+  auto& sorted_batches = sorted_pending_batches.batches;
+  std::sort(sorted_batches.begin(), sorted_batches.end(), 
       [](AwaitingBatch& aw1, AwaitingBatch& aw2) {
         return aw1.id < aw2.id;    
     });
   
   // attempt to pass as many to merging as we can.
   unsigned processed_batches = 0;
-  for (; processed_batches < sorted_pending_batches.size(); processed_batches++) {
-    auto& curr_awaiting_batch = sorted_pending_batches[processed_batches];
-    if (curr_awaiting_batch.id != handed_batch_id) {
+  for (; processed_batches < sorted_batches.size(); processed_batches++) {
+    auto& curr_awaiting_batch = sorted_batches[processed_batches];
+    if (curr_awaiting_batch.id != sorted_pending_batches.handed_batch_id) {
       break;
     }
     
     merging_queues.merging_stages[0].push_tail(std::move(curr_awaiting_batch)); 
-    handed_batch_id ++;
+    sorted_pending_batches.handed_batch_id ++;
   } 
 
   // erase those passed
   if (processed_batches > 0) {
-    sorted_pending_batches.erase(
-      sorted_pending_batches.begin(), 
-      sorted_pending_batches.begin() + processed_batches);
+    sorted_batches.erase(
+      sorted_batches.begin(), 
+      sorted_batches.begin() + processed_batches);
   }
 };
 

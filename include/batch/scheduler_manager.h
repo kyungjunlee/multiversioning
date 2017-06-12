@@ -91,6 +91,24 @@ struct AwaitingSchedulerBatches {
   std::vector<AwaitingBatchQueue> pending_queues;
 };
 
+// Global Ordered Batches
+//
+//  This is the object representing the global, ordered batches (ordered
+//  on batch ID). Also includes the necessary locks and counters. As per
+//  usual, the lock must be obtained before any operation on the data
+//  is performed.
+struct GlobalOrderedBatches {
+  GlobalOrderedBatches():
+    handed_batch_id(0)
+  {
+    pthread_rwlock_init(&lck, NULL);
+  };
+  
+  std::vector<AwaitingBatch> batches;
+  pthread_rwlock_t lck;
+  uint64_t handed_batch_id;
+};
+
 // Batch Merging Stage Queues
 //
 //  Merging of batch schedules into the global schedule is sharded horizontally
@@ -136,17 +154,12 @@ public:
   // Variables necessary for input
   ThreadInputQueues thread_input;
 
-  // Variables necessary for collection of schedules into a global vector
-  // and later on for passing them to the merging system
+  // Local schedule queues.
   AwaitingSchedulerBatches pending_batches;
 
   // Synchronized global vector of batches waiting to be passed to 
   // the execution. Sorted on batch id.  
-  std::vector<AwaitingBatch> sorted_pending_batches;
-  // The id of the last batch passed on for merging
-  uint64_t handed_batch_id;
-  // Synchronizes operations on the above.
-  pthread_rwlock_t collection_lock;
+  GlobalOrderedBatches sorted_pending_batches;
 
   // Variables necessary for horizontally shareded merging into the 
   // global schedule.
@@ -195,7 +208,6 @@ public:
   void collect_awaiting_batches();
   void merge_into_global_schedule(unsigned int stage);
   void signal_execution_threads(); 
-
 
   virtual ~SchedulerManager();
 };

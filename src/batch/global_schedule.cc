@@ -13,8 +13,8 @@ void GlobalSchedule::merge_into_global_schedule(
 
 inline void GlobalSchedule::merge_into_global_schedule_for(
     BatchLockTable& blt,
-    RecordKey from,
-    RecordKey to) {
+    const RecordKey& from,
+    const RecordKey& to) {
   lt.merge_batch_table_for(blt, from, to);
 };
 
