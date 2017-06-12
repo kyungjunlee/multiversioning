@@ -166,7 +166,7 @@ public:
   const unsigned int records_per_stage;
   BatchMergingStageQueues merging_queues;
   
-	std::vector<std::shared_ptr<SchedulerThread>> schedulers;
+  std::vector<std::shared_ptr<SchedulerThread>> schedulers;
   IGlobalSchedule* gs;
 
   SchedulerManager(

@@ -213,11 +213,6 @@ void SchedulerManager::hand_batch_to_execution(
   process_created_batches();
 };
 
-SchedulerManager::~SchedulerManager() {
-  // just to make sure that we are safe on this front.
-  stop_working();
-};
-
 void SchedulerManager::register_created_batch(
     SchedulerThread* s,
     uint64_t batch_id,
@@ -334,5 +329,10 @@ void SchedulerManager::signal_execution_threads() {
     exec_manager->signal_execution_threads(std::move(m_queue.peek_head().tw));  
     m_queue.pop_head();
   } 
+};
+
+SchedulerManager::~SchedulerManager() {
+  // just to make sure that we are safe on this front.
+  stop_working();
 };
 
