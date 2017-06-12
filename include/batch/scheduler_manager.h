@@ -6,9 +6,12 @@
 #include "batch/batched_input_queue.h"
 #include "batch/scheduler_system.h"
 #include "batch/scheduler_thread_manager.h"
+#include "batch/db_storage_interface.h"
 
 #include <vector>
 #include <memory>
+
+#define HORIZONTAL_MERGE_SHARDING_STAGES 3
 
 // ThreadInputQueue
 //
@@ -21,38 +24,6 @@ class ThreadInputQueue : public MSQueue<SchedulerThreadBatch> {
   private:
       using MSQueue<SchedulerThreadBatch>::merge_queue;
 }; 
-
-//  AwaitingBatch
-//
-//    An internal representation of all the data necessary for handing
-//    a batch off to the execution threads. This is necessary because 
-//    we maintain the ordering of batches and require as little 
-//    contention on data structures as possible.
-struct AwaitingBatch {
-  uint64_t id;
-  BatchLockTable blt;
-  ExecutorThreadManager::ThreadWorkloads tw;  
-};
-
-// HandingQueue
-//
-//    A single consumer, single producer queue used to queue up scheduler
-//    batches that cannot yet be handed over to execution threads because
-//    of "former" batches still being processed. Each scheduling thread
-//    has its own queue and there may be only one thread performing the 
-//    handing off.
-class HandingQueue : public MSQueue<AwaitingBatch> {
-  private:
-    using MSQueue<AwaitingBatch>::merge_queue;
-};
-
-struct AwaitingSchedulerBatches {
-  AwaitingSchedulerBatches(unsigned int thread_number) {
-    pending_queues.resize(thread_number);
-  };
-
-  std::vector<HandingQueue> pending_queues;
-};
 
 // Thread Input Queues
 //
@@ -82,6 +53,67 @@ public:
   void assign_inputs(SchedulerThread* s);
 };
 
+//  AwaitingBatch
+//
+//    An internal representation of all the data necessary for handing
+//    a batch off to the execution threads. This is necessary because 
+//    we maintain the ordering of batches and require as little 
+//    contention on data structures as possible.
+struct AwaitingBatch {
+  uint64_t id;
+  BatchLockTable blt;
+  ExecutorThreadManager::ThreadWorkloads tw;  
+};
+
+// HandingQueue
+//
+//    A single consumer, single producer queue used to queue up scheduler
+//    batches that cannot yet be handed over to execution threads because
+//    of "former" batches still being processed. Each scheduling thread
+//    has its own queue and there may be only one thread performing the 
+//    handing off.
+class AwaitingBatchQueue : public MSQueue<AwaitingBatch> {
+  private:
+    using MSQueue<AwaitingBatch>::merge_queue;
+};
+
+// Awaiting Scheduler Batches
+//
+//  Every scheduler worker has its own queue for batches whose schedules
+//  have been created. These queues are joined into a global, ordered
+//  vector of batches later on. Every queue in question is single-consumer,
+//  single-producer.
+struct AwaitingSchedulerBatches {
+  AwaitingSchedulerBatches(unsigned int thread_number) {
+    pending_queues.resize(thread_number);
+  };
+
+  std::vector<AwaitingBatchQueue> pending_queues;
+};
+
+// Batch Merging Stage Queues
+//
+//  Merging of batch schedules into the global schedule is sharded horizontally
+//  and so it is done in stages. The queues below are the input and output 
+//  queues for each stage. The additional queue is required for signaling
+//  to the execution threads that new actions are to be executed. Signaling
+//  is treated as the last stage of merging.
+struct BatchMergingStageQueues {
+  BatchMergingStageQueues(unsigned int stages_number) {
+    merging_stages.resize(stages_number);
+    stage_locks.resize(stages_number);
+    for (auto& lck : stage_locks) {
+      pthread_rwlock_init(&lck, NULL);
+    }
+    pthread_rwlock_init(&signaling_lock, NULL);
+  };
+
+  std::vector<AwaitingBatchQueue> merging_stages;
+  std::vector<pthread_rwlock_t> stage_locks;
+  AwaitingBatchQueue merged_batches;
+  pthread_rwlock_t signaling_lock;
+};
+
 //  Scheduler Manager
 //
 //  Scheduler Manager is the actual implementation of Scheduling System and
@@ -94,28 +126,39 @@ class SchedulerManager :
 private:
   bool system_is_initialized();
   void create_threads();
+
+  // convert the given workload batch from the scheduler worker format
+  // to the format accepted by the execution system.
+  ExecutorThreadManager::ThreadWorkloads convert_to_exec_format(
+      OrderedWorkload&& ow);
+
 public:
+  // Variables necessary for input
   ThreadInputQueues thread_input;
 
-  // TODO:
-  //    Refactoring for better encapsulation. This is confusing to
-  //    anyone but me right now.
-  //
-  // To maintain ordering of batches handed to execution
-  uint64_t handed_batch_id;
-  // For scheduler workers to register created batch schedules.
+  // Variables necessary for collection of schedules into a global vector
+  // and later on for passing them to the merging system
   AwaitingSchedulerBatches pending_batches;
-  // this is a sorted vector of awaiting batches that is synchronized
-  // on the handing lock. It is introduced to reduce the overhead of 
-  // finding the correct batch for merging.
+
+  // Synchronized global vector of batches waiting to be passed to 
+  // the execution. Sorted on batch id.  
   std::vector<AwaitingBatch> sorted_pending_batches;
-  pthread_rwlock_t handing_lock;
+  // The id of the last batch passed on for merging
+  uint64_t handed_batch_id;
+  // Synchronizes operations on the above.
+  pthread_rwlock_t collection_lock;
+
+  // Variables necessary for horizontally shareded merging into the 
+  // global schedule.
+  const unsigned int records_per_stage;
+  BatchMergingStageQueues merging_queues;
   
 	std::vector<std::shared_ptr<SchedulerThread>> schedulers;
   IGlobalSchedule* gs;
 
   SchedulerManager(
       SchedulingSystemConfig c,
+      DBStorageConfig db_c,
       ExecutorThreadManager* exec);
 
   // implementing the SchedulingSystem interface
@@ -142,6 +185,17 @@ public:
       //    Make this a typedef somewhere...
       OrderedWorkload&& workload,
       BatchLockTable&& blt) override;
+
+  void register_created_batch(
+      SchedulerThread* s,
+      uint64_t batch_id,
+      OrderedWorkload&& workload,
+      BatchLockTable&& blt);
+  void process_created_batches();
+  void collect_awaiting_batches();
+  void merge_into_global_schedule(unsigned int stage);
+  void signal_execution_threads(); 
+
 
   virtual ~SchedulerManager();
 };

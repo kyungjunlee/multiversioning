@@ -14,7 +14,13 @@
 class IGlobalSchedule {
 public:
   // scheduler thread manager interface:
-  virtual void merge_into_global_schedule(BatchLockTable&& blt) = 0;
+  virtual void merge_into_global_schedule(BatchLockTable& blt) = 0;
+  // Both from and to are inclusive. Merging occurs only for records
+  // in the range [from, to];
+  virtual void merge_into_global_schedule_for(
+      BatchLockTable& blt,
+      RecordKey from,
+      RecordKey to) = 0;
 
   // executor thread manager interface:
   virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(

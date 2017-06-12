@@ -45,6 +45,14 @@ SchedulerThreadBatch ThreadInputQueues::get_batch_from_my_queue(
         .batch_id = 0
       };
     }
+
+    // if there is no more input, help handing the load to execution.
+    // TODO:
+    //  This is a hack... warning with this, might be dangerous.
+    SchedulerManager* man = static_cast<SchedulerManager*>(s->manager);
+    if (man->thread_input.unassigned_input_exists() == false) {
+      man->process_created_batches();
+    }
   }
 
   SchedulerThreadBatch batch = std::move(my_queue.peek_head());
@@ -93,16 +101,27 @@ void ThreadInputQueues::assign_inputs(SchedulerThread* s) {
 
 SchedulerManager::SchedulerManager(
     SchedulingSystemConfig c,
+    DBStorageConfig db_c,
     ExecutorThreadManager* exec):
   SchedulerThreadManager(exec),
-  SchedulingSystem(c),
+  SchedulingSystem(c, db_c),
   thread_input(
       c.scheduling_threads_count,
       c.batch_size_act),
+  pending_batches(c.scheduling_threads_count),
   handed_batch_id(0),
-  pending_batches(c.scheduling_threads_count)
+  records_per_stage(
+      db_c.tables_definitions[0].num_records /\
+      (HORIZONTAL_MERGE_SHARDING_STAGES - 1)),
+  merging_queues(HORIZONTAL_MERGE_SHARDING_STAGES)
 {
-  pthread_rwlock_init(&handing_lock, NULL);
+  // This system is designed to only work with a single 
+  // database storage table. If you want more, please redesign it. 
+  // Look at how the db is horizontally sharded for passing to execution.
+  assert(db_c.tables_definitions.size() == 1);
+  assert(db_c.tables_definitions[0].table_id == 0);
+
+  pthread_rwlock_init(&collection_lock, NULL);
 	create_threads();
 };
 
@@ -129,6 +148,27 @@ void SchedulerManager::create_threads() {
 		schedulers.push_back(
 			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
   }
+};
+
+ExecutorThreadManager::ThreadWorkloads
+SchedulerManager::convert_to_exec_format(OrderedWorkload&& ow) {
+  unsigned exec_number = exec_manager->get_executor_num();
+  assert(exec_number > 0);
+  ExecutorThreadManager::ThreadWorkloads tw(exec_number);
+  
+  // initialize the memory all at once.
+  unsigned int mod = ow.size() % exec_number;
+  unsigned int per_exec_thr_size = ow.size() / exec_number;
+  for (unsigned int i = 0; i < tw.size(); i++) {
+    // notice that the "+ (mod < i)" takes care of unequal division among threads.
+    tw[i].resize(per_exec_thr_size + (i < mod));
+  }
+
+  for (unsigned int i = 0; i < ow.size(); i++) {
+    tw[i % exec_number][i / exec_number] = ow[i];
+  }
+
+  return tw;
 };
 
 void SchedulerManager::start_working() {
@@ -170,92 +210,127 @@ void SchedulerManager::hand_batch_to_execution(
     uint64_t batch_id,
     OrderedWorkload&& workload,
     BatchLockTable&& blt) {
-  assert(
-      s != nullptr &&
-      system_is_initialized());
-
-  // convert the given workload.batch to format accepted by the execution system.
-  unsigned exec_number = exec_manager->get_executor_num();
-  assert(exec_number > 0);
-  ExecutorThreadManager::ThreadWorkloads tw(exec_number);
-  
-  // initialize the memory all at once.
-  unsigned int mod = workload.size() % exec_number;
-  unsigned int per_exec_thr_size = workload.size() / exec_number;
-  for (unsigned int i = 0; i < tw.size(); i++) {
-    // notice that the "+ (mod < i)" takes care of unequal division among thread.
-    tw[i].resize(per_exec_thr_size + (i < mod));
-  }
-
-  for (unsigned int i = 0; i < workload.size(); i++) {
-    tw[i % exec_number][i / exec_number] = workload[i];
-  }
-
-  // we don't need a lock to access s's pending batches queue. That is because
-  // we are the only producer and consumer must hold the handing_lock. 
-  pending_batches.pending_queues[s->get_thread_id()].push_tail({
-    .id = batch_id,
-    .blt = std::move(blt),
-    .tw = std::move(tw)
-  });
-
-  // Attempt to begin handing batches if one may get the lock.
-  MutexRWGuard g(&handing_lock, LockType::exclusive, true);
-  if (g.is_locked() == false) return;
-
-  assert(g.is_locked() == true);
-  assert(pending_batches.pending_queues.size() == schedulers.size());
-
-  auto pass_workloads_on = [this]() {
-    // Lock has been granted.
-    unsigned int queues_num = pending_batches.pending_queues.size();
-
-    // pass all of the queues and insert into the vector
-    for (unsigned int i = 0; i < queues_num; i++) {
-      auto& current_queue = pending_batches.pending_queues[i]; 
-      while (current_queue.is_empty() == false) {
-        sorted_pending_batches.push_back(std::move(current_queue.peek_head()));
-        current_queue.pop_head();
-      }
-    }
-
-    // sort the vector
-    std::sort(sorted_pending_batches.begin(), sorted_pending_batches.end(), 
-        [](AwaitingBatch& aw1, AwaitingBatch& aw2) {
-          return aw1.id < aw2.id;    
-      });
-    
-    // attempt to finalize as many as we can.
-    unsigned processed_batches = 0;
-    for (; processed_batches < sorted_pending_batches.size(); processed_batches++) {
-      auto& curr_awaiting_batch = sorted_pending_batches[processed_batches];
-      if (curr_awaiting_batch.id != handed_batch_id) {
-        break;
-      }
-      
-      gs->merge_into_global_schedule(std::move(curr_awaiting_batch.blt));
-      exec_manager->signal_execution_threads(std::move(curr_awaiting_batch.tw));
-      handed_batch_id ++;
-    } 
-
-    // erase processed elements.
-    if (processed_batches > 0) {
-      sorted_pending_batches.erase(
-          sorted_pending_batches.begin(), 
-          sorted_pending_batches.begin() + processed_batches);
-    }
-  };
-
-  pass_workloads_on();
-  // make sure we don't block.
-  if (thread_input.unassigned_input_exists() && 
-      thread_input.input_awaits(s) == false &&
-      s->is_stop_requested() == false) {
-    pass_workloads_on();
-  }
+  register_created_batch(s, batch_id, std::move(workload), std::move(blt));
+  process_created_batches();
 };
 
 SchedulerManager::~SchedulerManager() {
   // just to make sure that we are safe on this front.
   stop_working();
 };
+
+void SchedulerManager::register_created_batch(
+    SchedulerThread* s,
+    uint64_t batch_id,
+    OrderedWorkload&& workload,
+    BatchLockTable&& blt) {
+  assert(
+      s != nullptr &&
+      system_is_initialized());
+
+  // we don't need a lock to access s's pending batches queue. That is because
+  // we are the only producer and consumer must hold the handing_lock. 
+  pending_batches.pending_queues[s->get_thread_id()].push_tail({
+    .id = batch_id,
+    .blt = std::move(blt),
+    .tw = std::move(convert_to_exec_format(std::move(workload)))
+  });
+};
+
+void SchedulerManager::process_created_batches() {
+  collect_awaiting_batches();
+  for (unsigned int i = 0; i < HORIZONTAL_MERGE_SHARDING_STAGES; i++) {
+    merge_into_global_schedule(i); 
+  }
+  signal_execution_threads();
+};
+
+void SchedulerManager::collect_awaiting_batches() {
+  MutexRWGuard g(&collection_lock, LockType::exclusive, true);
+  if (g.is_locked() == false) return;
+  assert(g.is_locked());
+  
+  unsigned int queues_num = pending_batches.pending_queues.size(); 
+  assert(queues_num == schedulers.size());
+
+  // pass all of the scheduler-thread-local queues and insert
+  // batches into the global vector. 
+  for (unsigned int i = 0; i < queues_num; i++) {
+    auto& current_queue = pending_batches.pending_queues[i];
+    while (current_queue.is_empty() == false) {
+      sorted_pending_batches.push_back(std::move(current_queue.peek_head()));
+      current_queue.pop_head();
+    }
+  }
+
+  // sort the vector
+  std::sort(sorted_pending_batches.begin(), sorted_pending_batches.end(), 
+      [](AwaitingBatch& aw1, AwaitingBatch& aw2) {
+        return aw1.id < aw2.id;    
+    });
+  
+  // attempt to pass as many to merging as we can.
+  unsigned processed_batches = 0;
+  for (; processed_batches < sorted_pending_batches.size(); processed_batches++) {
+    auto& curr_awaiting_batch = sorted_pending_batches[processed_batches];
+    if (curr_awaiting_batch.id != handed_batch_id) {
+      break;
+    }
+    
+    merging_queues.merging_stages[0].push_tail(std::move(curr_awaiting_batch)); 
+    handed_batch_id ++;
+  } 
+
+  // erase those passed
+  if (processed_batches > 0) {
+    sorted_pending_batches.erase(
+      sorted_pending_batches.begin(), 
+      sorted_pending_batches.begin() + processed_batches);
+  }
+};
+
+void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
+  MutexRWGuard g(
+      &merging_queues.stage_locks[stage],
+      LockType::exclusive,
+      true);
+  if (g.is_locked() == false) return;
+
+  auto& m_queue = merging_queues.merging_stages[stage];
+  RecordKey lo(records_per_stage * stage);
+  RecordKey hi(records_per_stage * (stage + 1) - 1);
+  AwaitingBatchQueue* next_queue;
+  if (stage == merging_queues.merging_stages.size() - 1) {
+    // NOTE: 
+    //  As mentioned before, we assume only ONE table. In this case we
+    //  must have that each table has the same size, which is weaker.
+    hi.key = (this->db_conf.tables_definitions[0].num_records  - 1); 
+    next_queue = &merging_queues.merged_batches;
+  } else {
+    next_queue = &merging_queues.merging_stages[stage + 1];
+  }
+
+  // merge for the current key range for everything that awaits.
+  while (m_queue.is_empty() == false) {
+    // current awaiting batch
+    auto& curr_aw = m_queue.peek_head();
+    gs->merge_into_global_schedule_for(curr_aw.blt, lo, hi);
+    next_queue->push_tail(std::move(curr_aw));
+    m_queue.pop_head();  
+  }
+};
+
+void SchedulerManager::signal_execution_threads() {
+  MutexRWGuard g(
+      &merging_queues.signaling_lock,
+      LockType::exclusive,
+      true);
+  if (g.is_locked() == false) return;
+
+  auto& m_queue = merging_queues.merged_batches;
+  while (m_queue.is_empty() == false) {
+    exec_manager->signal_execution_threads(std::move(m_queue.peek_head().tw));  
+    m_queue.pop_head();
+  } 
+};
+
