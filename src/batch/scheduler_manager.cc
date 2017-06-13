@@ -297,6 +297,7 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
   RecordKey lo(records_per_stage * stage);
   RecordKey hi(records_per_stage * (stage + 1) - 1);
   AwaitingBatchQueue* next_queue;
+
   if (stage == merging_queues.merging_stages.size() - 1) {
     // NOTE: 
     //  As mentioned before, we assume only ONE table. In this case we
@@ -307,6 +308,11 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
     next_queue = &merging_queues.merging_stages[stage + 1];
   }
 
+  // we limit the number of batches that a single thread may process
+  // on an iteration to make sure that there is no build-up in the 
+  // global ordered queue due to lack of continuity in batch numbers.
+  unsigned int processed = 0;
+
   // merge for the current key range for everything that awaits.
   while (m_queue.is_empty() == false) {
     // current awaiting batch
@@ -314,6 +320,9 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
     gs->merge_into_global_schedule_for(curr_aw.blt, lo, hi);
     next_queue->push_tail(std::move(curr_aw));
     m_queue.pop_head();  
+    processed ++;
+
+    if (processed > 25) break;
   }
 };
 
@@ -325,10 +334,21 @@ void SchedulerManager::signal_execution_threads() {
   if (g.is_locked() == false) return;
 
   auto& m_queue = merging_queues.merged_batches;
+  // We must put all awaiting batches that we process into a vector
+  // to make sure that their destructors aren't called until the 
+  // end of the function when lock is released. Otherwise a huge slowdown
+  // ensues!
+  std::vector<AwaitingBatch> tmp_aw_batches;
+  tmp_aw_batches.resize(300);
+ 
   while (m_queue.is_empty() == false) {
-    exec_manager->signal_execution_threads(std::move(m_queue.peek_head().tw));  
+    auto& curr_aw_batch = m_queue.peek_head();
+    exec_manager->signal_execution_threads(std::move(curr_aw_batch.tw));  
     m_queue.pop_head();
-  } 
+    tmp_aw_batches.push_back(std::move(curr_aw_batch));
+  }
+
+  g.unlock();
 };
 
 SchedulerManager::~SchedulerManager() {
