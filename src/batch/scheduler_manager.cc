@@ -191,6 +191,15 @@ void SchedulerManager::reset() {
 };
 
 void SchedulerManager::stop_working() {
+  IF_SCHED_DIAG(
+    GlobalSchedulerDiag gsd;
+    for (auto& scheduler_thread_ptr : schedulers) {
+      gsd.add_sample(scheduler_thread_ptr->diag);
+    }
+
+    gsd.print();
+  );
+ 
   for (auto& scheduler_thread_ptr : schedulers) {
     scheduler_thread_ptr->signal_stop_working();
     scheduler_thread_ptr->Join();
