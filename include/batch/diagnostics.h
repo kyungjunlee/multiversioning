@@ -116,7 +116,7 @@ struct GlobalSchedulerDiag {
 
   void print() {
     TablePrinter tp;
-    tp.set_table_header("Scheduler Thread Diagnostics");
+    tp.set_table_header("Scheduler Threads Diagnostics");
     tp.add_column_headers({
       "Measurements",
       "min",
