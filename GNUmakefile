@@ -1,4 +1,9 @@
-CFLAGS= -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
+# Flags available within the batched system:
+#
+# 	- SCHEDULER_DIAG -- if defined, allows the system to collect statistics on scheduler
+# 											threads and print them.
+
+CFLAGS= $(ADD_CFLAGS) -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1
 LIBS=-lnuma -lpthread -lrt -lcityhash
 TEST_LIBS=-lgtest
