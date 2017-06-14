@@ -19,13 +19,13 @@ void Scheduler::StartWorking() {
       batch_actions = std::move(this->manager->request_input(this));
       TIME_IF_SCHED_DIAGNOSTICS(
         process_batch();, 
-        diag.time_creating_schedule.update, tp_2);
+        diag.time_creating_schedule.add_sample, tp_2);
       this->manager->hand_batch_to_execution(
           this, 
           batch_actions.batch_id, 
           std::move(workloads), 
           std::move(lt));,
-      diag.time_creating_schedule.update,
+      diag.time_creating_schedule.add_sample,
       tp_1
      );
   }

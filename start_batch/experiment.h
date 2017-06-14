@@ -3,7 +3,7 @@
 
 #include "experiment_config.h"
 #include "batch/txn_factory.h"
-#include "batch/time_utilities.h"
+#include "batch/time_util.h"
 
 #include <cassert>
 #include <chrono>

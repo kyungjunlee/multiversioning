@@ -194,7 +194,13 @@ void SchedulerManager::stop_working() {
   IF_SCHED_DIAG(
     GlobalSchedulerDiag gsd;
     for (auto& scheduler_thread_ptr : schedulers) {
-      gsd.add_sample(scheduler_thread_ptr->diag);
+      // NOTE: This will only work with this particular implementation
+      // of scheduler... But I guess that should be alright for now.
+      //
+      // Otherwise we'd have to define an interface for all of below... FT.
+      Scheduler* scheduler_ptr = 
+        static_cast<Scheduler*>(scheduler_thread_ptr.get());
+      gsd.add_sample(scheduler_ptr->diag);
     }
 
     gsd.print();
