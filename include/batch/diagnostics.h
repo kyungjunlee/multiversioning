@@ -2,6 +2,7 @@
 #define BATCH_DIAGNOSTICS_H_
 
 #include "batch/print_util.h"
+#include "batch/time_util.h"
 
 #ifdef SCHEDULER_DIAG
 // if diagnostics requested, time the "time_what" chunk of code and 
