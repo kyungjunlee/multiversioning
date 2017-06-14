@@ -115,6 +115,7 @@ struct GlobalSchedulerDiag {
     TablePrinter tp;
     tp.set_table_header("Scheduler Thread Diagnostics");
     tp.add_column_headers({
+      "Measurements",
       "min",
       "max",
       "avg",
