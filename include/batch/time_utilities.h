@@ -24,6 +24,10 @@ namespace TimeUtilities {
     fun();
     return time_difference_ms(start, system_clock::now()); 
   }
+
+  TimePoint now() { 
+    return system_clock::now(); 
+  }
 };
 
 #endif //TIME_UTILITIES_H
