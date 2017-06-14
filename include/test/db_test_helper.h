@@ -34,7 +34,7 @@ public:
 
   DBTestHelper():
     db_conf({{}}),
-    sched_conf({0,0,0,0}),
+    sched_conf({0,0,0,0,3}),
     exec_conf({0, 0}),
     action_num(0)
   {};
@@ -61,15 +61,19 @@ public:
     sched_conf.batch_length_sec = sec;
     return *this;
   };
+  DBTestHelper& set_merging_shard_num(unsigned int num) {
+    sched_conf.num_table_merging_shard = num;
+    return *this;
+  };
   DBTestHelper& set_action_num(unsigned int acts) {
     action_num = acts; 
     return *this;
-  }
+  };
   DBTestHelper& set_workload(
       std::vector<std::unique_ptr<IBatchAction>>&& work) {
     workload = std::move(work);
     return *this;
-  }
+  };
 
   void runTest(DBAssertion assertion = [](IDBStorage* db){(void) db;}) {
     assert(test_properly_initialized());

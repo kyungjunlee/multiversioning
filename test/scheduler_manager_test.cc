@@ -17,11 +17,15 @@ protected:
 	const uint32_t batch_size = 100;
 	const uint32_t batch_length_sec = 0;
 	const uint32_t scheduling_threads_count = 3;
+  const uint32_t shards = 3;
+  const uint32_t first_pin = 0;
 
   const SchedulingSystemConfig conf = {
 		scheduling_threads_count,
 		batch_size,
-		scheduling_threads_count
+		scheduling_threads_count,
+    first_pin,
+    shards
 	};
   const DBStorageConfig db_conf = {
     .tables_definitions = {{
