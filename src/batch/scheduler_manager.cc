@@ -112,8 +112,8 @@ SchedulerManager::SchedulerManager(
   sorted_pending_batches(),
   records_per_stage(
       db_c.tables_definitions[0].num_records /\
-      (HORIZONTAL_MERGE_SHARDING_STAGES - 1)),
-  merging_queues(HORIZONTAL_MERGE_SHARDING_STAGES)
+      (c.num_table_merging_shard - 1)),
+  merging_queues(c.num_table_merging_shard)
 {
   // This system is designed to only work with a single 
   // database storage table. If you want more, please redesign it. 
@@ -233,7 +233,7 @@ void SchedulerManager::register_created_batch(
 
 void SchedulerManager::process_created_batches() {
   collect_awaiting_batches();
-  for (unsigned int i = 0; i < HORIZONTAL_MERGE_SHARDING_STAGES; i++) {
+  for (unsigned int i = 0; i < conf.num_table_merging_shard; i++) {
     merge_into_global_schedule(i); 
   }
   signal_execution_threads();

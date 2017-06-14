@@ -12,11 +12,10 @@ struct ExperimentConfig {
   DBStorageConfig db_conf;
   ActionSpecification act_conf;
   unsigned int num_txns;
-  unsigned int exp_reps;
   std::string output_dir;
 
   std::ofstream& print_experiment_header(std::ofstream& ofs) {
-    ofs << "num_txns,batch_size,num_sched_threads," <<
+    ofs << "num_txns,batch_size,num_sched_threads,num_table_merging_shard," <<
       "num_exec_threads,num_records,avg_shared_locks," <<
       "std_dev_shared_locks,avg_excl_locks," <<
       "std_dev_excl_locks";
@@ -29,6 +28,7 @@ struct ExperimentConfig {
       num_txns << "," <<
       sched_conf.batch_size_act << "," <<
       sched_conf.scheduling_threads_count << "," <<
+      sched_conf.num_table_merging_shard << "," <<
       exec_conf.executing_threads_count << "," <<
       db_conf.tables_definitions[0].num_records << "," <<
       act_conf.reads.average_num_locks << "," <<
@@ -55,13 +55,13 @@ struct ExperimentConfig {
 
     ofs << "GENERAL INFORMATION" << std::endl;
     write_desc_row("Transaction number:", num_txns);
-    write_desc_row("Experiment repetitions:", exp_reps);
     
     ofs << "SCHEDULING SYSTEM" << std::endl;
     write_desc_row("Scheduling threads:", sched_conf.scheduling_threads_count);
     write_desc_row("Batch size (act):", sched_conf.batch_size_act);
     write_desc_row("Batch length (sec):", sched_conf.batch_length_sec);
     write_desc_row("First pin cpu id:", sched_conf.first_pin_cpu_id);
+    write_desc_row("Number of shards for table merge:", sched_conf.num_table_merging_shard);
     ofs << std::endl; 
 
     ofs << "EXECUTING SYSTEM" << std::endl;

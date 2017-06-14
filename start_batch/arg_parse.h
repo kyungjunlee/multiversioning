@@ -20,8 +20,8 @@ static struct option long_options[] = {
   {"std_dev_shared_locks", required_argument, 0, 6},
   {"avg_excl_locks", required_argument, 0, 7},
   {"std_dev_excl_locks", required_argument, 0, 8},
-  {"exp_reps", required_argument, 0, 9},
-  {"output_dir", required_argument, 0, 10},
+  {"output_dir", required_argument, 0, 9},
+  {"num_table_merging_shard", required_argument, 0, 10},
   {0, no_argument, 0, 11}
 };
 
@@ -37,8 +37,8 @@ private:
     std_dev_shared_locks,
     avg_excl_locks,
     std_dev_excl_locks,
-    exp_reps,
     output_dir,
+    num_table_merging_shard,
     count
   };
 
@@ -101,7 +101,11 @@ private:
   static SchedulingSystemConfig get_sched_conf(ArgMap m) {
     check_presence(
         m, "scheduling system", 
-        {OptionCode::batch_size, OptionCode::num_sched_threads});
+        {
+          OptionCode::batch_size, 
+          OptionCode::num_sched_threads,
+          OptionCode::num_table_merging_shard
+        });
 
     SchedulingSystemConfig conf = {
       .scheduling_threads_count = 
@@ -111,7 +115,10 @@ private:
         (uint32_t) strtoul(
             m[static_cast<int>(OptionCode::batch_size)], nullptr, 10),
       .batch_length_sec = 0,
-      .first_pin_cpu_id = 1
+      .first_pin_cpu_id = 1,
+      .num_table_merging_shard = 
+        (uint32_t) strtoul(
+            m[static_cast<int>(OptionCode::num_table_merging_shard)], nullptr, 10),
     };
 
     return conf;
@@ -197,7 +204,6 @@ public:
     check_presence(
         arg_map, "experiment", 
         {OptionCode::num_txns,
-        OptionCode::exp_reps,
         OptionCode::output_dir});
 
     ExperimentConfig exp_conf = {
@@ -208,9 +214,6 @@ public:
       .num_txns = 
         (unsigned int) strtoul(
             arg_map[static_cast<int>(OptionCode::num_txns)], nullptr, 10),
-      .exp_reps = 
-        (unsigned int) strtoul(
-            arg_map[static_cast<int>(OptionCode::exp_reps)], nullptr, 10),
       .output_dir = 
         std::string(arg_map[static_cast<int>(OptionCode::output_dir)])
     };
