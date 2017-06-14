@@ -1,7 +1,8 @@
 #ifndef TIME_SPSC_QUEUE_H_
 #define TIME_SPSC_QUEUE_H_
 
-#include <time_utilities.h>
+#include "batch/time_utilities.h"
+
 #include <memory>
 #include <sstream>
 #include <iomanip>
