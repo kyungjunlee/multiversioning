@@ -40,6 +40,7 @@ public:
   // override SchedulerThread interface
   void signal_stop_working() override;
   bool is_stop_requested() override;
+  void reset() override;
 
   // override Runnable interface
   void StartWorking() override;
@@ -47,10 +48,9 @@ public:
 
   virtual ~Scheduler();
 
-#ifdef SCHEDULER_DIAG
-  SchedulerDiag diag;  
-  TimeUtilities::TimePoint start_time;
-#endif // SCHEDULER_DIAG
+  IF_SCHED_DIAG(
+    SchedulerDiag diag;
+  );
 };
 
 #endif // BATCH_SCHEDULER_H_

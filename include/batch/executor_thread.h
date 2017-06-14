@@ -36,6 +36,7 @@ public:
   virtual std::unique_ptr<BatchActions> try_get_done_batch() = 0;
   virtual void signal_stop_working() = 0;
   virtual bool is_stop_requested() = 0;
+  virtual void reset() = 0;
 
   virtual ~ExecutorThread() {
     free(m_rand_state);

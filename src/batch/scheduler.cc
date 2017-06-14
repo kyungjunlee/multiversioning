@@ -14,10 +14,12 @@ Scheduler::Scheduler(
 
 void Scheduler::StartWorking() {
   while(!is_stop_requested()) {
-    TIME_IF_DIAGNOSTICS(
+    TIME_IF_SCHED_DIAGNOSTICS(
       // get the batch actions
       batch_actions = std::move(this->manager->request_input(this));
-      TIME_IF_DIAGNOSTICS(process_batch();, diag.time_creating_schedule.update, tp_2);
+      TIME_IF_SCHED_DIAGNOSTICS(
+        process_batch();, 
+        diag.time_creating_schedule.update, tp_2);
       this->manager->hand_batch_to_execution(
           this, 
           batch_actions.batch_id, 
@@ -26,7 +28,7 @@ void Scheduler::StartWorking() {
       diag.time_creating_schedule.update,
       tp_1
      );
-    }
+  }
 };
 
 void Scheduler::Init() {
@@ -65,3 +67,9 @@ void Scheduler::signal_stop_working() {
 bool Scheduler::is_stop_requested() {
   return stop_signal;
 }
+
+void Scheduler::reset() {
+  IF_SCHED_DIAG(
+    diag.reset();
+  );
+} 

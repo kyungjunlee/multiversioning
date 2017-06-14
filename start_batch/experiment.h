@@ -88,6 +88,7 @@ private:
               time_start, time_end)) + "ms\n"
       });
     txns_completed = 0;
+    s.reset_system();
   };
 
   std::vector<std::pair<double, unsigned int>> do_measurements() {

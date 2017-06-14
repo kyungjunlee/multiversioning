@@ -184,6 +184,12 @@ void SchedulerManager::init() {
   }
 };
 
+void SchedulerManager::reset() {
+  for (auto& scheduler_thread_ptr : schedulers) {
+    scheduler_thread_ptr->reset();
+  }
+};
+
 void SchedulerManager::stop_working() {
   for (auto& scheduler_thread_ptr : schedulers) {
     scheduler_thread_ptr->signal_stop_working();

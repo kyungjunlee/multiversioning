@@ -148,8 +148,11 @@ std::unique_ptr<ExecutorThread::BatchActions> BatchExecutor::try_get_done_batch(
 
 void BatchExecutor::signal_stop_working() {
   xchgq(&stop_signal, 1);
-}
+};
 
 bool BatchExecutor::is_stop_requested() {
   return stop_signal;
-}
+};
+
+void BatchExecutor::reset() {
+};

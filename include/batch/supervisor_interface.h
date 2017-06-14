@@ -41,6 +41,11 @@ public:
     exec_system->init(); 
   };
 
+  virtual void reset_system() {
+    sched_system->reset();
+    exec_system->reset();
+  };
+
   virtual void start_system() {
     sched_system->start_working();
     exec_system->start_working(); 
