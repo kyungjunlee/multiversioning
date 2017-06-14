@@ -6,6 +6,7 @@
 #include "batch/container.h"
 #include "batch/scheduler_thread_manager.h"
 #include "batch/scheduler_thread.h"
+#include "batch/diagnostics.h"
 
 //  Scheduler
 //
@@ -45,6 +46,11 @@ public:
   void Init() override;
 
   virtual ~Scheduler();
+
+#ifdef SCHEDULER_DIAG
+  SchedulerDiag diag;  
+  TimeUtilities::TimePoint start_time;
+#endif // SCHEDULER_DIAG
 };
 
 #endif // BATCH_SCHEDULER_H_

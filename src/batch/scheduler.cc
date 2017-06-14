@@ -14,15 +14,19 @@ Scheduler::Scheduler(
 
 void Scheduler::StartWorking() {
   while(!is_stop_requested()) {
-    // get the batch actions
-    batch_actions = std::move(this->manager->request_input(this));
-    process_batch();
-    this->manager->hand_batch_to_execution(
-        this, 
-        batch_actions.batch_id, 
-        std::move(workloads), 
-        std::move(lt));
-  }
+    TIME_IF_DIAGNOSTICS(
+      // get the batch actions
+      batch_actions = std::move(this->manager->request_input(this));
+      TIME_IF_DIAGNOSTICS(process_batch();, diag.time_creating_schedule.update, tp_2);
+      this->manager->hand_batch_to_execution(
+          this, 
+          batch_actions.batch_id, 
+          std::move(workloads), 
+          std::move(lt));,
+      diag.time_creating_schedule.update,
+      tp_1
+     );
+    }
 };
 
 void Scheduler::Init() {

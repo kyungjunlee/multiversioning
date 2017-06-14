@@ -1,5 +1,5 @@
-#ifndef TIME_UTILITIES_H
-#define TIME_UTILITIES_H
+#ifndef TIME_UTILITIES_H_
+#define TIME_UTILITIES_H_
 
 #include "batch/SPSC_MR_queue.h"
 
@@ -30,4 +30,4 @@ namespace TimeUtilities {
   }
 };
 
-#endif //TIME_UTILITIES_H
+#endif //TIME_UTILITIES_H_
