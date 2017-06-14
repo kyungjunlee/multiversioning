@@ -94,6 +94,8 @@ struct GlobalSchedulerDiag {
   NumStat avg_time_per_iteration;
   NumStat max_time_per_iteration;
   NumStat min_time_per_iteration;
+  NumStat avg_num_of_iterations;
+
   NumStat avg_time_creating_schedule;
   NumStat max_time_creating_schedule;
   NumStat min_time_creating_schedule;
@@ -105,6 +107,7 @@ struct GlobalSchedulerDiag {
     avg_time_per_iteration.add_sample(tpi.average);
     max_time_per_iteration.add_sample(tpi.max);
     min_time_per_iteration.add_sample(tpi.min);
+    avg_num_of_iterations.add_sample(tpi.samples);
 
     avg_time_creating_schedule.add_sample(tcs.average);
     max_time_creating_schedule.add_sample(tcs.max);
@@ -136,6 +139,7 @@ struct GlobalSchedulerDiag {
     add_formatted_row("Average time per iteration", avg_time_per_iteration);
     add_formatted_row("Max time per iteration", max_time_per_iteration);
     add_formatted_row("Min time per iteration", min_time_per_iteration);
+    add_formatted_row("Avg number of iterations", avg_num_of_iterations);
 
     add_formatted_row("Average time creating schedule", avg_time_creating_schedule);
     add_formatted_row("Max time creating schedule", max_time_creating_schedule);

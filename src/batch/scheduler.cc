@@ -25,7 +25,7 @@ void Scheduler::StartWorking() {
           batch_actions.batch_id, 
           std::move(workloads), 
           std::move(lt));,
-      diag.time_creating_schedule.add_sample,
+      diag.time_per_iteration.add_sample,
       tp_1
      );
   }
