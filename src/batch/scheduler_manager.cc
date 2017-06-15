@@ -204,21 +204,6 @@ void SchedulerManager::reset() {
 };
 
 void SchedulerManager::stop_working() {
-  IF_SCHED_DIAG(
-    GlobalSchedulerDiag gsd;
-    for (auto& scheduler_thread_ptr : schedulers) {
-      // NOTE: This will only work with this particular implementation
-      // of scheduler... But I guess that should be alright for now.
-      //
-      // Otherwise we'd have to define an interface for all of below... FT.
-      Scheduler* scheduler_ptr = 
-        static_cast<Scheduler*>(scheduler_thread_ptr.get());
-      gsd.add_sample(scheduler_ptr->diag);
-    }
-
-    gsd.print();
-  );
- 
   for (auto& scheduler_thread_ptr : schedulers) {
     scheduler_thread_ptr->signal_stop_working();
     scheduler_thread_ptr->Join();
@@ -420,6 +405,21 @@ void SchedulerManager::signal_execution_threads() {
 };
 
 SchedulerManager::~SchedulerManager() {
+  IF_SCHED_DIAG(
+    GlobalSchedulerDiag gsd;
+    for (auto& scheduler_thread_ptr : schedulers) {
+      // NOTE: This will only work with this particular implementation
+      // of scheduler... But I guess that should be alright for now.
+      //
+      // Otherwise we'd have to define an interface for all of below... FT.
+      Scheduler* scheduler_ptr = 
+        static_cast<Scheduler*>(scheduler_thread_ptr.get());
+      gsd.add_sample(scheduler_ptr->diag);
+    }
+
+    gsd.print();
+  );
+ 
   // just to make sure that we are safe on this front.
   stop_working();
   IF_SCHED_MAN_DIAG(diag.print());

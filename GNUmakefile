@@ -1,7 +1,13 @@
-# Flags available within the batched system:
+# Flags available within the batched system. WARNING: Collection of diagnostics might 
+#	directly impact the performance of the system, especially when considering the 
+#	timing diagnostics. Make sure that is not a factor when considering using diagnostics
+#	or modify the number of measured variables.
 #
 # 	- SCHEDULER_DIAG -- if defined, allows the system to collect statistics on scheduler
 # 											threads and print them.
+# 	- SCHEDULER_MAN_DIAG -- if degined, allows the system to collect statistics on
+# 													the scheduler manager and print them.
+# 	- SCHEDULER_MAN_NO_TIME -- disable timing statistics in diagnostics on scheduler manager.
 
 CFLAGS= $(ADD_CFLAGS) -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1

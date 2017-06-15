@@ -76,8 +76,15 @@ struct GlobalSchedulerDiag {
 };
 
 #ifdef SCHEDULER_MAN_DIAG
-#define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
-  TIME_AND_INVOKE_ON_RESULT(time_what, invoke, tp_name)
+  #ifdef SCHEDULER_MAN_NO_TIME
+    #define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)          \
+      do {                                                                     \
+        time_what                                                              \
+      } while (0) 
+  #else
+    #define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)          \
+      TIME_AND_INVOKE_ON_RESULT(time_what, invoke, tp_name)
+  #endif // SCHEDULER_MAN_NO_TIME
 #else
 #define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
   do {                                                                         \
