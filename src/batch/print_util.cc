@@ -61,17 +61,26 @@ void TablePrinter::add_to_row(unsigned int row, std::string data) {
 void TablePrinter::print_table() {
   if (table_data.size() == 0) return;
 
-  // Find the length of the longest element within the table.
-  unsigned int max_data_len = 0;
+  // Find the length of the longest element within the table for each column.
+  unsigned int columns = table_data[0].size();
+  std::vector<unsigned int> max_len(table_data[0].size(), 0);
+  
   for (auto& row : table_data) {
-    for (auto& str : row) {
-      max_data_len = max_data_len < str.length() ? str.length() : max_data_len;
+    assert(row.size() == columns);
+    for (unsigned int i = 0; i < columns; i++) {
+      max_len[i] = max_len[i] < row[i].length() ? row[i].length() : max_len[i];
     }
   }
 
   unsigned int cel_padding = 2;
-  unsigned int cel_len = cel_padding * 2 + max_data_len;
-  unsigned int table_len = cel_len * table_data[0].size();
+  // get the length of cels in each column
+  std::vector<unsigned int> cel_lens;
+  unsigned int table_len = 0;
+  for (auto& ml : max_len) {
+    unsigned int cel_len = ml + 2 * cel_padding;
+    cel_lens.push_back(cel_len);
+    table_len += cel_len;
+  }
   
   auto pad = [](unsigned int len, char pad_char) {
     for (unsigned int i = 0; i < len; i++) {
@@ -101,8 +110,8 @@ void TablePrinter::print_table() {
 
   // write the data.
   for (auto& row : table_data) {
-    for (auto& str: row) {
-      write_middle(str, cel_len);
+    for (unsigned int i = 0; i < row.size(); i++) {
+      write_middle(row[i], cel_lens[i]);
     }
     std::cout <<  std::endl;
     hor_rule();
