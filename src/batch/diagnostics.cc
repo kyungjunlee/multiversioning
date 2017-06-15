@@ -94,3 +94,62 @@ void GlobalSchedulerDiag::print() {
   tp.print_table();
 };
 
+SchedulerManagerDiag::SchedulerManagerDiag(unsigned int merging_stages) {
+  time_merging.resize(merging_stages);
+  number_merged.resize(merging_stages);
+};
+
+void SchedulerManagerDiag::reset() {
+  collection_queue_length.reset();
+  collection_queue_processed.reset();
+  time_collecting_inputs.reset();
+  time_signaling_no_destr.reset();
+  number_signaled.reset();
+
+  for (auto& ns : time_merging) {
+    ns.reset();
+  }
+
+  for (auto& ns : number_merged) {
+    ns.reset();
+  }
+};
+
+void SchedulerManagerDiag::print() {
+  TablePrinter tp;
+  tp.set_table_header("Scheduler Manager Diagnostics");
+  tp.add_column_headers({
+    "Measurements",
+    "min",
+    "max",
+    "avg",
+    "data count"
+  });
+
+  auto add_formatted_row = [&tp](std::string row_name, NumStat& stat) {
+    tp.add_row();
+    tp.add_to_last_row({
+        row_name,
+        PrintUtilities::double_to_string(stat.min),
+        PrintUtilities::double_to_string(stat.max),
+        PrintUtilities::double_to_string(stat.average),
+        std::to_string(stat.samples)
+    });
+  };
+
+  add_formatted_row("Time collecting Inputs", time_collecting_inputs);
+  add_formatted_row("Collection queue length", collection_queue_length);
+  add_formatted_row("Processed from collection queue", collection_queue_processed);
+  add_formatted_row("Time signaling (no destr)", time_signaling_no_destr);
+  add_formatted_row("Number signaled", number_signaled);
+
+  for (unsigned int i = 0; i < time_merging.size(); i++) {
+    add_formatted_row("Time merging at stage " + std::to_string(i), time_merging[i]);
+  }
+  
+  for (unsigned int i = 0; i < time_merging.size(); i++) {
+    add_formatted_row("Batches merged at stage " + std::to_string(i), number_merged[i]);
+  }
+
+  tp.print_table();
+}

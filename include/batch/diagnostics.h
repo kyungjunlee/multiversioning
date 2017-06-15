@@ -32,24 +32,6 @@
 
 #endif  // SCHEDULER_DIAG
 
-#ifdef SCHEDULER_MAN_DIAG
-#define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
-  TIME_AND_INVOKE_ON_RESULT(time_what, invoke, tp_name)
-#else
-#define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
-  do {                                                                         \
-    time_what                                                                  \
-  } while (0) 
-#endif //SCHEDULER_MAN_DIAG
-
-#ifdef SCHEDULER_DIAG 
-#define IF_SCHED_MAN_DIAG(what)                                                \
-  what
-#else
-#define IF_SCHED_MAN_DIAG(what)                                                \
-
-#endif  // SCHEDULER_DIAG
-
 class NumStat {
   private:
     void update_avg(double num);
@@ -93,15 +75,46 @@ struct GlobalSchedulerDiag {
   void print();
 };
 
-struct SchedulerManagerDiag {
-  NumStat time_converting_workload;
-  NumStat time_collecting_inputs;
-  NumStat time_merging;
-  NumStat time_signaling_no_destr;
-  NumStat time_to_assign;
-  NumStat time_to_create;
+#ifdef SCHEDULER_MAN_DIAG
+#define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
+  TIME_AND_INVOKE_ON_RESULT(time_what, invoke, tp_name)
+#else
+#define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
+  do {                                                                         \
+    time_what                                                                  \
+  } while (0) 
+#endif //SCHEDULER_MAN_DIAG
 
-  SchedulerManagerDiag() {};
+#ifdef SCHEDULER_MAN_DIAG
+// This is necessary to use IF_SCHED_MAN_DIAG with commas inside...
+#define COMMA ,
+#define IF_SCHED_MAN_DIAG(what)                                                \
+  what
+#else
+#define IF_SCHED_MAN_DIAG(what)                                                \
+
+#endif  // SCHEDULER_MAN_DIAG
+
+struct SchedulerManagerDiag {
+  NumStat collection_queue_length;
+  NumStat collection_queue_processed;
+  NumStat time_collecting_inputs;
+  NumStat time_signaling_no_destr;
+  NumStat number_signaled;
+  
+  // TODO:
+  //  Do I want these at all?
+  //  NumStat time_to_assign;
+  //  NumStat time_to_create;
+  
+  // This is per-stage!
+  std::vector<NumStat> time_merging;
+  std::vector<NumStat> number_merged;
+
+  SchedulerManagerDiag(unsigned int merging_stages);
+
+  void reset();
+  void print();
 }; 
 
 #endif // BATCH_DIAGNOSTICS_H_

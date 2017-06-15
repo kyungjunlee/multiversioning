@@ -69,6 +69,11 @@ bool Scheduler::is_stop_requested() {
 }
 
 void Scheduler::reset() {
+  // The only reason why this doesn't have to be locked
+  // is that reset should only ever be called when the system
+  // has no input. That means that the scheduler thread is awaiting 
+  // input or helping to merge and not using the diagnostics. If 
+  // that weren't the case, we'd have to lock!
   IF_SCHED_DIAG(
     diag.reset();
   );

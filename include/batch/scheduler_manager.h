@@ -149,6 +149,10 @@ private:
       OrderedWorkload&& ow);
 
 public:
+  IF_SCHED_MAN_DIAG(
+    SchedulerManagerDiag diag
+  );
+
   // Variables necessary for input
   ThreadInputQueues thread_input;
 
