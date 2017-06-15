@@ -45,6 +45,7 @@ class SchedulerThread : public Runnable {
     virtual uint64_t get_thread_id() { return thread_id; };
     virtual void signal_stop_working() = 0;
     virtual bool is_stop_requested() = 0;
+    virtual void reset() = 0;
  
     virtual ~SchedulerThread() {
       free(m_rand_state); 

@@ -8,12 +8,10 @@
 #include "batch/RMW_batch_action.h"
 #include "batch/batch_action_interface.h"
 #include "batch/SPSC_MR_queue.h"
-#include "time_utilities.h"
+#include "batch/time_utilities.h"
 
 #include <vector>
 #include <memory>
-#include <sstream>
-#include <iomanip>
 #include <thread>
 
 #define DB_TABLES 1
@@ -177,10 +175,10 @@ namespace TimeLockTable {
 
         result = result / 5;
         double per_fun_exec = result/batches;
-        std::stringstream ss;
-        ss << std::fixed << std::setprecision(6) <<
-          result << "(" << per_fun_exec << ")";
-        tp.add_to_last_row(ss.str());
+        tp.add_to_last_row(
+            PrintUtilities::double_to_string(result) +
+              "(" + PrintUtilities::double_to_string(per_fun_exec) + ")"
+        );
       }; 
 
       for (auto& batches : {10, 100, 1000}) {

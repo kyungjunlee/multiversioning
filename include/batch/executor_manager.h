@@ -39,6 +39,7 @@ public:
   virtual void set_db_storage_ptr(IDBStorage* db) override;
   virtual void start_working() override;
   virtual void init() override;
+  virtual void reset() override;
   virtual void stop_working() override;
 
   // implementing the ExecutorThreadManager interface

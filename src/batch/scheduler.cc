@@ -14,14 +14,20 @@ Scheduler::Scheduler(
 
 void Scheduler::StartWorking() {
   while(!is_stop_requested()) {
-    // get the batch actions
-    batch_actions = std::move(this->manager->request_input(this));
-    process_batch();
-    this->manager->hand_batch_to_execution(
-        this, 
-        batch_actions.batch_id, 
-        std::move(workloads), 
-        std::move(lt));
+    TIME_IF_SCHED_DIAGNOSTICS(
+      // get the batch actions
+      batch_actions = std::move(this->manager->request_input(this));
+      TIME_IF_SCHED_DIAGNOSTICS(
+        process_batch();, 
+        diag.time_creating_schedule.add_sample, tp_2);
+      this->manager->hand_batch_to_execution(
+          this, 
+          batch_actions.batch_id, 
+          std::move(workloads), 
+          std::move(lt));,
+      diag.time_per_iteration.add_sample,
+      tp_1
+     );
   }
 };
 
@@ -61,3 +67,14 @@ void Scheduler::signal_stop_working() {
 bool Scheduler::is_stop_requested() {
   return stop_signal;
 }
+
+void Scheduler::reset() {
+  // The only reason why this doesn't have to be locked
+  // is that reset should only ever be called when the system
+  // has no input. That means that the scheduler thread is awaiting 
+  // input or helping to merge and not using the diagnostics. If 
+  // that weren't the case, we'd have to lock!
+  IF_SCHED_DIAG(
+    diag.reset();
+  );
+} 

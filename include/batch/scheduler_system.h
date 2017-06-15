@@ -46,6 +46,7 @@ public:
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) = 0;
   virtual void start_working() = 0;
   virtual void init() = 0;
+  virtual void reset() = 0;
   virtual void stop_working() = 0;
 
   virtual ~SchedulingSystem() {};

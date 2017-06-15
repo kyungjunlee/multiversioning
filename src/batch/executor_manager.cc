@@ -24,8 +24,14 @@ void ExecutorManager::start_working() {
 };
 
 void ExecutorManager::init() {
-  for (auto executor : executors) {
-    executor->Init();
+  for (auto executor_ptr : executors) {
+    executor_ptr->Init();
+  }
+}
+
+void ExecutorManager::reset() {
+  for (auto executor_ptr : executors) {
+    executor_ptr->reset(); 
   }
 }
 

@@ -1,10 +1,9 @@
 #ifndef TIME_SPSC_QUEUE_H_
 #define TIME_SPSC_QUEUE_H_
 
-#include <time_utilities.h>
+#include "batch/time_utilities.h"
+
 #include <memory>
-#include <sstream>
-#include <iomanip>
 
 namespace TimeSpscQueue {
   SPSCMRQueue<unsigned int> get_prepped_queue(unsigned int elts) {
@@ -67,10 +66,10 @@ namespace TimeSpscQueue {
         result = result/5;
 
         double per_fun_exec = result/reps;
-        std::stringstream ss;
-        ss << std::fixed << std::setprecision(6) << 
-          result << "(" << per_fun_exec << ")";
-        tp.add_to_last_row(ss.str()); 
+        tp.add_to_last_row(
+            PrintUtilities::double_to_string(result) +
+              "(" + PrintUtilities::double_to_string(per_fun_exec) + ")"
+        );
       };
 
       for (auto& s : {1000, 10000, 1000000, 10000000}) {

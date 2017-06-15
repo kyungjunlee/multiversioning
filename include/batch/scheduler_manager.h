@@ -149,6 +149,10 @@ private:
       OrderedWorkload&& ow);
 
 public:
+  IF_SCHED_MAN_DIAG(
+    SchedulerManagerDiag diag
+  );
+
   // Variables necessary for input
   ThreadInputQueues thread_input;
 
@@ -178,6 +182,7 @@ public:
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) override;
   virtual void start_working() override;
   virtual void init() override;
+  virtual void reset() override;
   virtual void stop_working() override;
 
   // implementing the SchedulerThreadManager interface

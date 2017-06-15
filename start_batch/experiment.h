@@ -3,6 +3,7 @@
 
 #include "experiment_config.h"
 #include "batch/txn_factory.h"
+#include "batch/time_util.h"
 
 #include <cassert>
 #include <chrono>
@@ -14,12 +15,11 @@
 //  data dumps when necessary.
 class Experiment {
 private:
-  typedef std::chrono::system_clock::time_point TimePoint;
+  typedef TimeUtilities::TimePoint TimePoint;
 
   ExperimentConfig conf;
   std::vector<std::unique_ptr<IBatchAction>> workload;
   std::vector<std::unique_ptr<IBatchAction>> warm_up_workload;
-  TimePoint time_start, time_end;
   Supervisor s;
   uint64_t txns_completed;
   unsigned int expected_output_elts;
@@ -44,12 +44,12 @@ private:
     print_debug_info("Beginning warm up run ... ");
     
     // we make sure all of the transactions have gone through the DB at least once.
-    std::chrono::system_clock::time_point first_point;
     unsigned int txns_num = warm_up_workload.size();
     s.set_simulation_workload(std::move(warm_up_workload));
     warm_up_workload.clear();
 
-    time_start = std::chrono::system_clock::now(); 
+    TimePoint time_start, time_end;
+    time_start = TimeUtilities::now(); 
 
     barrier();
 
@@ -64,10 +64,13 @@ private:
       if (o == nullptr) continue;
 
       if (txns_completed == 0) {
-        first_point = std::chrono::system_clock::now();
         print_debug_info(
-            {"\n\tFirst transaction through after: ", 
-            std::to_string(time_period_ms(time_start, first_point)) + "ms\n"});
+            {
+              "\n\tFirst transaction through after: ", 
+              std::to_string(
+                TimeUtilities::time_difference_ms(
+                  time_start, TimeUtilities::now())) + "ms\n"
+            });
       }
 
       txns_completed += o->size();
@@ -76,11 +79,16 @@ private:
 
     barrier();
     assert(txns_completed == txns_num);
-    time_end = std::chrono::system_clock::now();
+    time_end = TimeUtilities::now();
     print_debug_info(
-      {"\tWarm up finished within: ",
-      std::to_string(time_period_ms(time_start, time_end)) + "ms\n"});
+      {
+        "\tWarm up finished within: ",
+        std::to_string(
+            TimeUtilities::time_difference_ms(
+              time_start, time_end)) + "ms\n"
+      });
     txns_completed = 0;
+    s.reset_system();
   };
 
   std::vector<std::pair<double, unsigned int>> do_measurements() {
@@ -94,25 +102,26 @@ private:
       pin_thread(78);
       unsigned int current_measurement = 0;
       unsigned int former_measurement = 0;
+      TimePoint iteration_start, iteration_end;
       while(!end_of_measurement) {
-        time_start = std::chrono::system_clock::now();
+        iteration_start = TimeUtilities::now();
         std::this_thread::sleep_for(std::chrono::seconds(1));
         barrier();
         current_measurement = txns_completed;
-        time_end = std::chrono::system_clock::now();
+        iteration_end = TimeUtilities::now();
         results.push_back(
             std::make_pair(
-              time_period_ms(time_start, time_end),
+              TimeUtilities::time_difference_ms(iteration_start, iteration_end),
               current_measurement - former_measurement));
         former_measurement = current_measurement;
       }
-      measure_stop = std::chrono::system_clock::now();
+      measure_stop = TimeUtilities::now();
     };
     
     auto put_input = [&]() {
       pin_thread(77);
       s.set_simulation_workload(std::move(workload));
-      input_stop = std::chrono::system_clock::now();
+      input_stop = TimeUtilities::now();
     };
 
     auto get_output = [&]() {
@@ -133,10 +142,10 @@ private:
       }
 
       fetch_and_increment(&end_of_measurement);
-      output_stop = std::chrono::system_clock::now();
+      output_stop = TimeUtilities::now();
     };
 
-    all_start = std::chrono::system_clock::now();
+    all_start = TimeUtilities::now();
     std::thread measure(measure_throughput);
     std::thread output(get_output);
     std::thread input(put_input);
@@ -152,16 +161,12 @@ private:
       "Input Time",
       "Output Time",
       "Measure Time\n",
-      std::to_string(time_period_ms(all_start, input_stop)) + "ms",
-      std::to_string(time_period_ms(all_start, output_stop)) + "ms",
-      std::to_string(time_period_ms(all_start, measure_stop)) + "ms\n"
+      std::to_string(TimeUtilities::time_difference_ms(all_start, input_stop)) + "ms",
+      std::to_string(TimeUtilities::time_difference_ms(all_start, output_stop)) + "ms",
+      std::to_string(TimeUtilities::time_difference_ms(all_start, measure_stop)) + "ms\n"
     });
 
     return results;
-  };
-
-  double time_period_ms(TimePoint start, TimePoint end) {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count(); 
   };
 
   std::vector<std::unique_ptr<IBatchAction>> allocate_actions() {
@@ -204,9 +209,13 @@ private:
   };
 
   void initialize() { 
-    auto print_OK_time = [this]() {
+    TimePoint time_start, time_end;
+    auto print_OK_time = [this, &time_start, &time_end]() {
      print_debug_info(
-        "[ O K ] (" + std::to_string(time_period_ms(time_start, time_end)) + ")\n");
+        "[ O K ] (" + 
+        std::to_string(
+          TimeUtilities::time_difference_ms(time_start, time_end)) + 
+        ")\n");
     };
 
     print_debug_info("Creating workload ... ");

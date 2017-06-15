@@ -62,6 +62,7 @@ public:
   std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
   void signal_stop_working() override;
   bool is_stop_requested() override;
+  void reset() override;
 };
 
 #endif //BATCH_EXECUTOR_H_

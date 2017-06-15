@@ -6,6 +6,7 @@
 #include "batch/container.h"
 #include "batch/scheduler_thread_manager.h"
 #include "batch/scheduler_thread.h"
+#include "batch/diagnostics.h"
 
 //  Scheduler
 //
@@ -39,12 +40,17 @@ public:
   // override SchedulerThread interface
   void signal_stop_working() override;
   bool is_stop_requested() override;
+  void reset() override;
 
   // override Runnable interface
   void StartWorking() override;
   void Init() override;
 
   virtual ~Scheduler();
+
+  IF_SCHED_DIAG(
+    SchedulerDiag diag;
+  );
 };
 
 #endif // BATCH_SCHEDULER_H_
