@@ -86,19 +86,19 @@ struct GlobalSchedulerDiag {
       TIME_AND_INVOKE_ON_RESULT(time_what, invoke, tp_name)
   #endif // SCHEDULER_MAN_NO_TIME
 #else
-#define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
-  do {                                                                         \
-    time_what                                                                  \
-  } while (0) 
+  #define TIME_IF_SCHED_MAN_DIAGNOSTICS(time_what, invoke, tp_name)              \
+    do {                                                                         \
+      time_what                                                                  \
+    } while (0) 
 #endif //SCHEDULER_MAN_DIAG
 
 #ifdef SCHEDULER_MAN_DIAG
-// This is necessary to use IF_SCHED_MAN_DIAG with commas inside...
-#define COMMA ,
-#define IF_SCHED_MAN_DIAG(what)                                                \
-  what
+  // This is necessary to use IF_SCHED_MAN_DIAG with commas inside...
+  #define COMMA ,
+  #define IF_SCHED_MAN_DIAG(what)                                                \
+    what
 #else
-#define IF_SCHED_MAN_DIAG(what)                                                \
+  #define IF_SCHED_MAN_DIAG(what)                                                \
 
 #endif  // SCHEDULER_MAN_DIAG
 

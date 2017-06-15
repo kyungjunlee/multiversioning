@@ -186,17 +186,21 @@ void SchedulerManager::init() {
 };
 
 void SchedulerManager::reset() {
-  IF_SCHED_MAN_DIAG(
-    MutexRWGuard collect_lck(&sorted_pending_batches.lck, LockType::exclusive);
-    MutexRWGuard signal_lck(&merging_queues.signaling_lock, LockType::exclusive);
-    std::vector<MutexRWGuard> merging_locks;
-    for (auto& lck : merging_queues.stage_locks) {
-      merging_locks.push_back(MutexRWGuard(&lck, LockType::exclusive));
-    }
-
-    // Now we own all of the necessary locks and can reset!
-    diag.reset();
-  );
+  // TODO:
+  //  If you really want to reset here, must make sure that the lock contention
+  //  isn't as high as it is right now. Will take ages to actually do if will
+  //  ever be done.
+//  IF_SCHED_MAN_DIAG(
+//    MutexRWGuard collect_lck(&sorted_pending_batches.lck, LockType::exclusive);
+//    MutexRWGuard signal_lck(&merging_queues.signaling_lock, LockType::exclusive);
+//    std::vector<MutexRWGuard> merging_locks;
+//    for (auto& lck : merging_queues.stage_locks) {
+//      merging_locks.push_back(MutexRWGuard(&lck, LockType::exclusive));
+//    }
+//
+//    // Now we own all of the necessary locks and can reset!
+//    diag.reset();
+//  );
 
   for (auto& scheduler_thread_ptr : schedulers) {
     scheduler_thread_ptr->reset();
