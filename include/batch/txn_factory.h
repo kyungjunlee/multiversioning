@@ -49,13 +49,158 @@ private:
       unsigned int how_many, 
       std::unordered_set<unsigned int> constraining_set = {});
   static unsigned int get_lock_number(LockDistributionConfig conf);
-  static bool lock_distro_config_is_valid(LockDistributionConfig spec);
 public:
+  static bool lock_distro_config_is_valid(LockDistributionConfig spec);
   static std::vector<std::unique_ptr<IBatchAction>> generate_actions(
       ActionSpecification spec,
       unsigned int number_of_actions);
+  static void initialize_txn_to_random_values(
+      std::unique_ptr<IBatchAction>& act,
+      ActionSpecification spec);
 };
 
 #include "batch/txn_factory_impl.h"
+
+struct MemElt {
+  struct MemElt* next_elt;
+  char* memory;
+
+  MemElt(unsigned int byte_size) {
+    next_elt = nullptr;
+    memory = new char[byte_size];
+  };
+
+  ~MemElt() {
+    next_elt = nullptr;
+    delete[] memory;
+  };
+};
+
+struct MemEltList {
+  MemElt* head;
+  MemElt* tail;
+
+  MemEltList() {
+    head = nullptr;
+    tail = nullptr;
+  };
+
+  void push_tail(MemElt* me) {
+    if (is_empty()) {
+      head = me;
+      tail = head;
+    } else {
+      tail->next_elt = me;
+      tail = me;
+    }
+  };
+
+  MemElt* pop_head() {
+    if (is_empty()) {
+      return nullptr;
+    }
+
+    auto tmp = head;
+    head = head->next_elt;
+    if (head == nullptr) {
+      assert(tail == tmp);
+      tail = nullptr;
+    }
+
+    return tmp;
+  };
+
+  bool is_empty() {
+    return (head == nullptr);
+  };
+
+  ~MemEltList() {
+    MemElt* tmp;
+    while (!is_empty()) {
+      tmp = head;
+      head = head->next_elt;
+
+      delete tmp;
+    }
+  }
+};
+
+template <class ActionClass>
+class BatchActionAllocator {
+private:
+  //  TODO: 
+  // The above queue would need to be SPSC. Considering using 
+  // MR queue if possible. I think it should be possible here, but the 
+  // memory allocated in MR queue must also be taken care of by a pool
+  // allocator somewhere, lol.
+  //
+  // That allocator can be local to the queue though so that shouldn't be an issue.
+  // Ever. Just need to modify the MRqueue a tad.
+  MemEltList act_free_list;
+  MemEltList act_allocated_list;
+  MemEltList txn_free_list;
+  MemEltList txn_allocated_list;
+
+  MemElt* act_cur_elt;
+  MemElt* txn_cur_elt;
+  unsigned int batch_size;
+  unsigned int next_mem_elt;
+
+  void allocate_more_memory() {
+    act_free_list.push_tail(new MemElt(sizeof(ActionClass) * batch_size));
+    txn_free_list.push_tail(new MemElt(sizeof(TestTxn) * batch_size));
+  }
+public:
+  BatchActionAllocator(unsigned int batch_size): 
+    act_cur_elt(nullptr),
+    txn_cur_elt(nullptr),
+    batch_size(batch_size),
+    next_mem_elt(batch_size)
+  {};
+
+  // In generality we must provide memory for txns or provide an array 
+  // of such txns. This should be done using Args&&... args and variadic templates.
+  ActionClass* get_action() {
+    if (next_mem_elt == batch_size) {
+      if (act_free_list.is_empty() || txn_free_list.is_empty()) {
+        allocate_more_memory();
+      }
+      assert(act_free_list.is_empty() == false);
+      assert(txn_free_list.is_empty() == false);
+
+      // save the element to allocated list.
+      act_allocated_list.push_tail(act_cur_elt);
+      txn_allocated_list.push_tail(txn_cur_elt);
+
+      // get the new memory element.
+      act_cur_elt = act_free_list.pop_head();
+      txn_cur_elt = txn_free_list.pop_head();
+      next_mem_elt = 0;
+    }
+
+    ActionClass* act_mem = (ActionClass*)
+      &act_cur_elt->memory[next_mem_elt * sizeof(ActionClass)];
+    TestTxn* txn_mem = (TestTxn*) 
+      &txn_cur_elt->memory[next_mem_elt * sizeof(TestTxn)];
+    next_mem_elt ++;
+
+    return new (act_mem) ActionClass(new (txn_mem) TestTxn());
+  };
+
+  void free_last_action_batch() {
+    act_free_list.push_tail(act_allocated_list.pop_head());
+    txn_free_list.push_tail(txn_allocated_list.pop_head());
+  };
+
+  // TODO:
+  //  Add assertions about the number of elements being on free list and 
+  //  allocated list. We probably would expect ALL of the elements ever allocated
+  //  to be on the free list, not allocated list. Plus, we probably want the number
+  //  of such elements to be checked as well. Right?
+  ~BatchActionAllocator () {
+    delete act_cur_elt;
+    delete txn_cur_elt;
+  };
+};
 
 #endif // BATCH_ACTION_FACTORY_H_

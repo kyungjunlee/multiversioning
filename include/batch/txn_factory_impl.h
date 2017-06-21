@@ -114,35 +114,41 @@ bool ActionFactory<ActionClass>::lock_distro_config_is_valid(
 
 template <class ActionClass>
 std::vector<std::unique_ptr<IBatchAction>>
-ActionFactory<ActionClass>::generate_actions (
+ActionFactory<ActionClass>::generate_actions(
     ActionSpecification spec,
     unsigned int number_of_actions) {
   assert(
       lock_distro_config_is_valid(spec.reads) &&
       lock_distro_config_is_valid(spec.writes));
-  
-  std::vector<std::unique_ptr<IBatchAction>> res;
+
+  std::vector<std::unique_ptr<IBatchAction>> actions;
   for (unsigned int i = 0; i < number_of_actions; i++) {
-    auto read_set = get_disjoint_set_of_random_numbers(
-        spec.reads.low_record,
-        spec.reads.high_record,
-        get_lock_number(spec.reads));
-
-    auto write_set = get_disjoint_set_of_random_numbers(
-        spec.writes.low_record,
-        spec.writes.high_record,
-        get_lock_number(spec.writes),
-        read_set);
-
-    // construct the action
     std::unique_ptr<IBatchAction> act = std::make_unique<ActionClass>(new TestTxn());
-    for (auto& key : read_set) act->add_read_key(key);
-    for (auto& key : write_set) act->add_write_key(key);
-
-    res.push_back(std::move(act));
+    initialize_txn_to_random_values(act, spec);
+    actions.push_back(std::move(act));
   }
 
-  return res;
-}
+  return actions;
+};
+
+template <class ActionClass> 
+void ActionFactory<ActionClass>::initialize_txn_to_random_values(
+    std::unique_ptr<IBatchAction>& act,
+    ActionSpecification spec) {
+  auto read_set = get_disjoint_set_of_random_numbers(
+      spec.reads.low_record,
+      spec.reads.high_record,
+      get_lock_number(spec.reads));
+
+  auto write_set = get_disjoint_set_of_random_numbers(
+      spec.writes.low_record,
+      spec.writes.high_record,
+      get_lock_number(spec.writes),
+      read_set);
+
+  // set the appropriate values
+  for (auto& key : read_set) act->add_read_key(key);
+  for (auto& key : write_set) act->add_write_key(key);
+};
 
 #endif // BATCH_ACTION_FACTORY_IMPL_
