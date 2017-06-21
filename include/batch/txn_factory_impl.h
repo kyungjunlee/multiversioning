@@ -5,6 +5,7 @@
 #include "test/test_action.h"
 
 #include <random>
+#include <cassert>
 
 template <class ActionClass>
 std::unordered_set<unsigned int> 
@@ -133,7 +134,7 @@ ActionFactory<ActionClass>::generate_actions(
 
 template <class ActionClass> 
 void ActionFactory<ActionClass>::initialize_txn_to_random_values(
-    std::unique_ptr<IBatchAction>& act,
+    IBatchAction* act,
     ActionSpecification spec) {
   auto read_set = get_disjoint_set_of_random_numbers(
       spec.reads.low_record,
@@ -149,6 +150,13 @@ void ActionFactory<ActionClass>::initialize_txn_to_random_values(
   // set the appropriate values
   for (auto& key : read_set) act->add_read_key(key);
   for (auto& key : write_set) act->add_write_key(key);
+}; 
+
+template <class ActionClass> 
+void ActionFactory<ActionClass>::initialize_txn_to_random_values(
+    std::unique_ptr<IBatchAction>& act,
+    ActionSpecification spec) {
+  initialize_txn_to_random_values(act.get(), spec);
 };
 
 #endif // BATCH_ACTION_FACTORY_IMPL_

@@ -8,7 +8,7 @@
 #include "batch/RMW_batch_action.h"
 #include "batch/batch_action_interface.h"
 #include "batch/SPSC_MR_queue.h"
-#include "batch/time_utilities.h"
+#include "batch/time_util.h"
 
 #include <vector>
 #include <memory>

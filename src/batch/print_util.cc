@@ -7,7 +7,7 @@
 
 std::string PrintUtilities::double_to_string(double d) {
   std::stringstream ss;
-  ss << std::fixed << std::setprecision(3) << d;
+  ss << std::fixed << std::setprecision(5) << d;
   return ss.str();
 };
 

@@ -55,6 +55,8 @@ public:
       ActionSpecification spec,
       unsigned int number_of_actions);
   static void initialize_txn_to_random_values(
+      IBatchAction* act, ActionSpecification spec);
+  static void initialize_txn_to_random_values(
       std::unique_ptr<IBatchAction>& act,
       ActionSpecification spec);
 };
