@@ -47,10 +47,18 @@ bool Packer::txn_conflicts(
 }
 
 Packer::BatchActions Packer::get_packing(Container* c) {
+  // TODO: Pre-allocate memory? Even in the scenario below 
+  //       this would have to be done to ensure that .clear
+  //       doesn't drop memory.
+  // TODO: If we make Packer an object, we may use these as
+  //       objects and move this to class so that memory 
+  //       is only allocated once.
   RecordKeySet held_ex_locks;
   RecordKeySet held_sh_locks; 
 
   // TODO: Does this help or hinder?
+  // TODO: We don't need to create a new vector every time. We can just
+  //      pass one in. 
   // over-reserve memory to be able to fit every elt within container
   // if such is the need.
   BatchActions actions_in_packing;
