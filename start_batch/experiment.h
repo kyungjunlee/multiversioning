@@ -184,8 +184,8 @@ private:
         to_produce = actions_num - i * acts_per_thread;
       }
 
-      thread_actions[i] = std::move(ActionFactory<RMWBatchAction>::generate_actions(
-           this->conf.act_conf, to_produce));
+      ActionFactory<RMWBatchAction> act_factory(this->conf.act_conf);
+      thread_actions[i] = std::move(act_factory.generate_actions(to_produce));
     };
 
     for (unsigned int i = 0; i < thread_num; i++) {

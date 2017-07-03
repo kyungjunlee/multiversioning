@@ -46,7 +46,9 @@ namespace TimeLockTable {
       .reads = ldc
     };
 
-    return ActionFactory<RMWBatchAction>::generate_actions(as, txns_num); 
+    ActionFactory<RMWBatchAction> act_factory(as);
+
+    return act_factory.generate_actions(txns_num);
   };
 
   std::vector<BatchLockTable> prepare_blts(

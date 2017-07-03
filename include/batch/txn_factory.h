@@ -40,25 +40,36 @@ struct ActionSpecification {
 template <class ActionClass>
 class ActionFactory {
 private:
+  LockDistributionConfig read_conf;
+  LockDistributionConfig write_conf;
+  std::unordered_set<unsigned int> read_set;
+  std::unordered_set<unsigned int> write_set;
+  std::random_device rand_gen;
+  std::normal_distribution<double> read_num_distro;
+  std::uniform_int_distribution<unsigned int> read_distro;
+  std::normal_distribution<double> write_num_distro;
+  std::uniform_int_distribution<unsigned int> write_distro;
+
+  void initialize_from_spec(ActionSpecification spec);
   // runs in expected polynomial time.
   //
   // to and from are both inclusive.
-  static std::unordered_set<unsigned int> get_disjoint_set_of_random_numbers(
-      unsigned int from,
-      unsigned int to,
-      unsigned int how_many, 
-      std::unordered_set<unsigned int> constraining_set = {});
-  static unsigned int get_lock_number(LockDistributionConfig conf);
+  void fill_disjoint_set_of_random_numbers(
+      unsigned int how_many_numbers,
+      std::uniform_int_distribution<unsigned int>& distro,
+      std::unordered_set<unsigned int>& working_set,
+      const std::unordered_set<unsigned int>& constraining_set = {});
+  unsigned int get_nonzero_integer(std::normal_distribution<double>& distro);
+
 public:
-  static bool lock_distro_config_is_valid(LockDistributionConfig spec);
-  static std::vector<std::unique_ptr<IBatchAction>> generate_actions(
-      ActionSpecification spec,
+  ActionFactory(ActionSpecification spec);
+
+  bool lock_distro_config_is_valid(LockDistributionConfig spec);
+  std::vector<std::unique_ptr<IBatchAction>> generate_actions(
       unsigned int number_of_actions);
-  static void initialize_txn_to_random_values(
-      IBatchAction* act, ActionSpecification spec);
-  static void initialize_txn_to_random_values(
-      std::unique_ptr<IBatchAction>& act,
-      ActionSpecification spec);
+  void initialize_txn_to_random_values(IBatchAction* act);
+  void initialize_txn_to_random_values(std::unique_ptr<IBatchAction>& act);
+  void set_action_spec(ActionSpecification spec);
 };
 
 #include "batch/txn_factory_impl.h"

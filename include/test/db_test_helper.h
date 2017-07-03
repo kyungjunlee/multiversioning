@@ -29,6 +29,7 @@ private:
       exec_conf.executing_threads_count > 0 &&
       (action_num > 0 || workload.size() > 0);
   }
+
 public:
   typedef std::function<void (IDBStorage* db)> DBAssertion;
 
@@ -99,8 +100,8 @@ public:
         .reads = lock_distro
       };
 
-      workload = ActionFactory<BatchAction>::generate_actions(
-          act_spec, action_num);
+      ActionFactory<BatchAction> act_factory(act_spec);
+      workload = act_factory.generate_actions(action_num);
     } else {
       action_num = workload.size();
     }

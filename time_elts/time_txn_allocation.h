@@ -26,26 +26,25 @@ namespace TimeTxnAllocation {
   };
 
   double time_individual_alloation(unsigned int number_of_txn) {
-    auto act_spec = get_action_spec();
-    auto time_it = [&act_spec, &number_of_txn](){
-      ActionFactory<RMWBatchAction>::generate_actions(act_spec, number_of_txn);
+    ActionFactory<RMWBatchAction> act_factory(get_action_spec());
+    auto time_it = [&act_factory, &number_of_txn](){
+      act_factory.generate_actions(number_of_txn);
     };
 
     return TimeUtilities::time_function_ms(time_it);
   };
 
-  double batched_allocation(unsigned int number_of_txn, unsigned int batch_size) {
-    auto act_spec = get_action_spec();
+  double time_batched_allocation(unsigned int number_of_txn, unsigned int batch_size) {
+    ActionFactory<RMWBatchAction> act_factory(get_action_spec());
     BatchActionAllocator<RMWBatchAction> baa(batch_size);
     std::vector<IBatchAction*> acts;
     acts.resize(number_of_txn);
 
-    auto time_it = [&act_spec, &number_of_txn, &acts, &baa]() {
+    auto time_it = [&act_factory, &number_of_txn, &acts, &baa]() {
       IBatchAction* curr_act;
       for (unsigned int i = 0; i < number_of_txn; i++) {
         curr_act = baa.get_action();
-        ActionFactory<RMWBatchAction>::initialize_txn_to_random_values(
-            curr_act, act_spec);    
+        act_factory.initialize_txn_to_random_values(curr_act);
         acts.push_back(curr_act);
       }
     };
@@ -92,7 +91,7 @@ namespace TimeTxnAllocation {
 
     auto get_batch_fun_for = [](unsigned int batch_size) {
       return [batch_size](unsigned int txn_num) {
-        return batched_allocation(txn_num, batch_size);
+        return time_batched_allocation(txn_num, batch_size);
       };
     };
 
