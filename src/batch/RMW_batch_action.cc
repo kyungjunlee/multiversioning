@@ -2,11 +2,24 @@
 
 #include <cassert>
 
+bool RMWBatchAction::TmpRead::operator==(const TmpRead &other) const {
+  return rec_key == other.rec_key;
+};
+
+bool RMWBatchAction::TmpRead::operator<(const TmpRead &other) const {
+  return rec_key < other.rec_key;
+};
+
+bool RMWBatchAction::TmpRead::operator>(const TmpRead &other) const {
+  return rec_key > other.rec_key;
+};
+
 RMWBatchAction::RMWBatchAction(txn* t) : BatchAction(t) {};
 
 void RMWBatchAction::add_to_tmp_reads(RecordKey rk) {
-  auto res = tmp_reads.emplace(std::make_pair(rk, 0)); 
-  assert(res.second);
+  assert(tmp_reads.contains({rk}) == false);
+  auto res = tmp_reads.insert({rk}); 
+  assert(res);
 }
 
 void RMWBatchAction::add_read_key(RecordKey rk) {
@@ -27,26 +40,17 @@ void RMWBatchAction::Run(IDBStorage* db) {
 };
 
 void RMWBatchAction::do_reads(IDBStorage* db) {
-  auto read_for_set = [db, this](auto key_set_ptr){
-    TmpReadMap::iterator it;
-    for (const auto& key : *key_set_ptr) {
-      it = tmp_reads.find(key);
-      assert(it != tmp_reads.end());
-      assert(it->second == 0);
-      it->second = db->read_record_value(key);
-    }
-  };
-
-  read_for_set(this->get_readset_handle());
-  read_for_set(this->get_writeset_handle());
+  assert(tmp_reads.size() == this->get_readset_size() + this->get_writeset_size());
+  for (auto& tmp_struct : tmp_reads) {
+    tmp_struct.rec_val = db->read_record_value(tmp_struct.rec_key);
+  } 
 };
 
 void RMWBatchAction::do_writes(IDBStorage* db) {
   auto write_set_handle = this->get_writeset_handle();
-  TmpReadMap::iterator it;
   for (const auto& key : *write_set_handle) {
-    it = tmp_reads.find(key);
-    assert(it != tmp_reads.end());
-    db->write_record_value(key, it->second + 1); 
+    auto elt = tmp_reads.find({key});
+    assert(elt != nullptr);
+    db->write_record_value(key, elt->rec_val + 1); 
   }
 };

@@ -4,7 +4,7 @@
 #include "time_lock_table.h"
 
 int main() {//int argc, char** argv) {
-  TimeSpscQueue::time_queue();
+//  TimeSpscQueue::time_queue();
   TimeTxnAllocation::time_txn_allocation();
 //  TimeLockTable::time_lock_table();
   return 0;

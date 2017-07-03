@@ -27,7 +27,12 @@ void StaticVector<type, size>::sort() {
 
 template <typename type, unsigned int size>
 bool StaticVector<type, size>::contains(const type& elt) {
-  if (next_elt == 0) return false;
+  return (nullptr != find(elt));
+};
+
+template <typename type, unsigned int size>
+type* StaticVector<type, size>::find(const type& elt) {
+  if (next_elt == 0) return nullptr;
   if (sorted == false) sort();
 
   // sorted array. We may use binary search
@@ -43,11 +48,11 @@ bool StaticVector<type, size>::contains(const type& elt) {
     } else if (contents[cur] < elt) {
       lo = cur + 1;
     } else {
-      return true;
+      return &contents[cur];
     }
   };
 
-  return false;
+  return nullptr;
 };
 
 template <typename type, unsigned int maximal_size>

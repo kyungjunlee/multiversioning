@@ -22,6 +22,7 @@ public:
   // returns true on success and false otherwise
   bool insert(type elt);
   void sort();
+  type* find(const type& elt);
   bool contains(const type& elt);
   unsigned int capacity() const;
   unsigned int size() const;
