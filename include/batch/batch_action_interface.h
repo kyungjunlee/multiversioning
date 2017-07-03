@@ -3,6 +3,7 @@
 
 #include "batch/record_key.h"
 #include "batch/db_storage_interface.h"
+#include "batch/stat_vec.h"
 #include "db.h"
 
 #include <stdint.h>
@@ -24,8 +25,13 @@ enum class BatchActionState {
 //    system. 
 class IBatchAction : public translator {
 public:
-  // typedefs
-  typedef std::unordered_set<RecordKey> RecordKeySet;
+  // TODO: 
+  //    Change the statically set max size of the record key set
+  //    to something defined using a macro.
+  //
+  //    The real question is: where to define such macro? Any easy way to change it 
+  //    from the makefile / execution script level? I think so -- sed?
+  typedef StaticVector<RecordKey, 30> RecordKeySet;
 
   IBatchAction(txn* t): 
     translator(t),

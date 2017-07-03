@@ -19,22 +19,16 @@ void BatchAction::add_read_key(RecordKey rk) {
 }
 
 void* BatchAction::write_ref(uint64_t key, uint32_t table) {
-  RecordKey rk(key, table);
-  auto it = writeset.find(rk);
-  assert(it != writeset.end());//record must be part of this action
-  // TODO:
-  //    Do we need this anywhere?
-  //return it->record;
+  (void) key;
+  (void) table;
+  assert(false);
   return nullptr;
 }
 
 void* BatchAction::read(uint64_t key, uint32_t table) {
-  RecordKey rk(key, table);
-  auto it = readset.find(rk);
-  assert(it != readset.end());
-  // TODO:
-  //    Do we need this anywhere?
-  // return it->record;
+  (void) key;
+  (void) table;
+  assert(false);
   return nullptr;
 };
 

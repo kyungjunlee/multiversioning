@@ -12,16 +12,19 @@
 //    The reason for the existance of this instead of using a bare integer
 //    is the existence of multiple tables.
 class RecordKey {
-  public:
-    static constexpr uint64_t DEFAULT_TABLE_ID = 0;
-  
-    uint64_t key;
-    uint64_t table_id;
+public:
+  static constexpr uint64_t DEFAULT_TABLE_ID = 0;
 
-    RecordKey(uint64_t key, uint64_t table_id = DEFAULT_TABLE_ID);
+  uint64_t key;
+  uint64_t table_id;
 
-    bool operator==(const RecordKey &other) const;
-    bool operator<(const RecordKey &other) const;
+  RecordKey();
+  RecordKey(uint64_t key);
+  RecordKey(uint64_t key, uint64_t table_id);
+
+  bool operator==(const RecordKey &other) const;
+  bool operator<(const RecordKey &other) const;
+  bool operator>(const RecordKey &other) const;
 };
 
 namespace std {

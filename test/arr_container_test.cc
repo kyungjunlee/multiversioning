@@ -11,7 +11,7 @@
 //    Extract the action prep logic to a utility class / file.
 class ArrayContainerTest : public testing::Test {
 protected:
-  unsigned int ACTIONS_NUM = 100;
+  unsigned int ACTIONS_NUM = 30;
   float WRITE_PERC_IN_ACTION = 0.5;
 
   std::unique_ptr<ArrayContainer> testContainer;
@@ -58,9 +58,9 @@ TEST_F(ArrayContainerTest, eltTakingAndRemaningCountTest) {
   // remove every other element.
   for (unsigned int i = 0; i < ACTIONS_NUM; i++) {
     if ((i % 2) == 0) {
-      EXPECT_EQ(100 - i / 2, testContainer->get_remaining_count());
+      EXPECT_EQ(ACTIONS_NUM - i / 2, testContainer->get_remaining_count());
       auto min = testContainer->take_curr_elt();
-      EXPECT_EQ(100 - i/2 - 1, testContainer->get_remaining_count());
+      EXPECT_EQ(ACTIONS_NUM - i/2 - 1, testContainer->get_remaining_count());
     } else {
       testContainer->advance_to_next_elt();
     }      

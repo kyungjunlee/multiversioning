@@ -69,22 +69,3 @@ TEST_F(BatchActionTest, ComparingActions) {
   delete b;
   delete c;
 }
-
-// TODO:
-//    When we figure out if we need the read/write refs, this will come back
-//    or get deleted.
-//// create record keys with specific pointers and fetch them
-//TEST_F(BatchActionTest, CheckingRefs) {
-//  BatchRecord x = 10;
-//  BatchRecord y = 11;
-//
-//  RecordKey r1(1, 0); 
-//  RecordKey r2(1, 1); 
-//  r1.record = &x;
-//  r2.record = &y;
-//
-//  BatchAction* action = create_action_with_records({r1}, {r2}); 
-//  
-//  ASSERT_EQ(*((BatchRecord*) action->read(1, 0)), 10);
-//  ASSERT_EQ(*((BatchRecord*) action->write_ref(1, 1)), 11);
-//}

@@ -28,7 +28,7 @@ bool Packer::txn_conflicts(
     for (auto it = smaller->begin(); it != smaller->end(); it++) {
       // return true if the larger set contains any of the elements of 
       // the smaller set.
-      if (larger->find(*it) != larger->end()) {
+      if (larger->contains(*it)) {
         return true;
       }
     }
