@@ -39,6 +39,8 @@ public:
     action_state(static_cast<uint64_t>(BatchActionState::substantiated))
   {};
 
+  virtual txn* get_transaction() { return t; };
+
   uint64_t locks_held;
   virtual uint64_t notify_lock_obtained() = 0; 
   virtual bool ready_to_execute() = 0;

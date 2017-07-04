@@ -1,4 +1,6 @@
-#include "batch/MS_queue.h"
+#ifndef _MS_QUEUE_IMPL_H_
+#define _MS_QUEUE_IMPL_H_
+
 #include "util.h"
 
 #include <cassert>
@@ -181,3 +183,5 @@ MSQueue<Elt>::~MSQueue() {
 
   delete head;
 };
+
+#endif // _MS_QUEUE_IMPL_H_

@@ -2,6 +2,7 @@
 #define TIME_TXN_ALLOCATION_H_
 
 #include "batch/txn_factory.h"
+#include "batch/memory_pools.h"
 #include "batch/RMW_batch_action.h"
 #include "batch/time_util.h"
 #include "batch/print_util.h"
@@ -34,27 +35,46 @@ namespace TimeTxnAllocation {
     return TimeUtilities::time_function_ms(time_it);
   };
 
-  double time_batched_allocation(unsigned int number_of_txn, unsigned int batch_size) {
+  double time_with_reuse(unsigned int number_of_txn, unsigned int alloc_num) {
     ActionFactory<RMWBatchAction> act_factory(get_action_spec());
-    BatchActionAllocator<RMWBatchAction> baa(batch_size);
+    ActionMemoryPool<RMWBatchAction> amp; 
     std::vector<IBatchAction*> acts;
-    acts.resize(number_of_txn);
+    auto& num_act_allocated = alloc_num < number_of_txn ? alloc_num : number_of_txn;
+    acts.reserve(num_act_allocated);
 
-    auto time_it = [&act_factory, &number_of_txn, &acts, &baa]() {
+    auto time_it = [&act_factory, number_of_txn, &acts, &amp, num_act_allocated]() {
       IBatchAction* curr_act;
-      for (unsigned int i = 0; i < number_of_txn; i++) {
-        curr_act = baa.get_action();
+      for (unsigned int i = 0; i < num_act_allocated; i++) {
+        curr_act = amp.alloc_and_initialize();
         act_factory.initialize_txn_to_random_values(curr_act);
         acts.push_back(curr_act);
       }
+
+      unsigned int index = 0;
+      for (unsigned int i = 0; i < number_of_txn - num_act_allocated; i++) {
+        index = i % num_act_allocated;
+        curr_act = acts[index];
+        amp.free((RMWBatchAction*) curr_act);
+
+        curr_act = amp.alloc_and_initialize();
+        act_factory.initialize_txn_to_random_values(curr_act);
+        acts[index] = curr_act;
+      }
     };
 
-    return TimeUtilities::time_function_ms(time_it); 
+    auto result  = TimeUtilities::time_function_ms(time_it); 
+
+    assert(acts.size() == num_act_allocated);
+    for (auto& act : acts) {
+      amp.free(act);
+    }
+
+    return result;
   };
 
   void time_txn_allocation() {
     TablePrinter tp;
-    tp.set_table_header("Transaction Allocation Time [ms]");
+    tp.set_table_header("Transaction Creation Time [ms]");
     tp.add_column_headers({
         "Experiment",
         "1 000 txns",
@@ -89,17 +109,17 @@ namespace TimeTxnAllocation {
       }
     };
 
-    auto get_batch_fun_for = [](unsigned int batch_size) {
-      return [batch_size](unsigned int txn_num) {
-        return time_batched_allocation(txn_num, batch_size);
+    auto get_batch_fun_for = [](unsigned int alloc_num) {
+      return [alloc_num](unsigned int txn_num) {
+        return time_with_reuse(txn_num, alloc_num);
       };
     };
 
-    exec_and_add_to_table("One-by-one allocation", time_individual_alloation);
-    for (auto& batch_size : {10, 100, 1000, 10000}) {
+    exec_and_add_to_table("Always dynamic allocation", time_individual_alloation);
+    for (auto& alloc_num : {10, 100, 1000, 10000}) {
       exec_and_add_to_table(
-          "Allocator batch size: " + std::to_string(batch_size),
-          get_batch_fun_for(batch_size));
+          "Allocate up to " + std::to_string(alloc_num) + " then reuse",
+          get_batch_fun_for(alloc_num));
     } 
 
     tp.print_table();
