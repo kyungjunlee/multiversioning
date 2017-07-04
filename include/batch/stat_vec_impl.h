@@ -75,4 +75,10 @@ type* StaticVector<type, size>::end() {
   return &contents[next_elt];
 };
 
+template <typename type, unsigned int size>
+void StaticVector<type, size>::clear() {
+  next_elt = 0;
+  sorted = false;
+};
+
 #endif // STATIC_VECTOR_IMPL_H

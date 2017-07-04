@@ -34,8 +34,8 @@ private:
   //    As in the batch action interface, we must change the 60 to something
   //    less arbitrary.
   typedef StaticVector<TmpRead, 60> TmpReads;
-  TmpReads tmp_reads; 
 
+  TmpReads tmp_reads; 
   void add_to_tmp_reads(RecordKey rk);
   void do_reads(IDBStorage* db);
   void do_writes(IDBStorage* db);

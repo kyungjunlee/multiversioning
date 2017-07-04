@@ -28,6 +28,7 @@ public:
   unsigned int size() const;
   type* begin();
   type* end();
+  void clear();
 };
 
 #include "batch/stat_vec_impl.h"

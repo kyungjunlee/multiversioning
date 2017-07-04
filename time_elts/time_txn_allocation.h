@@ -74,7 +74,7 @@ namespace TimeTxnAllocation {
 
   void time_txn_allocation() {
     TablePrinter tp;
-    tp.set_table_header("Transaction Creation Time [ms]");
+    tp.set_table_header("Transaction Allocation and Initialization Time [ms]");
     tp.add_column_headers({
         "Experiment",
         "1 000 txns",
