@@ -11,11 +11,13 @@ uint64_t BatchAction::get_writeset_size() const {
 }
 
 void BatchAction::add_write_key(RecordKey rk) {
-  writeset.insert(rk);
+  auto res = writeset.insert(rk);
+  assert(res);
 }
 
 void BatchAction::add_read_key(RecordKey rk) {
-  readset.insert(rk);
+  auto res = readset.insert(rk);
+  assert(res);
 }
 
 void BatchAction::finish_creating_action() {
