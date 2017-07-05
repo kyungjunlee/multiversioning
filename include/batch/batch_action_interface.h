@@ -47,6 +47,7 @@ public:
 
   virtual void add_read_key(RecordKey rk) = 0;
   virtual void add_write_key(RecordKey rk) = 0;
+  virtual void finish_creating_action() = 0;
   
   virtual uint64_t get_readset_size() const = 0;
   virtual uint64_t get_writeset_size() const = 0;

@@ -18,8 +18,8 @@
 
 class TestAction : public IBatchAction {
 private:
-  RecordKeySet writeSet;
-  RecordKeySet readSet;
+  RecordKeySet write_set;
+  RecordKeySet read_set;
   uint64_t id;
   
 public: 
@@ -31,8 +31,8 @@ public:
       RecordKeySet reads, 
       uint64_t id = 0) :
     IBatchAction(txn),
-    writeSet(writes),
-    readSet(reads),
+    write_set(writes),
+    read_set(reads),
     id(id)
   {};
 
@@ -75,14 +75,15 @@ public:
   };
 
   // key fnuctions
-  void add_read_key(RecordKey rk) override {readSet.insert(rk);}
-  void add_write_key(RecordKey rk) override {writeSet.insert(rk);}
+  void add_read_key(RecordKey rk) override {read_set.insert(rk);}
+  void add_write_key(RecordKey rk) override {write_set.insert(rk);}
+  void finish_creating_action() override {read_set.sort(); write_set.sort();}
 
   // read/write set functions
-  uint64_t get_readset_size() const override {return readSet.size();}
-  uint64_t get_writeset_size() const override {return writeSet.size();}
-  RecordKeySet* get_readset_handle() {return &readSet;}
-  RecordKeySet* get_writeset_handle() {return &writeSet;}
+  uint64_t get_readset_size() const override {return read_set.size();}
+  uint64_t get_writeset_size() const override {return write_set.size();}
+  RecordKeySet* get_readset_handle() {return &read_set;}
+  RecordKeySet* get_writeset_handle() {return &write_set;}
 
   void Run(IDBStorage* db) override {(void) db;};
   // inequality calculated based on the overall number of transactions.

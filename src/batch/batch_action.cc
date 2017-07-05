@@ -18,6 +18,11 @@ void BatchAction::add_read_key(RecordKey rk) {
   readset.insert(rk);
 }
 
+void BatchAction::finish_creating_action() {
+  readset.sort();
+  writeset.sort();
+};
+
 void* BatchAction::write_ref(uint64_t key, uint32_t table) {
   (void) key;
   (void) table;

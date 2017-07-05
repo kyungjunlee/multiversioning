@@ -43,7 +43,7 @@ TEST(MemoryTest, SmallTestOneSchedTwoExec) {
 TEST(MemoryTest, SmallTestTwoSchedTwoExec) {
   DBTestHelper<Supervisor> hp;
   hp.set_table_info(1, 100)
-    .set_exec_thread_num(1)
+    .set_exec_thread_num(2)
     .set_sched_thread_num(2)
     .set_batch_size(200)
     .set_action_num(1000);

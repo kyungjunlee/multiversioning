@@ -20,7 +20,7 @@ public:
   };
 
   bool is_full();
-  // returns true on success and false otherwise
+  // returns true on success and false otherwise (container full);
   bool insert(type elt);
   void sort();
   // make sure to sort before finding or checking for containment.
