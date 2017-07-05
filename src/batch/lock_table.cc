@@ -99,7 +99,7 @@ void LockTable::allocate_mem_for(RecordKey key) {
 
 BatchLockTable::BatchLockTable() {}
 
-void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
+void BatchLockTable::insert_lock_request(IBatchAction* req) {
   auto add_request = [this, &req](
       IBatchAction::RecordKeySet* set, LockType typ) {
     for (auto& i : *set) {

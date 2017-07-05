@@ -17,7 +17,7 @@
 //    the global schedule and the execution threads input queues.
 class SchedulerThreadManager {
   public:
-    typedef std::vector<std::shared_ptr<IBatchAction>> OrderedWorkload;
+    typedef std::vector<IBatchAction*> OrderedWorkload;
     ExecutorThreadManager* exec_manager;
 
     SchedulerThreadManager(ExecutorThreadManager* exec): exec_manager(exec) {};

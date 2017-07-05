@@ -12,8 +12,8 @@ ArrayContainer::ArrayContainer(BatchActions&& actions):
       this->actions.end(),
       // NOTE: this makes use of an overloaded < operator for Actions!
       [](
-        std::unique_ptr<IBatchAction> const& a, 
-        std::unique_ptr<IBatchAction> const& b) 
+        const IBatchAction* const a, 
+        const IBatchAction* const b) 
       {return *a < *b;});
 };
 
@@ -28,16 +28,19 @@ IBatchAction* ArrayContainer::peek_curr_elt() {
   }
 
   // return the pointer within unique_ptr of the right elt.
-  return this->actions[current_element].get();
+  return this->actions[current_element];
 }
 
-std::unique_ptr<IBatchAction> ArrayContainer::take_curr_elt() {
+IBatchAction* ArrayContainer::take_curr_elt() {
   if (arr_is_empty() || current_element == this->actions.size()) return nullptr;
 
   elements_removed_this_round ++;
   elements_removed_total ++;
   current_element ++;
-  return std::move(this->actions[current_element - 1]);
+  
+  auto return_value = this->actions[current_element - 1];
+  this->actions[current_element - 1] = nullptr;
+  return return_value;
 }
 
 void ArrayContainer::advance_to_next_elt() {
@@ -45,7 +48,8 @@ void ArrayContainer::advance_to_next_elt() {
   // of contiguous unremoved space.
   if (elements_removed_this_round > 0) {
     this->actions[current_element - elements_removed_this_round] =
-      std::move(this->actions[current_element]);
+      this->actions[current_element];
+    this->actions[current_element] = nullptr;
   }
 
   current_element ++;

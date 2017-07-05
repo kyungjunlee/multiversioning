@@ -10,6 +10,9 @@
 // TODO: 
 //    Extract the action prep logic to a utility class / file.
 class ArrayContainerTest : public testing::Test {
+private:
+  std::vector<IBatchAction*> allocated_actions;
+
 protected:
   unsigned int ACTIONS_NUM = 30;
   float WRITE_PERC_IN_ACTION = 0.5;
@@ -21,7 +24,7 @@ protected:
     Container::BatchActions actions;
     
     for (unsigned int i = 0; i < ACTIONS_NUM; i++) {
-      std::unique_ptr<TestAction> ta = std::make_unique<TestAction>(new TestTxn());
+      TestAction* ta = new TestAction(new TestTxn());
       
       // add i*WRITE_PERC_IN_ACTION keys to write and the rest to read sets.
       for (unsigned int j = 0; j < (unsigned int) (i * WRITE_PERC_IN_ACTION); j++) {
@@ -32,12 +35,19 @@ protected:
         ta->add_read_key(j);
       }
 
-      actions.push_back(std::move(ta));
+      allocated_actions.push_back(ta);
+      actions.push_back(ta);
     }
     
     // make the container
     testContainer = std::make_unique<ArrayContainer>(std::move(actions));
   }  
+
+  virtual void TearDown() {
+    for (auto& act_ptr : allocated_actions) {
+      delete act_ptr;
+    } 
+  }
 };
 
 // Freshly created container must:
@@ -59,7 +69,7 @@ TEST_F(ArrayContainerTest, eltTakingAndRemaningCountTest) {
   for (unsigned int i = 0; i < ACTIONS_NUM; i++) {
     if ((i % 2) == 0) {
       EXPECT_EQ(ACTIONS_NUM - i / 2, testContainer->get_remaining_count());
-      auto min = testContainer->take_curr_elt();
+      testContainer->take_curr_elt();
       EXPECT_EQ(ACTIONS_NUM - i/2 - 1, testContainer->get_remaining_count());
     } else {
       testContainer->advance_to_next_elt();

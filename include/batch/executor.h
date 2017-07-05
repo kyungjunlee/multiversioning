@@ -17,9 +17,9 @@
 //    The executor manager contains handles to all the executor threads
 //    and may be used by scheduling threads to assign ownership of actions
 //    to execution threads in a synchronized manner. 
-class ExecutorQueue : public MSQueue<std::unique_ptr<ExecutorThread::BatchActions>> {
+class ExecutorQueue : public MSQueue<ExecutorThread::BatchActions> {
 private:
-  using MSQueue<std::unique_ptr<ExecutorThread::BatchActions>>::merge_queue;
+  using MSQueue<ExecutorThread::BatchActions>::merge_queue;
 };
 
 // Pending Queue
@@ -27,7 +27,7 @@ private:
 //    Pending Queue is used by the executor to keep track of actions within
 //    a particular batch that could not be executed when the executor attempted
 //    to do so.
-typedef std::list<std::shared_ptr<IBatchAction>> PendingList;
+typedef std::list<IBatchAction*> PendingList;
 
 // BatchExecutor
 //
@@ -36,16 +36,19 @@ typedef std::list<std::shared_ptr<IBatchAction>> PendingList;
 //    it.
 class BatchExecutor : public ExecutorThread {
 protected:
+  // TODO:
+  //    Why the hell are all of these pointers? Delete them...
+  //
   std::unique_ptr<ExecutorQueue> input_queue;
   std::unique_ptr<ExecutorQueue> output_queue;
   // Pending actions are those that may not be immediately executed, but 
   // belong to the currently processed batch.
   std::unique_ptr<PendingList> pending_list;
-  std::unique_ptr<ExecutorThread::BatchActions> currentBatch;
+  ExecutorThread::BatchActions current_batch;
 
   void process_action_batch();
   // true if successful and false otherwise
-  bool process_action(std::shared_ptr<IBatchAction> act);
+  bool process_action(IBatchAction* act);
   void process_pending();
   
 public:
@@ -59,7 +62,7 @@ public:
   
   // implement the executor thread interface.
   void add_actions(ExecutorThread::BatchActions&& actions) override;
-  std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
+  ExecutorThread::BatchActions try_get_done_batch() override;
   void signal_stop_working() override;
   bool is_stop_requested() override;
   void reset() override;

@@ -33,8 +33,8 @@ public:
   ExecutorManager(ExecutingSystemConfig c);
 
   // implementing the ExecutingSystem interface
-  virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch() override;
-  virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
+  virtual ExecutorThread::BatchActions get_done_batch() override;
+  virtual ExecutorThread::BatchActions try_get_done_batch() override;
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) override;
   virtual void set_db_storage_ptr(IDBStorage* db) override;
   virtual void start_working() override;
@@ -49,7 +49,7 @@ public:
       ExecutorThreadManager::ThreadWorkloads&& workload) override;
   virtual std::shared_ptr<LockStage> 
     get_current_lock_holder_for(RecordKey key) override;
-  virtual void finalize_action(std::shared_ptr<IBatchAction> act) override;
+  virtual void finalize_action(IBatchAction* act) override;
 
   virtual ~ExecutorManager();
 };

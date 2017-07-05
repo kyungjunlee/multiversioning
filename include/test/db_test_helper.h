@@ -19,7 +19,7 @@ private:
   SchedulingSystemConfig sched_conf;
   ExecutingSystemConfig exec_conf;
   unsigned int action_num;
-  std::vector<std::unique_ptr<IBatchAction>> workload;
+  std::vector<IBatchAction*> workload;
 
   bool test_properly_initialized() {
     return 
@@ -71,7 +71,7 @@ public:
     return *this;
   };
   DBTestHelper& set_workload(
-      std::vector<std::unique_ptr<IBatchAction>>&& work) {
+      std::vector<IBatchAction*>&& work) {
     workload = std::move(work);
     return *this;
   };
@@ -101,7 +101,12 @@ public:
       };
 
       ActionFactory<BatchAction> act_factory(act_spec);
-      workload = act_factory.generate_actions(action_num);
+      workload.clear();
+      workload.reserve(action_num);
+      for (unsigned int i = 0; i < action_num; i++) {
+        workload.push_back(new BatchAction(new TestTxn()));
+        act_factory.initialize_txn_to_random_values(workload.back());
+      }
     } else {
       action_num = workload.size();
     }
@@ -114,13 +119,13 @@ public:
 
     barrier();
 
-    std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> outputs;
+    std::vector<std::vector<IBatchAction*>> outputs;
     unsigned int output_count = 0;
     while (output_count != action_num) {
       auto o = s->get_output();
-      if (o == nullptr) continue;
+      if (o.size() == 0) continue;
 
-      output_count += o->size();
+      output_count += o.size();
       outputs.push_back(std::move(o));
     }
 
@@ -128,6 +133,13 @@ public:
 
     assertion(s->get_db_pter());
     s->stop_system();
+
+    // free the memory of the actions
+    for (auto& act_vec : outputs) {
+      for (auto& act_ptr : act_vec) {
+        delete act_ptr;
+      }
+    }
   }
 };
 

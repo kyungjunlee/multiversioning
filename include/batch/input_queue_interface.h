@@ -21,7 +21,7 @@ protected:
   uint32_t batch_size;
 public:
   InputQueue(uint32_t bs): batch_size(bs) {};
-  typedef std::vector<std::unique_ptr<IBatchAction>> BatchActions;
+  typedef std::vector<IBatchAction*> BatchActions;
   
   // Try to get a batch of actions. Returns an empty vector if no actions
   // are available and otherwise busy waits until a whole batch is available.
@@ -30,7 +30,7 @@ public:
   // Puts the action into the global queue. Does not guarantee that the actions
   // are visible to the execution threads. To enforce "flushing" consider calling
   // the flush function. 
-  virtual void add_action(std::unique_ptr<IBatchAction>&& act) = 0;
+  virtual void add_action(IBatchAction* act) = 0;
 
   // Flushes all of the actions added so that they are visible by the execution
   // threads. Notice that this is necessary if the implementation of input queue

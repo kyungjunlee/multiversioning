@@ -14,12 +14,12 @@ BatchExecutor::BatchExecutor(
 void BatchExecutor::StartWorking() {
   while (!is_stop_requested()) {
     // get a batch to execute or busy wait until we may do that
-    currentBatch.reset(nullptr);
+    current_batch.clear();
 
     while(input_queue->is_empty()) {
       if (is_stop_requested()) return; 
     }
-    currentBatch = std::move(input_queue->peek_head());
+    current_batch = std::move(input_queue->peek_head());
     input_queue->pop_head();
 
     process_action_batch();
@@ -30,22 +30,19 @@ void BatchExecutor::Init() {
 };
 
 void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
-  input_queue->push_tail(
-      std::move(
-        std::make_unique<ExecutorThread::BatchActions>(
-          std::move(actions))));
+  input_queue->push_tail(std::move(actions));
 };
 
 void BatchExecutor::process_action_batch() {
-  for (unsigned int i = 0; i < currentBatch->size(); i++) {
+  for (unsigned int i = 0; i < current_batch.size(); i++) {
     // attempt to execute the pending actions first. This is because the 
     // actions "earlier" in the current batch are more likely to not
     // be blocked by other actions!
     process_pending();
 
-    assert(currentBatch->at(i) != nullptr);
-    if (!process_action(currentBatch->at(i))) {
-      pending_list->push_back(currentBatch->at(i));        
+    assert(current_batch.at(i) != nullptr);
+    if (!process_action(current_batch.at(i))) {
+      pending_list->push_back(current_batch.at(i));        
       pending_list->size();
     } 
   } 
@@ -56,10 +53,10 @@ void BatchExecutor::process_action_batch() {
   }
 
   // put the batch to the output queue!
-  output_queue->push_tail(std::move(currentBatch));
+  output_queue->push_tail(std::move(current_batch));
 };
 
-bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
+bool BatchExecutor::process_action(IBatchAction* act) {
   assert(act != nullptr);
 
   uint64_t action_state = act->action_state;
@@ -104,8 +101,8 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
           continue;
         }
 
-        for (auto action_sptr : blocking_actions) {
-          this->process_action(action_sptr); 
+        for (auto action_ptr : blocking_actions) {
+          this->process_action(action_ptr); 
         }
       } 
     };
@@ -135,15 +132,14 @@ void BatchExecutor::process_pending() {
   }
 };
 
-std::unique_ptr<ExecutorThread::BatchActions> BatchExecutor::try_get_done_batch() {
+ExecutorThread::BatchActions BatchExecutor::try_get_done_batch() {
+    ExecutorThread::BatchActions acts; 
   if (!output_queue->is_empty()) {
-    std::unique_ptr<ExecutorThread::BatchActions> act;
-    act = std::move(output_queue->peek_head());
+    acts = std::move(output_queue->peek_head());
     output_queue->pop_head();
-    return act; 
   }
 
-  return nullptr;
+  return acts;
 };
 
 void BatchExecutor::signal_stop_working() {

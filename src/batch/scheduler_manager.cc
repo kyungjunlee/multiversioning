@@ -14,8 +14,8 @@ ThreadInputQueues::ThreadInputQueues(
   queues.resize(thread_number);
 };
 
-void ThreadInputQueues::add_action(std::unique_ptr<IBatchAction>&& act) {
-  iq.add_action(std::move(act));
+void ThreadInputQueues::add_action(IBatchAction* act) {
+  iq.add_action(act);
 };
 
 void ThreadInputQueues::flush_actions() {
@@ -41,7 +41,7 @@ SchedulerThreadBatch ThreadInputQueues::get_batch_from_my_queue(
   while (my_queue.is_empty()) {
     if (s->is_stop_requested()) {
       return SchedulerThreadBatch {
-        .batch = std::vector<std::unique_ptr<IBatchAction>>(),
+        .batch = std::vector<IBatchAction*>(),
         .batch_id = 0
       };
     }
@@ -129,7 +129,7 @@ bool SchedulerManager::system_is_initialized() {
   return schedulers.size() > 0;
 }
 
-void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
+void SchedulerManager::add_action(IBatchAction* act) {
 	thread_input.add_action(std::move(act));
 };
 

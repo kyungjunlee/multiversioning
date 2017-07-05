@@ -40,7 +40,7 @@ public:
   // Add actions to the system. The effect may be delayed from the perspective
   // of scheduling threads if the implementation of scheduling system provides
   // batching. Use flush_actions() to enforce visibility to the scheduling threads.
-  virtual void add_action(std::unique_ptr<IBatchAction>&& act) = 0;
+  virtual void add_action(IBatchAction* act) = 0;
   // Enforce flushing of transactions to scheduling threads.
   virtual void flush_actions() = 0;
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) = 0;

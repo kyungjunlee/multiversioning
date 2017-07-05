@@ -7,19 +7,24 @@
 #include <memory>
 #include <vector>
 
-std::vector<std::unique_ptr<IBatchAction>> getWorkload() {
-  unsigned int record_num = 100;
-  // prepare the workload
-  std::vector<std::unique_ptr<IBatchAction>> workload;
-  for (unsigned int i = 0; i < 1000; i++) {
-    workload.push_back(std::make_unique<RMWBatchAction>(new TestTxn()));
-    for (unsigned int j = 0; j < 10; j++) {
-      workload[i]->add_write_key({(i + j) % record_num, 0});
-      workload[i]->add_read_key({(i + j + 10) % record_num, 0});
-    }
-  }
+class ConsistencyTest : public ::testing::Test {
+protected:
+  DBTestHelper<Supervisor> hp;
 
-  return workload;
+  std::vector<IBatchAction*> getWorkload() {
+    unsigned int record_num = 100;
+    // prepare the workload
+    std::vector<IBatchAction*> workload;
+    for (unsigned int i = 0; i < 1000; i++) {
+      workload.push_back(new RMWBatchAction(new TestTxn()));
+      for (unsigned int j = 0; j < 10; j++) {
+        workload[i]->add_write_key({(i + j) % record_num, 0});
+        workload[i]->add_read_key({(i + j + 10) % record_num, 0});
+      }
+    }
+
+    return workload;
+  };
 };
 
 auto get_assertion() {
@@ -30,8 +35,7 @@ auto get_assertion() {
   };
 }
 
-TEST(ConsistencyTest, SingleSchedSingleExec) {
-  DBTestHelper<Supervisor> hp;
+TEST_F(ConsistencyTest, SingleSchedSingleExec) {
   hp.set_table_info(1, 100)
     .set_exec_thread_num(1)
     .set_sched_thread_num(1)
@@ -41,8 +45,7 @@ TEST(ConsistencyTest, SingleSchedSingleExec) {
   hp.runTest(get_assertion());
 }
 
-TEST(ConsistencyTest, SingleSchedTwoExec) {
-  DBTestHelper<Supervisor> hp;
+TEST_F(ConsistencyTest, SingleSchedTwoExec) {
   hp.set_table_info(1, 100)
     .set_exec_thread_num(2)
     .set_sched_thread_num(1)
@@ -52,8 +55,7 @@ TEST(ConsistencyTest, SingleSchedTwoExec) {
   hp.runTest(get_assertion());
 }
 
-TEST(ConsistencyTest, TwoSchedTwoExec) {
-  DBTestHelper<Supervisor> hp;
+TEST_F(ConsistencyTest, TwoSchedTwoExec) {
   hp.set_table_info(1, 100)
     .set_exec_thread_num(2)
     .set_sched_thread_num(2)

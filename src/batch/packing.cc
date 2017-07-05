@@ -64,7 +64,7 @@ Packer::BatchActions Packer::get_packing(Container* c) {
   BatchActions actions_in_packing;
   actions_in_packing.reserve(c->get_remaining_count());
   IBatchAction* next_action;
-  std::unique_ptr<IBatchAction> action;
+  IBatchAction* action;
 
   auto merge_sets = [](RecordKeySet* mergeTo, RecordKeySet* mergeFrom) {
     for (auto it = mergeFrom->begin(); it != mergeFrom->end(); it++) {

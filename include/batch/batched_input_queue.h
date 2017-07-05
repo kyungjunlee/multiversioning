@@ -19,22 +19,22 @@ class Scheduler;
  *    are stored in batches and are returned on request.
  */
 class BatchedInputQueue : 
-  private MSQueue<std::vector<std::unique_ptr<IBatchAction>>>,
+  private MSQueue<std::vector<IBatchAction*>>,
   public InputQueue
 {
 private:
   // private container for the batch before it is visible to the
   // execution threads. Necessary to make sure that adding transactions
   // is thread safe!
-  std::vector<std::unique_ptr<IBatchAction>> currentBatch;
+  std::vector<IBatchAction*> currentBatch;
 
 public:
   BatchedInputQueue(uint32_t batch_size): 
-    MSQueue<std::vector<std::unique_ptr<IBatchAction>>>(),
+    MSQueue<std::vector<IBatchAction*>>(),
     InputQueue(batch_size) {};
 
   virtual InputQueue::BatchActions try_get_action_batch() override {
-    if (MSQueue<std::vector<std::unique_ptr<IBatchAction>>>::is_empty()) 
+    if (MSQueue<std::vector<IBatchAction*>>::is_empty()) 
       return InputQueue::BatchActions();
 
     auto return_value = std::move(this->peek_head());
@@ -43,7 +43,7 @@ public:
     return return_value;
   };
 
-  virtual void add_action(std::unique_ptr<IBatchAction>&& act) override {
+  virtual void add_action(IBatchAction* act) override {
     assert(this->batch_size > 0);
     // It is not necessary to create a new batch to put into the queue. 
     // This action will fit into the existing element.
@@ -58,7 +58,7 @@ public:
   };
 
   virtual bool is_empty() override {
-    return MSQueue<std::vector<std::unique_ptr<IBatchAction>>>::is_empty();
+    return MSQueue<std::vector<IBatchAction*>>::is_empty();
   };
 
   virtual void flush() override {

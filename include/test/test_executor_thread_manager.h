@@ -23,7 +23,7 @@ public:
     return nullptr;
   };
 
-  void finalize_action(std::shared_ptr<IBatchAction> act) override {
+  void finalize_action(IBatchAction* act) override {
     (void) act;
     finalize_action_called ++;
   };

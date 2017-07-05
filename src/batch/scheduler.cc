@@ -41,17 +41,16 @@ void Scheduler::process_batch() {
 
   // populate the batch lock table and workloads
   unsigned int curr_workload_item = 0;
-  std::vector<std::unique_ptr<IBatchAction>> packing;
+  std::vector<IBatchAction*> packing;
   // TODO: See the todo in packer class. Need to make it non-static.
   while (ac.get_remaining_count() != 0) {
     // get packing
     packing = std::move(Packer::get_packing(&ac));
     ac.sort_remaining();
     // translate a packing into lock request
-    for (std::unique_ptr<IBatchAction>& act : packing) {
-      auto act_sptr = std::shared_ptr<IBatchAction>(std::move(act));
-      workloads[curr_workload_item++] = act_sptr;
-      lt.insert_lock_request(act_sptr);
+    for (IBatchAction* act_ptr : packing) {
+      workloads[curr_workload_item++] = act_ptr;
+      lt.insert_lock_request(act_ptr);
     }
   }
 

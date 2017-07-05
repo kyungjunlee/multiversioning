@@ -17,7 +17,7 @@
 // skipping some of them.
 class Container {
 public:
-  typedef std::vector<std::unique_ptr<IBatchAction>> BatchActions;
+  typedef std::vector<IBatchAction*> BatchActions;
 protected:
   BatchActions actions;
 
@@ -40,7 +40,7 @@ public:
    *
    * Returns nullptr if no elements are left.
    */
-  virtual std::unique_ptr<IBatchAction> take_curr_elt() = 0;
+  virtual IBatchAction* take_curr_elt() = 0;
   /*
    * Get the number of elements remaining in the container.
    */

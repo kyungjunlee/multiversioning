@@ -16,7 +16,7 @@ class Packer {
 private:
   typedef IBatchAction::RecordKeySet RecordKeySet;
   typedef Container::BatchActions BatchActions;
-
+  
   Packer();
 
   static bool txn_conflicts(

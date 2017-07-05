@@ -27,15 +27,19 @@ protected:
     s = std::make_shared<Scheduler>(stm.get(), 0, 0);    
   };
 
+  virtual void TearDown() {
+    for (auto& act_ptr : s->workloads) {
+      delete act_ptr;
+    }
+  };
+
   virtual void add_test_txn_to_scheduler_batch(
       IBatchAction::RecordKeySet write_set,
       IBatchAction::RecordKeySet read_set,
       uint64_t id) {
 
     s->batch_actions.batch.push_back(
-        std::move(
-          std::make_unique<TestAction>(
-            new TestTxn(), write_set, read_set, id)));
+        new TestAction (new TestTxn(), write_set, read_set, id));
   }; 
 };
 
@@ -54,7 +58,7 @@ void assert_correct_schedule(
     std::unordered_set<uint64_t> ids;
 
     for (const auto& e : r) {
-      TestAction* ta = static_cast<TestAction*>(e.get());
+      TestAction* ta = static_cast<TestAction*>(e);
       ids.insert(ta->get_id());
     }
 

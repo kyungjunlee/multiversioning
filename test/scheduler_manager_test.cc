@@ -10,6 +10,8 @@
 class SchedulerManagerTest :
   public testing::Test,
   public testing::WithParamInterface<int> {
+private:
+  std::vector<IBatchAction*> allocated_actions;
 protected:
   std::shared_ptr<SchedulerManager> sm;
   std::shared_ptr<IGlobalSchedule> gs;
@@ -44,23 +46,27 @@ protected:
 		for (unsigned int i = 0;
 				i < actions_at_start;
 				i++) {
-			sm->add_action(
-				std::move(
-					std::unique_ptr<TestAction>(
-						TestAction::make_test_action_with_test_txn({}, {}, i))));
+      allocated_actions.push_back(TestAction::make_test_action_with_test_txn({}, {}, i));
+			sm->add_action(allocated_actions.back());
 		}
 	};
+
+  virtual void TearDown() {
+    for (auto& act_ptr : allocated_actions) {
+      delete act_ptr;
+    }
+  };
 };	
 
 void assertBatchIsCorrect(
-		std::vector<std::unique_ptr<IBatchAction>>&& batch,
+		std::vector<IBatchAction*>&& batch,
 		unsigned int expected_size,
 		unsigned int begin_id,
 		unsigned int line) {
 	ASSERT_EQ(expected_size, batch.size());
 	TestAction* act;
 	for (unsigned int i = begin_id; i < begin_id + expected_size; i++) {
-		act = static_cast<TestAction*>(batch[i - begin_id].get());
+		act = static_cast<TestAction*>(batch[i - begin_id]);
 		ASSERT_EQ(i, act->get_id()) <<
 			"Error within test starting at line" << line;
 	}

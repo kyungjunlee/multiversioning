@@ -13,21 +13,27 @@ TEST(BatchLockTable, constructorTest) {
 
 TEST(BatchLockTable, insert_lock_requestTest) {
   BatchLockTable blt;
-  blt.insert_lock_request(
-      std::shared_ptr<TestAction>(TestAction::make_test_action_with_test_txn({1},{})));
+  TestAction* ta = TestAction::make_test_action_with_test_txn({1},{});
+  blt.insert_lock_request(ta);
   ASSERT_EQ(1, blt.get_lock_table_data().size());
+
+  delete ta;
 }
 
 TEST(LockTable, merge_batch_tableTest) {
   BatchLockTable blt;
-  blt.insert_lock_request(
-      std::shared_ptr<TestAction>(TestAction::make_test_action_with_test_txn({1,2,3},{})));
-  blt.insert_lock_request(
-      std::shared_ptr<TestAction>(TestAction::make_test_action_with_test_txn({4,5,6},{})));
+  TestAction
+    *ta1 = TestAction::make_test_action_with_test_txn({1,2,3},{}),
+    *ta2 = TestAction::make_test_action_with_test_txn({4,5,6},{});
+  blt.insert_lock_request(ta1);
+  blt.insert_lock_request(ta2);
 
   TestLockTable lt;
   lt.merge_batch_table(blt);
   ASSERT_EQ(6, lt.get_lock_table_data().size());
+
+  delete ta1;
+  delete ta2;
 }
 
 // NOTE:

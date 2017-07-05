@@ -23,8 +23,7 @@ std::shared_ptr<LockStage> GlobalSchedule::get_stage_holding_lock_for(
   return lt.get_head_for_record(key);
 };
 
-void GlobalSchedule::finalize_execution_of_action(
-    std::shared_ptr<IBatchAction> act) {
+void GlobalSchedule::finalize_execution_of_action(IBatchAction* act) {
   auto finalize_from_set = [this, act](IBatchAction::RecordKeySet* s){
     std::shared_ptr<LockStage> ls;
     for (auto& key : *s) {

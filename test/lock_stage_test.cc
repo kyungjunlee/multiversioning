@@ -12,6 +12,8 @@ bool operator==(const LockStage& ls1, const LockStage& ls2) {
 }
 
 class LockStageTest : public testing::Test {
+private:
+  std::vector<IBatchAction*> allocated_actions;
 protected:
   void expect_holders_to_be(LockStage& ls, uint64_t n) {
     ASSERT_EQ(n, TestLockStage(ls).get_holders());
@@ -29,9 +31,16 @@ protected:
     ASSERT_EQ(TestLockStage(ls1), TestLockStage(ls2));
   }
 
-  std::shared_ptr<TestAction> get_action() {
-    return std::make_shared<TestAction>(new TestTxn());
-  };
+  TestAction* get_action() {
+    allocated_actions.push_back(new TestAction(new TestTxn));
+    return static_cast<TestAction*>(allocated_actions.back());
+  }
+
+  virtual void TearDown() {
+    for (auto& act_ptr : allocated_actions) {
+      delete act_ptr;
+    }
+  }
 };
 
 TEST_F(LockStageTest, constructorTests) {
@@ -40,7 +49,7 @@ TEST_F(LockStageTest, constructorTests) {
   expect_requesting_actions_to_be(ls1, LockStage::RequestingActions({}));
   expect_lock_type_to_be(ls1, LockType::shared);
 
-  std::shared_ptr<TestAction> requester = get_action(); 
+  TestAction* requester = get_action(); 
   LockStage ls2(
       {requester},
       LockType::exclusive);
@@ -124,7 +133,7 @@ TEST_F(LockStageTest, decrement_holdersTest) {
 
 TEST_F(LockStageTest, notify_lock_obtainedTest) {
   LockStage ls;
-  std::vector<std::shared_ptr<TestAction>> acts;
+  std::vector<TestAction*> acts;
   for (unsigned int i = 0; i < 3; i++) {
     auto act = get_action();
     act->add_write_key({i});
@@ -141,7 +150,7 @@ TEST_F(LockStageTest, notify_lock_obtainedTest) {
 
 TEST_F(LockStageTest, finalize_actionTest) {
   LockStage ls;
-  std::vector<std::shared_ptr<TestAction>> acts;
+  std::vector<TestAction*> acts;
   for (unsigned int i = 0; i < 3; i++) {
     auto act = get_action();
     act->add_write_key({i});

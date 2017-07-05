@@ -25,8 +25,7 @@ public:
   // executor thread manager interface:
   virtual std::shared_ptr<LockStage> get_stage_holding_lock_for(
       RecordKey key) = 0;
-  virtual void finalize_execution_of_action(
-      std::shared_ptr<IBatchAction> act) = 0;
+  virtual void finalize_execution_of_action(IBatchAction* act) = 0;
 };
 
 #endif //GLOBAL_SCHEDULE_INTERFACE_H_

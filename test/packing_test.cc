@@ -9,32 +9,34 @@
 class PackingTest : public testing::Test {
 private:
   typedef IBatchAction::RecordKeySet RecordKeySet;
-  std::vector<RecordKeySet> readSets;
-  std::vector<RecordKeySet> writeSets;
+  std::vector<RecordKeySet> read_sets;
+  std::vector<RecordKeySet> write_sets;
 protected:
-  std::unique_ptr<ArrayContainer> testContainer;
+  std::unique_ptr<ArrayContainer> test_container;
+  std::vector<IBatchAction*> allocated_actions;
 
   void addActionFromSets(
-      RecordKeySet writeSet,
-      RecordKeySet readSet) {
-    readSets.push_back(readSet);
-    writeSets.push_back(writeSet);    
+      RecordKeySet write_set,
+      RecordKeySet read_set) {
+    read_sets.push_back(read_set);
+    write_sets.push_back(write_set);    
   }
 
   void finalizeAddingActions() {
     Container::BatchActions actions;
     
-    for (unsigned int i = 0; i < readSets.size(); i++) {
+    for (unsigned int i = 0; i < read_sets.size(); i++) {
       // treat the index as id.
-      std::unique_ptr<TestAction> ta = std::make_unique<TestAction>(new TestTxn(), i);
+      TestAction* ta = new TestAction(new TestTxn(), i);
+      allocated_actions.push_back(ta);
 
-      for (auto j : readSets[i]) ta->add_read_key(j);
-      for (auto j : writeSets[i]) ta->add_write_key(j);
+      for (auto j : read_sets[i]) ta->add_read_key(j);
+      for (auto j : write_sets[i]) ta->add_write_key(j);
 
-      actions.push_back(std::move(ta));
+      actions.push_back(ta);
     }
 
-    testContainer = std::make_unique<ArrayContainer>(std::move(actions));
+    test_container = std::make_unique<ArrayContainer>(std::move(actions));
   }
 
   std::unordered_set<uint64_t> collect_ids(
@@ -43,8 +45,7 @@ protected:
     
     for (const auto& j : packing) {
       // this is safe since we know we are dealing with TestActions!
-      ids.insert(
-          dynamic_cast<TestAction*>(j.get())->get_id());
+      ids.insert(static_cast<TestAction*>(j)->get_id());
     }
 
     return ids;
@@ -52,15 +53,21 @@ protected:
 
   void assertPackings(std::vector<std::unordered_set<uint64_t>> expected) {
     for (auto& j : expected) {
-      auto packing = Packer::get_packing(testContainer.get());
+      auto packing = Packer::get_packing(test_container.get());
       std::unordered_set<uint64_t> ids = collect_ids(packing);
       EXPECT_EQ(j, ids);
 
-      testContainer->sort_remaining();
+      test_container->sort_remaining();
     }
   }
 
   virtual void SetUp() {} 
+
+  virtual void TearDown() {
+    for (auto& act_ptr : allocated_actions) {
+      delete act_ptr;
+    }
+  }
 };
 
 // Input, all exclusive:

@@ -38,7 +38,7 @@ public:
   ArrayContainer(BatchActions&& actions);
 
   IBatchAction* peek_curr_elt() override;
-  std::unique_ptr<IBatchAction> take_curr_elt() override;
+  IBatchAction* take_curr_elt() override;
   void advance_to_next_elt() override;
   void sort_remaining() override;
   uint32_t get_remaining_count() override;
