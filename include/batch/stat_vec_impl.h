@@ -4,7 +4,12 @@
 #include <algorithm>
 
 template <typename type, unsigned int maximal_size>
-bool StaticVector<type, maximal_size>::is_full() {
+bool StaticVector<type, maximal_size>::is_empty() const {
+  return (next_elt == 0);
+};
+
+template <typename type, unsigned int maximal_size>
+bool StaticVector<type, maximal_size>::is_full() const {
   return (maximal_size == next_elt);
 };
 

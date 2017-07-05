@@ -19,7 +19,8 @@ public:
     };
   };
 
-  bool is_full();
+  bool is_full() const;
+  bool is_empty() const;
   // returns true on success and false otherwise (container full);
   bool insert(type elt);
   void sort();

@@ -5,8 +5,8 @@
 
 // super simple wrapper around stat_vec allowing pairs.
 template <
-  typename KeyType, 
-  typename ValueType, 
+  typename KeyType,
+  typename ValueType,
   unsigned int maximal_size>
 class StaticMap {
 private:
@@ -14,35 +14,53 @@ private:
     KeyType key;
     ValueType value;
 
-    KeyValuePair(): key(0), value(0) {};
-    KeyValuePair(KeyType kt): key(kt), value(0) {};
-    KeyValuePair(KeyType kt, ValueType vt): key(kt), value(vt) {};
+    KeyValuePair();
+    KeyValuePair(KeyType kt);
+    KeyValuePair(KeyType kt, ValueType vt);
 
-    bool operator==(const KeyValuePair &other) const {return key == other.key;};
-    bool operator<(const KeyValuePair &other) const {return key < other.key;};
-    bool operator>(const KeyValuePair &other) const {return key > other.key;};
+    bool operator==(const KeyValuePair &other) const;
+    bool operator<(const KeyValuePair &other) const;
+    bool operator>(const KeyValuePair &other) const;
   };
 
   StaticVector<KeyValuePair, maximal_size> contents;
-public:
 
-  bool is_full() {return contents.is_full();};
+public:
+  bool is_empty() const;
+  bool is_full() const;
   // returns true on success and false on failure (container full).
-  bool insert(KeyType key, ValueType val) {return contents.insert({key, val});};
+  //
+  // NOTE:
+  //    Insertion occurs only if an element with "key" did not
+  //    exist before. Otherwise an exception is thrown.
+  bool insert(KeyType key, ValueType val);
 
   // make sure to sort before finding or checking for containment.
   // Otherwise linear search instead of binary search is used!
-  void sort() {contents.sort();};
-  const ValueType* find(const KeyType& key) const {
-    return &contents.find({key})->value;};
-  bool contains(const KeyType& key) const {return contents.contains({key});};
-  unsigned int capacity() const {return contents.capacity();};
-  unsigned int size() const {return contents.size();};
-  KeyValuePair* begin() {return contents.begin();};
-  const KeyValuePair* begin() const {return contents.begin();};
-  KeyValuePair* end() {return contents.end();};
-  const KeyValuePair* end() const {return contents.end();};
-  void clear() {contents.clear();};
+  void sort();
+  const ValueType* find(const KeyType& key) const;
+  bool contains(const KeyType& key) const;
+
+  unsigned int capacity() const;
+  unsigned int size() const;
+
+  KeyValuePair* begin();
+  const KeyValuePair* begin() const;
+  KeyValuePair* end();
+  const KeyValuePair* end() const;
+
+//  const KeyType& lowest_key() const;
+//  const KeyType& highest_key() const;
+//
+//  // NOTE:
+//  //   0. The map MUST be sorted before these are called.
+//  //      Otherwise the pointers returned have no meaning.
+//  const KeyValuePair* lower_bound(const KeyType& key);
+//  const KeyValuePair* upper_bound(const KeyType& key);
+
+  void clear();
 };
+
+#include "batch/stat_map_impl.h"
 
 #endif // _STATIC_MAP_H_
