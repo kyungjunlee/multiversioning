@@ -95,7 +95,7 @@ bool BatchExecutor::process_action(IBatchAction* act) {
         const LockStage::RequestingActions& blocking_actions = 
           blocking_stage->get_requesters();
 
-        if (blocking_actions.find(act) != blocking_actions.end()) {
+        if (blocking_actions.contains(act)) {
           // this is not a blocking stage. act is clearly at the head
           // of this lock queue!
           continue;

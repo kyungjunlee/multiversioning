@@ -21,19 +21,30 @@ bool StaticVector<type, size>::insert(type elt) {
 
 template <typename type, unsigned int size>
 void StaticVector<type, size>::sort() {
+  if (sorted) return;
+
   std::sort(std::begin(contents), &contents[next_elt], std::less<type>());
   sorted = true;
 };
 
 template <typename type, unsigned int size>
-bool StaticVector<type, size>::contains(const type& elt) {
+bool StaticVector<type, size>::contains(const type& elt) const {
   return (nullptr != find(elt));
 };
 
-template <typename type, unsigned int size>
-type* StaticVector<type, size>::find(const type& elt) {
+template <typename type, unsigned int maximal_size>
+const type* StaticVector<type, maximal_size>::find(const type& elt) const {
   if (next_elt == 0) return nullptr;
-  if (sorted == false) sort();
+  if (sorted == false) {
+    // linear search
+    for (unsigned int i = 0; i < size(); i++) {
+      if (elt == contents[i]) {
+        return &contents[i];
+      }
+    };
+
+    return nullptr;
+  }
 
   // sorted array. We may use binary search
   int lo, hi, cur;
@@ -71,7 +82,17 @@ type* StaticVector<type, size>::begin() {
 };
 
 template <typename type, unsigned int size>
+const type* StaticVector<type, size>::begin() const {
+  return &contents[0];
+};
+
+template <typename type, unsigned int size>
 type* StaticVector<type, size>::end() {
+  return &contents[next_elt];
+};
+
+template <typename type, unsigned int size>
+const type* StaticVector<type, size>::end() const {
   return &contents[next_elt];
 };
 

@@ -6,7 +6,18 @@
 #include <thread>
 
 bool operator==(const LockStage& ls1, const LockStage& ls2) {
-  return (ls1.requesters == ls2.requesters &&
+  // validate requesters being identical.
+  if (ls1.requesters.size() != ls2.requesters.size()) return false;
+
+  auto ls1_req_iter = ls1.requesters.begin();
+  auto ls2_req_iter = ls2.requesters.begin();
+  for (unsigned int i = 0; i < ls1.requesters.size(); i++) {
+    if (*(ls1_req_iter + i) != *(ls2_req_iter + i)) {
+      return false;
+    } 
+  }
+
+  return (
     ls1.holders == ls2.holders &&
     ls1.l_type == ls2.l_type);
 }
@@ -20,7 +31,13 @@ protected:
   }
 
   void expect_requesting_actions_to_be(LockStage& ls, const LockStage::RequestingActions& exp) {
-    ASSERT_EQ(exp, TestLockStage(ls).get_requesters());
+    TestLockStage tls(ls);
+    ASSERT_EQ(exp.size(), tls.get_requesters().size());
+    auto exp_iter = exp.begin();
+    auto tls_iter = ls.get_requesters().begin();
+    for (unsigned int i = 0; i < exp.size(); i++) {
+      EXPECT_EQ(*(exp_iter + i), *(tls_iter + i)); 
+    };
   }
 
   void expect_lock_type_to_be(LockStage& ls, LockType lt) {
@@ -110,21 +127,21 @@ TEST_F(LockStageTest, addStageToExclusiveTest) {
 }
 
 TEST_F(LockStageTest, decrement_holdersTest) {
-  // lock stage with 100 actions
+  // lock stage with 30 actions
   LockStage ls1;
-  for (unsigned int i = 0; i < 100; i++) 
+  for (unsigned int i = 0; i < 30; i++) 
     ls1.add_to_stage(
         get_action(),
         LockType::shared);
 
   // single threaded decrement works.
-  expect_holders_to_be(ls1, 100);
-  ASSERT_EQ(99, ls1.decrement_holders());
+  expect_holders_to_be(ls1, 30);
+  ASSERT_EQ(29, ls1.decrement_holders());
 
   // launch two threads to decrement different number, but adding up to 99
   std::thread threads[2];
-  threads[0] = std::thread([&ls1](){for(unsigned int i = 0; i < 50; i++) ls1.decrement_holders();});
-  threads[1] = std::thread([&ls1](){for(unsigned int i = 0; i < 49; i++) ls1.decrement_holders();});
+  threads[0] = std::thread([&ls1](){for(unsigned int i = 0; i < 15; i++) ls1.decrement_holders();});
+  threads[1] = std::thread([&ls1](){for(unsigned int i = 0; i < 14; i++) ls1.decrement_holders();});
 
   threads[0].join();
   threads[1].join();

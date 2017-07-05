@@ -3,13 +3,15 @@
 
 #include "batch/lock_types.h"
 #include "batch/batch_action_interface.h"
+#include "batch/stat_vec.h"
 
 #include <memory>
 #include <stdint.h>
-#include <unordered_set>
 
-// TODO: Override the new/delete operators
-// TODO: implement a public inheritance test class which provides a == operator.
+// TODO:
+//    Really? well, this doesn't sound all that bad but we should check this
+//    parameter...
+#define MAX_REQUESTERS_PER_STAGE 30
 /*
  *  LockStage
  *    Logically, lockstage corresponds to a set of transactions that can run concurrently
@@ -26,7 +28,7 @@
  */
 class LockStage {
 public:
-  typedef std::unordered_set<IBatchAction*> RequestingActions;
+  typedef StaticVector<IBatchAction*, MAX_REQUESTERS_PER_STAGE> RequestingActions;
 
 protected:
   // The number of transactions holding on to the lock.

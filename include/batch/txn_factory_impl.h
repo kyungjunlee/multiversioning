@@ -144,6 +144,10 @@ void ActionFactory<ActionClass>::initialize_txn_to_random_values(
   // set the appropriate values
   for (auto& key : read_set) act->add_read_key(key);
   for (auto& key : write_set) act->add_write_key(key);
+
+  // make sure that look up is fast.
+  act->get_readset_handle()->sort();
+  act->get_writeset_handle()->sort();
 }; 
 
 template <class ActionClass> 

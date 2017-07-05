@@ -8,12 +8,7 @@ LockStage::LockStage():
     l_type(LockType::shared),
     requesters({}),
     has_been_given_lock(false)
-{
-  // TODO:
-  //    Figure out how much space to reserve up front 
-  //    in this place. It might be better to do more...
-  requesters.reserve(10);
-};
+{};
 
 LockStage::LockStage(
       RequestingActions requesters,
@@ -30,11 +25,13 @@ bool LockStage::add_to_stage(IBatchAction* txn, LockType lt) {
   // can only add to a stage when both the request and the stage are shared
   // or when the stage is empty.
   if ((lt == LockType::exclusive && requesters.size() > 0) ||
-      l_type == LockType::exclusive) {
+      l_type == LockType::exclusive ||
+      // requesters are full and insertion cannot proceed
+      requesters.insert(txn) == false) {
+    requesters.sort();
     return false;
   }
 
-  requesters.insert(txn);
   l_type = lt;
   holders ++;
   return true;
