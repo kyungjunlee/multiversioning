@@ -62,7 +62,6 @@ Packer::BatchActions Packer::get_packing(Container* c) {
   // over-reserve memory to be able to fit every elt within container
   // if such is the need.
   BatchActions actions_in_packing;
-  actions_in_packing.reserve(c->get_remaining_count());
   IBatchAction* next_action;
   IBatchAction* action;
 

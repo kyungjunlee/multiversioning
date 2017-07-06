@@ -21,7 +21,7 @@ protected:
   uint32_t batch_size;
 public:
   InputQueue(uint32_t bs): batch_size(bs) {};
-  typedef std::vector<IBatchAction*> BatchActions;
+  typedef Container::BatchActions BatchActions;
   
   // Try to get a batch of actions. Returns an empty vector if no actions
   // are available and otherwise busy waits until a whole batch is available.

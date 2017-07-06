@@ -41,7 +41,7 @@ SchedulerThreadBatch ThreadInputQueues::get_batch_from_my_queue(
   while (my_queue.is_empty()) {
     if (s->is_stop_requested()) {
       return SchedulerThreadBatch {
-        .batch = std::vector<IBatchAction*>(),
+        .batch = Container::BatchActions(),
         .batch_id = 0
       };
     }

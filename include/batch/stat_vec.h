@@ -23,6 +23,7 @@ public:
   bool is_empty() const;
   // returns true on success and false otherwise (container full);
   bool insert(type elt);
+  bool push_back(type elt);
   void sort();
   // make sure to sort before finding or checking for containment.
   // Otherwise linear search instead of binary search is used!
@@ -35,6 +36,9 @@ public:
   type* end();
   const type* end() const;
   void clear();
+
+  type& operator[](std::size_t idx);
+  const type& operator[](std::size_t idx) const;
 };
 
 #include "batch/stat_vec_impl.h"

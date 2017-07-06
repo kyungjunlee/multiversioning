@@ -2,6 +2,7 @@
 #define STATIC_VECTOR_IMPL_H
 
 #include <algorithm>
+#include <cassert>
 
 template <typename type, unsigned int maximal_size>
 bool StaticVector<type, maximal_size>::is_empty() const {
@@ -22,6 +23,13 @@ bool StaticVector<type, size>::insert(type elt) {
   contents[next_elt++] = elt;
   sorted = false;
   return true;
+};
+
+template <typename type, unsigned int size>
+bool StaticVector<type, size>::push_back(type elt) {
+  auto result = insert(elt);
+  assert(result);
+  return result;
 };
 
 template <typename type, unsigned int size>
@@ -107,4 +115,18 @@ void StaticVector<type, size>::clear() {
   sorted = false;
 };
 
+template <typename type, unsigned int maximal_size>
+type& StaticVector<type, maximal_size>::operator[](std::size_t idx) {
+  assert(idx < size());
+
+  return contents[idx];
+}
+
+template <typename type, unsigned int maximal_size>
+const type& StaticVector<type, maximal_size>::operator[](
+    std::size_t idx) const {
+  assert(idx < size());
+
+  return contents[idx];
+}
 #endif // STATIC_VECTOR_IMPL_H

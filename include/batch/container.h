@@ -2,10 +2,16 @@
 #define _CONTAINER_H_
 
 #include <batch/batch_action_interface.h>
+#include <batch/stat_vec.h>
 
 #include <memory>
-#include <vector>
 #include <stdint.h>
+
+// TODO:
+//
+//    Extract such definitions somewhere else and 
+//    do not always allocate this much space ...
+#define MAX_BATCH_SIZE 10000
 
 // Fully abstract class specifying the behavior of a container. 
 //
@@ -17,7 +23,7 @@
 // skipping some of them.
 class Container {
 public:
-  typedef std::vector<IBatchAction*> BatchActions;
+  typedef StaticVector<IBatchAction*, MAX_BATCH_SIZE> BatchActions;
 protected:
   BatchActions actions;
 

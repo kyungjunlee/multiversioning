@@ -39,7 +39,7 @@ public:
     // we will be waiting until we can return such.
     // TODO:
     //  Implement timeout.
-    InputQueue::BatchActions batch(this->batch_size);
+    InputQueue::BatchActions batch();
     for (unsigned int actionsTaken = 0; 
         actionsTaken < this->batch_size; 
         actionsTaken ++) {

@@ -59,7 +59,7 @@ protected:
 };	
 
 void assertBatchIsCorrect(
-		std::vector<IBatchAction*>&& batch,
+		Container::BatchActions batch,
 		unsigned int expected_size,
 		unsigned int begin_id,
 		unsigned int line) {
