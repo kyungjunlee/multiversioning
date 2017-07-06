@@ -5,6 +5,7 @@
 #include "batch/db_storage_interface.h"
 #include "batch/stat_vec.h"
 #include "batch/stat_map.h"
+#include "batch/static_mem_conf.h"
 
 #include <unordered_map>
 
@@ -12,7 +13,7 @@
 //
 //    RMWBatchAction implements the simplest kind of RMW action which
 //    reads all of the records within read and write sets and increments
-//    by 1 the value found within the records of write set. 
+//    by 1 the value found within the records of write set.
 //
 //    Note that the values read are stored intermittently to simulate
 //    the possibility of an abort of an action.
@@ -21,9 +22,13 @@ private:
   // TODO:
   //    As in the batch action interface, we must change the 60 to something
   //    less arbitrary.
-  typedef StaticMap<RecordKey, IDBStorage::RecordValue, 60> TmpReads;
+  typedef StaticMap<
+    RecordKey,
+    IDBStorage::RecordValue,
+    2 * MAX_ACTION_RWSET_SIZE>
+  TmpReads;
 
-  TmpReads tmp_reads; 
+  TmpReads tmp_reads;
   void add_to_tmp_reads(RecordKey rk);
   void do_reads(IDBStorage* db);
   void do_writes(IDBStorage* db);

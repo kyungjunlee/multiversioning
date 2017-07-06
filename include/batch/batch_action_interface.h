@@ -4,6 +4,7 @@
 #include "batch/record_key.h"
 #include "batch/db_storage_interface.h"
 #include "batch/stat_vec.h"
+#include "batch/static_mem_conf.h"
 #include "db.h"
 
 #include <stdint.h>
@@ -31,7 +32,7 @@ public:
   //
   //    The real question is: where to define such macro? Any easy way to change it 
   //    from the makefile / execution script level? I think so -- sed?
-  typedef StaticVector<RecordKey, 30> RecordKeySet;
+  typedef StaticVector<RecordKey, MAX_ACTION_RWSET_SIZE> RecordKeySet;
 
   IBatchAction(txn* t): 
     translator(t),

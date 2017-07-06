@@ -4,31 +4,31 @@
 #include "batch/lock_types.h"
 #include "batch/batch_action_interface.h"
 #include "batch/stat_vec.h"
+#include "batch/static_mem_conf.h"
 
 #include <memory>
 #include <stdint.h>
 
-// TODO:
-//    Really? well, this doesn't sound all that bad but we should check this
-//    parameter...
-#define MAX_REQUESTERS_PER_STAGE 30
 /*
  *  LockStage
  *    Logically, lockstage corresponds to a set of transactions that can run concurrently
  *    on a given record with no inconsistencies resulting. Hence, if an exclusive lock
- *    is requested, only one transaction may be within a lock stage. However, with a 
+ *    is requested, only one transaction may be within a lock stage. However, with a
  *    shared lock being requested, any number of transactions may be a part of a lock stage.
  *
  *    A lock stage is considered nearly immutable after it has been handed off by a scheduling thread.
  *    The only field that may be updated is the holders integer, which is handled using FAI/FAD
- *    instructions. 
+ *    instructions.
  *
  *    Lock stages form a singly linked list. Moving towards the "next_stage" means moving deeper into
- *    the dependency graph. This would likely be done to pass on a lock. 
+ *    the dependency graph. This would likely be done to pass on a lock.
  */
 class LockStage {
 public:
-  typedef StaticVector<IBatchAction*, MAX_REQUESTERS_PER_STAGE> RequestingActions;
+  typedef StaticVector<
+    IBatchAction*,
+    MAX_REQUESTERS_PER_LOCK_STAGE>
+  RequestingActions;
 
 protected:
   // The number of transactions holding on to the lock.
@@ -51,9 +51,9 @@ public:
   // into single stages.
   bool add_to_stage(IBatchAction* txn, LockType lt);
   // Returns the new value of holders
-  uint64_t decrement_holders(); 
-  
-  const RequestingActions& get_requesters() const; 
+  uint64_t decrement_holders();
+ 
+  const RequestingActions& get_requesters() const;
   uint64_t get_holders() const;
 
   // return true if all actions within this lock stage have been finished.
