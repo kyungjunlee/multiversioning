@@ -12,7 +12,7 @@ for batch_size_indicator in `seq 0 $((${#batch_sizes[@]} - 1))`;
       batch_size=${batch_sizes[$batch_size_indicator]}
 
       write_static_definitions;
-      make batch;
+      make clean; make batch;
 
 			numactl --interleave=all perf record -F 1000 -a -g build/batch_db --num_txns $num_txns --exp_reps $exp_reps --output_dir time_whole_system/data --batch_size $batch_size --num_sched_threads $sched_threads --num_exec_threads $exec_threads --num_records $db_recs --avg_shared_locks $shared_lock_num --std_dev_shared_locks $shared_std_dev --avg_excl_locks $excl_lock_num --std_dev_excl_locks $excl_std_dev;
 
