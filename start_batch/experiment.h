@@ -22,6 +22,10 @@
 class Experiment {
 private:
   typedef TimeUtilities::TimePoint TimePoint;
+  typedef StaticVector<
+      StaticVector<IBatchAction*, EXEC_BATCH_SIZE>,
+      OUTPUT_BATCH_NUM> 
+    OutputVector;
 
   ExperimentConfig conf;
   std::vector<IBatchAction*> workload;
@@ -29,9 +33,7 @@ private:
   ActionFactory<ACTION_TYPE> action_factory;
   Supervisor s;
 
-  StaticVector<
-    StaticVector<IBatchAction*, EXEC_BATCH_SIZE>,
-    OUTPUT_BATCH_NUM> output;
+  OutputVector output;
   uint64_t txns_completed;
   unsigned int expected_output_elts;
   bool print_debug;
@@ -176,11 +178,11 @@ private:
 
     all_start = TimeUtilities::now();
     std::thread measure(measure_throughput);
-    std::thread output(get_output);
+    std::thread get_output_thr(get_output);
     std::thread input(put_input);
   
     input.join();
-    output.join();
+    get_output_thr.join();
     measure.join();
 
     // stop system
@@ -240,6 +242,8 @@ public:
     txns_completed(0),
     print_debug(print)
   {};
+
+  ~Experiment() {}
 
   void do_experiment() {
     initialize();
