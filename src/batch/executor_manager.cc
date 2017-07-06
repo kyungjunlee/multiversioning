@@ -59,14 +59,14 @@ void ExecutorManager::signal_execution_threads(
   } 
 };
 
-ExecutorThread::BatchActions ExecutorManager::get_done_batch() {
-  ExecutorThread::BatchActions batch;
+ExecutorThread::ExecutorBatch ExecutorManager::get_done_batch() {
+  ExecutorThread::ExecutorBatch batch;
   while ((batch = try_get_done_batch()).size() == 0);
 
   return std::move(batch);  
 }
 
-ExecutorThread::BatchActions ExecutorManager::try_get_done_batch() {
+ExecutorThread::ExecutorBatch ExecutorManager::try_get_done_batch() {
   auto batch = executors[next_output_executor]->try_get_done_batch();
   next_output_executor ++;
   next_output_executor %= executors.size();

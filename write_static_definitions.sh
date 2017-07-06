@@ -11,7 +11,9 @@ function write_static_definitions {
     shared_lock_num
     shared_std_dev
     excl_lock_num
-    shared_lock_num)
+    shared_lock_num
+    exec_threads
+    num_txns)
 
   for i in "${important_vars[@]}"
   do
@@ -35,6 +37,8 @@ function write_static_definitions {
     exit
   fi
  
-  sed -i -e "s/BATCH_SIZE.*/BATCH_SIZE ${batch_size}/g" $config_path
-  sed -i -e "s/MAX_ACTION_RWSET_SIZE.*/MAX_ACTION_RWSET_SIZE ${max_rw_set_size}/g" $config_path
+  sed -i -e "s/ BATCH_SIZE [0-9]*$/ BATCH_SIZE ${batch_size}/g" $config_path
+  sed -i -e "s/ MAX_ACTION_RWSET_SIZE [0-9]*$/ MAX_ACTION_RWSET_SIZE ${max_rw_set_size}/g" $config_path
+  sed -i -e "s/ EXEC_THREAD_NUM [0-9]*$/ EXEC_THREAD_NUM ${exec_threads}/g" $config_path
+  sed -i -e "s/ TXN_NUMBER [0-9]*$/ TXN_NUMBER ${num_txns}/g" $config_path
 }

@@ -9,7 +9,7 @@
 #include <fstream>
 
 // Executing System Config
-//  
+//
 //    Used to configure the executing system within the system.
 struct ExecutingSystemConfig {
   uint32_t executing_threads_count;
@@ -19,9 +19,9 @@ struct ExecutingSystemConfig {
 };
 
 // Executing System
-//   
+//
 //    Represents the exeucting system. This is what the supervisor class
-//    thinks the executing system is. The only interactions between the 
+//    thinks the executing system is. The only interactions between the
 //    supervisor and the scheduling system are described by this interface.
 class ExecutingSystem {
 protected:
@@ -29,8 +29,8 @@ protected:
 public:
   ExecutingSystem(ExecutingSystemConfig c): conf(c) {};
 
-  virtual ExecutorThread::BatchActions get_done_batch() = 0;  
-  virtual ExecutorThread::BatchActions try_get_done_batch() = 0;  
+  virtual ExecutorThread::ExecutorBatch get_done_batch() = 0;
+  virtual ExecutorThread::ExecutorBatch try_get_done_batch() = 0;
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) = 0;
   virtual void set_db_storage_ptr(IDBStorage* db) = 0;
   virtual void start_working() = 0;

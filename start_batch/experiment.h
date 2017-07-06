@@ -5,16 +5,19 @@
 #include "batch/txn_factory.h"
 #include "batch/memory_pools.h"
 #include "batch/time_util.h"
+#include "batch/stat_vec.h"
+#include "batch/static_mem_conf.h"
 
 #include <cassert>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #define ACTION_TYPE RMWBatchAction
 
 // Experiment
-//    
-//  Class that controls the experiment, performs initialization, measurements and 
+//  
+//  Class that controls the experiment, performs initialization, measurements and
 //  data dumps when necessary.
 class Experiment {
 private:
@@ -25,6 +28,10 @@ private:
   ActionMemoryPool<ACTION_TYPE> action_pool;
   ActionFactory<ACTION_TYPE> action_factory;
   Supervisor s;
+
+  StaticVector<
+    StaticVector<IBatchAction*, EXEC_BATCH_SIZE>,
+    OUTPUT_BATCH_NUM> output;
   uint64_t txns_completed;
   unsigned int expected_output_elts;
   bool print_debug;
@@ -35,7 +42,7 @@ private:
 
   void print_debug_info(std::vector<std::string> text_segment) {
     if (!print_debug) return;
-  
+
     for (auto& str : text_segment) {
       std::cout.width(20);
       std::cout << str << std::flush;
@@ -46,17 +53,16 @@ private:
     assert(txns_completed == 0);
     assert(conf.num_txns == workload.size());
     print_debug_info("Beginning warm up run ... ");
-    
+  
     // we make sure all of the transactions have gone through the DB at least once.
     unsigned int txns_num = workload.size();
     s.set_simulation_workload(std::move(workload));
     workload.clear();
 
     // prepare all of the variables necessary later on.
-    std::vector<std::vector<IBatchAction*>> output;
-    output.reserve(expected_output_elts); 
+    output.clear();
     TimePoint time_start, time_end;
-    time_start = TimeUtilities::now(); 
+    time_start = TimeUtilities::now();
 
     barrier();
 
@@ -71,7 +77,7 @@ private:
       if (txns_completed == 0) {
         print_debug_info(
             {
-              "\n\tFirst transaction through after: ", 
+              "\n\tFirst transaction through after: ",
               std::to_string(
                 TimeUtilities::time_difference_ms(
                   time_start, TimeUtilities::now())) + "ms\n"
@@ -92,7 +98,7 @@ private:
             TimeUtilities::time_difference_ms(
               time_start, time_end)) + "ms\n"
       });
-    
+  
     // reset the system and the workload.
     txns_completed = 0;
     for (auto& output_vector : output) {
@@ -132,7 +138,7 @@ private:
       }
       measure_stop = TimeUtilities::now();
     };
-    
+  
     auto put_input = [&]() {
       pin_thread(77);
       s.set_simulation_workload(std::move(workload));
@@ -142,8 +148,7 @@ private:
 
     auto get_output = [&]() {
       pin_thread(76);
-      std::vector<std::vector<IBatchAction*>> output;
-      output.reserve(expected_output_elts);
+      output.clear();
       unsigned int workload_size = workload.size();
       uint64_t cur_txns_completed = txns_completed;
       assert(cur_txns_completed == 0);
@@ -152,7 +157,7 @@ private:
         if (o.size() == 0) continue;
 
         cur_txns_completed = txns_completed;
-        bool res = cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o.size());  
+        bool res = cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o.size());
         assert(res);
         output.push_back(std::move(o));
       }
@@ -173,7 +178,7 @@ private:
     std::thread measure(measure_throughput);
     std::thread output(get_output);
     std::thread input(put_input);
-    
+  
     input.join();
     output.join();
     measure.join();
@@ -181,7 +186,7 @@ private:
     // stop system
     s.stop_system();
 
-    print_debug_info ({ 
+    print_debug_info ({
       "Input Time",
       "Output Time",
       "Measure Time\n",
@@ -202,14 +207,14 @@ private:
             auto cur_txn = action_pool.alloc_and_initialize();
             action_factory.initialize_txn_to_random_values(cur_txn);
             workload.push_back(cur_txn);
-          }; 
-        }); 
-    
+          };
+        });
+  
     print_debug_info(
       "[ O K ] (" + std::to_string(time_to_allocate) + ")\n");
   };
 
-  void initialize() { 
+  void initialize() {
     TimePoint time_start, time_end;
     allocate_workload();
 
@@ -217,19 +222,19 @@ private:
     auto time_to_init = TimeUtilities::time_function_ms([this](){s.init_system();});
     print_debug_info(
       "[ O K ] (" + std::to_string(time_to_init) + ")\n");
-    
-    // the number of output elts is the number of all batches times the 
-    // number of executing threads since we partition every workload among 
+  
+    // the number of output elts is the number of all batches times the
+    // number of executing threads since we partition every workload among
     // all the executing threads. Of course, this is an upper bound which
     // assumes batch_size > number of exec threads
-    expected_output_elts = 
-      conf.num_txns / conf.sched_conf.batch_size_act * 
+    expected_output_elts =
+      conf.num_txns / conf.sched_conf.batch_size_act *
         conf.exec_conf.executing_threads_count;
   };
 
 public:
-  Experiment(ExperimentConfig conf, bool print): 
-    conf(conf), 
+  Experiment(ExperimentConfig conf, bool print):
+    conf(conf),
     action_factory(conf.act_conf),
     s(conf.db_conf, conf.sched_conf, conf.exec_conf),
     txns_completed(0),
@@ -240,11 +245,11 @@ public:
     initialize();
     do_warm_up_run();
     auto results = do_measurements();
-    
+  
     Out printer(conf);
     printer.write_exp_description();
     printer.write_interim_completion_time_results(results);
   };
 };
 
-#endif // _EXPERIMENT_H_ 
+#endif // _EXPERIMENT_H_

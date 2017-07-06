@@ -6,6 +6,8 @@
 #include "batch/batch_action.h"
 #include "test/test_action.h"
 #include "batch/txn_factory.h"
+#include "batch/stat_vec.h"
+#include "batch/static_mem_conf.h"
 
 #include <cassert>
 #include <memory>
@@ -119,14 +121,16 @@ public:
 
     barrier();
 
-    std::vector<std::vector<IBatchAction*>> outputs;
+    std::vector<IBatchAction*> outputs;
     unsigned int output_count = 0;
     while (output_count != action_num) {
       auto o = s->get_output();
       if (o.size() == 0) continue;
 
       output_count += o.size();
-      outputs.push_back(std::move(o));
+      for (auto act_ptr : o) {
+        outputs.push_back(act_ptr);
+      }
     }
 
     barrier();
@@ -135,10 +139,8 @@ public:
     s->stop_system();
 
     // free the memory of the actions
-    for (auto& act_vec : outputs) {
-      for (auto& act_ptr : act_vec) {
-        delete act_ptr;
-      }
+    for (auto& act_ptr : outputs) {
+      delete act_ptr;
     }
   }
 };

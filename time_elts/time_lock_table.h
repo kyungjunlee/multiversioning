@@ -63,7 +63,7 @@ namespace TimeLockTable {
     // Use scheduler class to create the necessary blts.
     Scheduler st(nullptr, 0, 0);
     for (unsigned int i = 0; i < batches; i++) {
-      std::vector<std::unique_ptr<IBatchAction>> batch;
+      std::vector<IBatchAction*> batch;
       for (unsigned int j = 0; j < txns_in_batch; j++) {
         batch.push_back(std::move(actions[i*txns_in_batch + j]));
       }

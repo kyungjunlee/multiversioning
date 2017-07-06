@@ -14,7 +14,7 @@ private:
   std::vector<IBatchAction*> allocated_actions;
 
 protected:
-  unsigned int ACTIONS_NUM = 30;
+  unsigned int ACTIONS_NUM = MAX_ACTION_RWSET_SIZE;
   float WRITE_PERC_IN_ACTION = 0.5;
 
   std::unique_ptr<ArrayContainer> testContainer;

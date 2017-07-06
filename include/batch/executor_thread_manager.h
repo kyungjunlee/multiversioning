@@ -12,7 +12,7 @@
 
 class ExecutorThreadManager {
   public:
-    typedef std::vector<ExecutorThread::BatchActions> ThreadWorkloads;
+    typedef std::vector<ExecutorThread::ExecutorBatch> ThreadWorkloads;
 
     virtual IDBStorage* get_db_storage_pointer() = 0;
     virtual unsigned int get_executor_num() = 0;

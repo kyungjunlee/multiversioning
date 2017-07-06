@@ -26,14 +26,17 @@ public:
   using Runnable::StartWorking;
   using Runnable::Init;
 
-  // TODO: 
-  //    Make this typedef in global schedule so that it makes more sense? 
+  // TODO:
+  //    Make this typedef in global schedule so that it makes more sense?
   //    Also... I think this will require changes in lock stages? Lock Stages
   //    don't own actions alone... they share them with the execution threads!
   typedef std::vector<IBatchAction*> BatchActions;
+  // TODO:
+  //    Naming?
+  typedef StaticVector<IBatchAction*, EXEC_BATCH_SIZE> ExecutorBatch;
 
-  virtual void add_actions(BatchActions&& actions) = 0;
-  virtual BatchActions try_get_done_batch() = 0;
+  virtual void add_actions(ExecutorBatch&& actions) = 0;
+  virtual ExecutorBatch try_get_done_batch() = 0;
   virtual void signal_stop_working() = 0;
   virtual bool is_stop_requested() = 0;
   virtual void reset() = 0;

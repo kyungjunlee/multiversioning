@@ -156,16 +156,8 @@ SchedulerManager::convert_to_exec_format(OrderedWorkload&& ow) {
   assert(exec_number > 0);
   ExecutorThreadManager::ThreadWorkloads tw(exec_number);
   
-  // initialize the memory all at once.
-  unsigned int mod = ow.size() % exec_number;
-  unsigned int per_exec_thr_size = ow.size() / exec_number;
-  for (unsigned int i = 0; i < tw.size(); i++) {
-    // notice that the "+ (mod < i)" takes care of unequal division among threads.
-    tw[i].resize(per_exec_thr_size + (i < mod));
-  }
-
   for (unsigned int i = 0; i < ow.size(); i++) {
-    tw[i % exec_number][i / exec_number] = ow[i];
+    tw[i % exec_number].push_back(ow[i]);
   }
 
   return tw;

@@ -3,7 +3,7 @@
 #include <utility>
 
 BatchExecutor::BatchExecutor(
-      ExecutorThreadManager* manager, 
+      ExecutorThreadManager* manager,
       int m_cpu_number):
     ExecutorThread(manager, m_cpu_number) {
   this->input_queue = std::make_unique<ExecutorQueue>();;
@@ -17,7 +17,7 @@ void BatchExecutor::StartWorking() {
     current_batch.clear();
 
     while(input_queue->is_empty()) {
-      if (is_stop_requested()) return; 
+      if (is_stop_requested()) return;
     }
     current_batch = std::move(input_queue->peek_head());
     input_queue->pop_head();
@@ -29,23 +29,23 @@ void BatchExecutor::StartWorking() {
 void BatchExecutor::Init() {
 };
 
-void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
+void BatchExecutor::add_actions(ExecutorThread::ExecutorBatch&& actions) {
   input_queue->push_tail(std::move(actions));
 };
 
 void BatchExecutor::process_action_batch() {
   for (unsigned int i = 0; i < current_batch.size(); i++) {
-    // attempt to execute the pending actions first. This is because the 
+    // attempt to execute the pending actions first. This is because the
     // actions "earlier" in the current batch are more likely to not
     // be blocked by other actions!
     process_pending();
 
-    assert(current_batch.at(i) != nullptr);
-    if (!process_action(current_batch.at(i))) {
-      pending_list->push_back(current_batch.at(i));        
+    assert(current_batch[i] != nullptr);
+    if (!process_action(current_batch[i])) {
+      pending_list->push_back(current_batch[i]);
       pending_list->size();
-    } 
-  } 
+    }
+  }
 
   // make sure that everything within current batch has been successfully executed!
   while (!pending_list->empty()) {
@@ -78,7 +78,7 @@ bool BatchExecutor::process_action(IBatchAction* act) {
   // we successfully claimed the action.
   if (act->ready_to_execute()) {
     act->Run(this->exec_manager->get_db_storage_pointer());
-    this->exec_manager->finalize_action(act); 
+    this->exec_manager->finalize_action(act);
     bool state_change_success = act->conditional_atomic_change_state(
         BatchActionState::processing,
         BatchActionState::done);
@@ -90,9 +90,9 @@ bool BatchExecutor::process_action(IBatchAction* act) {
         IBatchAction::RecordKeySet* set) {
       std::shared_ptr<LockStage> blocking_stage = nullptr;
       for (auto rec_key : *set) {
-        blocking_stage = 
+        blocking_stage =
           this->exec_manager->get_current_lock_holder_for(rec_key);
-        const LockStage::RequestingActions& blocking_actions = 
+        const LockStage::RequestingActions& blocking_actions =
           blocking_stage->get_requesters();
 
         if (blocking_actions.contains(act)) {
@@ -102,14 +102,14 @@ bool BatchExecutor::process_action(IBatchAction* act) {
         }
 
         for (auto action_ptr : blocking_actions) {
-          this->process_action(action_ptr); 
+          this->process_action(action_ptr);
         }
-      } 
+      }
     };
-    
+   
     execute_blockers(act->get_writeset_handle());
     execute_blockers(act->get_readset_handle());
-    
+   
     // unlock the action so that someone else may attempt to execute it.
     bool state_change_success = act->conditional_atomic_change_state(
         BatchActionState::processing,
@@ -132,8 +132,8 @@ void BatchExecutor::process_pending() {
   }
 };
 
-ExecutorThread::BatchActions BatchExecutor::try_get_done_batch() {
-    ExecutorThread::BatchActions acts; 
+ExecutorThread::ExecutorBatch BatchExecutor::try_get_done_batch() {
+    ExecutorThread::ExecutorBatch acts;
   if (!output_queue->is_empty()) {
     acts = std::move(output_queue->peek_head());
     output_queue->pop_head();

@@ -5,6 +5,8 @@
 #include "batch/scheduler_system.h"
 #include "batch/executor_system.h"
 #include "batch/batch_action_interface.h"
+#include "batch/stat_vec.h"
+#include "batch/static_mem_conf.h"
 
 class ISupervisor {
 protected:
@@ -30,7 +32,7 @@ public:
     sched_system->flush_actions();
   };
 
-  virtual std::vector<IBatchAction*> get_output() {
+  virtual StaticVector<IBatchAction*, EXEC_BATCH_SIZE> get_output() {
       return std::move(exec_system->try_get_done_batch());
   };
   
