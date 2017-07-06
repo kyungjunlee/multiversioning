@@ -1,0 +1,14 @@
+set -e
+source write_static_definitions.sh
+
+batch_size=1000
+shared_lock_num=50
+shared_std_dev=0
+excl_lock_num=50
+excl_std_dev=50
+num_txns=500000
+exec_threads=10
+
+write_static_definitions
+make test
+./build/tests
