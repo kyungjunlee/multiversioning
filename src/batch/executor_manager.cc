@@ -30,6 +30,7 @@ void ExecutorManager::init() {
 }
 
 void ExecutorManager::reset() {
+  gs->reset();
   for (auto executor_ptr : executors) {
     executor_ptr->reset(); 
   }

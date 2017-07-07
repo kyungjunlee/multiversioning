@@ -41,3 +41,7 @@ void GlobalSchedule::finalize_execution_of_action(IBatchAction* act) {
   finalize_from_set(act->get_readset_handle());
   finalize_from_set(act->get_writeset_handle());
 };
+
+void GlobalSchedule::reset() {
+  lt.reset(); 
+};

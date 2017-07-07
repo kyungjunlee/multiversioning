@@ -2,6 +2,7 @@
 #include "batch/lock_types.h"
 
 #include <cassert>
+#include <iostream>
 
 LockTable::LockTable(): memory_preallocated(false) {};
 
@@ -90,6 +91,26 @@ void LockTable::pass_lock_to_next_stage_for(RecordKey key) {
     (*head_pt)->notify_lock_obtained();
   }
 }
+
+void LockTable::reset() {
+  // empty all of the lock queues within the table.
+  unsigned int emptied = 0;
+  for (auto& elt : lock_table) {
+    if (elt.second.is_empty() == false) {
+      emptied ++;
+    }
+
+    while (elt.second.is_empty() == false) {
+      elt.second.pop_head();
+    };
+  }
+
+  std::cerr << 
+    "Cleaning the global schedule, emptied: " << 
+    emptied << 
+    "queues. If this is NOT an instant-execution test," <<
+    " this might be an error!\n";
+};
 
 void LockTable::allocate_mem_for(RecordKey key) {
   auto insert_res = lock_table.insert(

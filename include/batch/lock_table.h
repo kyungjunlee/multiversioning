@@ -48,6 +48,7 @@ public:
   
   std::shared_ptr<LockStage> get_head_for_record(RecordKey key);
   void pass_lock_to_next_stage_for(RecordKey key);
+  void reset();
 };
 
 // BatchLockTable

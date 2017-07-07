@@ -29,6 +29,7 @@ public:
   std::shared_ptr<LockStage> get_stage_holding_lock_for(
       RecordKey key) override;
   void finalize_execution_of_action(IBatchAction* act) override;
+  void reset() override;
 };
 
 #endif
