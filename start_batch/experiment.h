@@ -33,7 +33,7 @@ private:
   ActionFactory<ACTION_TYPE> action_factory;
   Supervisor s;
 
-  OutputVector output;
+  OutputVector* output;
   uint64_t txns_completed;
   unsigned int expected_output_elts;
   bool print_debug;
@@ -62,7 +62,7 @@ private:
     workload.clear();
 
     // prepare all of the variables necessary later on.
-    output.clear();
+    output->clear();
     TimePoint time_start, time_end;
     time_start = TimeUtilities::now();
 
@@ -87,7 +87,7 @@ private:
       }
 
       txns_completed += o.size();
-      output.push_back(std::move(o));
+      output->push_back(std::move(o));
     }
 
     barrier();
@@ -103,7 +103,7 @@ private:
   
     // reset the system and the workload.
     txns_completed = 0;
-    for (auto& output_vector : output) {
+    for (auto& output_vector : *output) {
       for (auto& act : output_vector) {
         action_pool.free(act);
       }
@@ -150,7 +150,7 @@ private:
 
     auto get_output = [&]() {
       pin_thread(76);
-      output.clear();
+      output->clear();
       unsigned int workload_size = workload.size();
       uint64_t cur_txns_completed = txns_completed;
       assert(cur_txns_completed == 0);
@@ -161,7 +161,7 @@ private:
         cur_txns_completed = txns_completed;
         bool res = cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o.size());
         assert(res);
-        output.push_back(std::move(o));
+        output->push_back(std::move(o));
       }
 
       fetch_and_increment(&end_of_measurement);
@@ -169,7 +169,7 @@ private:
 
       barrier();
       // clean up the memory
-      for (auto& output_vector : output) {
+      for (auto& output_vector : *output) {
         for (auto& act : output_vector) {
           action_pool.free(act);
         }
@@ -241,9 +241,13 @@ public:
     s(conf.db_conf, conf.sched_conf, conf.exec_conf),
     txns_completed(0),
     print_debug(print)
-  {};
+  {
+    output = new OutputVector();
+  };
 
-  ~Experiment() {}
+  ~Experiment() {
+    delete output;
+  }
 
   void do_experiment() {
     initialize();
