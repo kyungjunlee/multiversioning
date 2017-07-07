@@ -1,6 +1,9 @@
 #include "gtest/gtest.h"
 #include "batch/memory_pools.h"
+#include "batch/MS_queue.h"
 #include "test/test_action.h"
+
+#include <thread>
 
 class ActionMemoryPoolTest : public testing::Test {
 protected:
@@ -70,6 +73,7 @@ TEST_F(ActionMemoryPoolTest, reuse_single_test) {
   }
 
   amp_ptr->free(ta);
+  ASSERT_EQ(1, amp_ptr->available_elts());
 };
 
 TEST_F(ActionMemoryPoolTest, reuse_many_test) {
@@ -91,4 +95,37 @@ TEST_F(ActionMemoryPoolTest, reuse_many_test) {
   };
 
   for (auto& act : acts) amp_ptr->free(act);
+  ASSERT_EQ(5, amp_ptr->available_elts());
+};
+
+TEST_F(ActionMemoryPoolTest, concurrent_test) {
+  // repeat everything just to make sure.
+  for (unsigned int i = 0; i < 10; i++) {
+    MSQueue<TestAction*> actions;
+    std::thread threads[2];
+
+    // consumer -- "freer"
+    threads[0] = std::thread([&]() {
+      for (unsigned int i = 0; i < 500; i++) {
+        while (actions.is_empty()) {};
+
+        TestAction* ta = actions.peek_head();
+        actions.pop_head();
+
+        amp_ptr->free(ta);
+      }
+    });
+
+    // producer
+    threads[1] = std::thread([&]() {
+      for (unsigned int i = 0; i < 500; i ++) {
+        actions.push_tail(amp_ptr->alloc_and_initialize());
+      }
+    });
+
+    threads[0].join();
+    threads[1].join();
+
+    ASSERT_TRUE(actions.is_empty());
+  }
 };

@@ -37,6 +37,11 @@ void MemoryPool<AllocatedClass>::preallocate_memory(unsigned int num) {
 };
 
 template <class AllocatedClass>
+unsigned int MemoryPool<AllocatedClass>::available_elts() {
+  return free_list.size();
+};
+
+template <class AllocatedClass>
 MemoryPool<AllocatedClass>::~MemoryPool() {
   assert(allocated_list.is_empty() == true);
 };
