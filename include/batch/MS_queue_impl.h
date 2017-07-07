@@ -36,13 +36,13 @@ typename MSQueue<Elt>::QueueElt* MSQueue<Elt>::QueueElt::get_next_elt() {
 
 template <typename Elt>
 bool MSQueue<Elt>::QueueElt::set_next_elt(MSQueue<Elt>::QueueElt* ne) {
-  return cmp_and_swap((uint64_t*) &next, 0, (uint64_t) ne); 
+  return cmp_and_swap((uint64_t*) &next, 0, (uint64_t) ne);
 };
 
 template <typename Elt>
 // Definitions of the MSQueue functions.
 MSQueue<Elt>::MSQueue() {
-  QueueElt* dummy_node = new QueueElt();
+  QueueElt* dummy_node = new (queue_elt_mem_pool.alloc()) QueueElt();
   head = dummy_node;
   tail = dummy_node;
 }
@@ -95,8 +95,8 @@ void MSQueue<Elt>::pop_head() {
       if (m_head == m_tail) {           // empty or tail behind
         if (m_next == nullptr) {
           assert(false);               // empty
-        } 
-        
+        }
+       
         continue;
       }
       assert(m_next != nullptr);
@@ -107,19 +107,19 @@ void MSQueue<Elt>::pop_head() {
             (uint64_t) m_head,
             (uint64_t) m_next)) break;
     }
-  }  
+  } 
 
-  delete m_head;
+  queue_elt_mem_pool.free(m_head);
 }
 
 template <typename Elt>
 void MSQueue<Elt>::push_tail(Elt&& e) {
-  push_tail_implem(new QueueElt(std::move(e)));  
+  push_tail_implem(new (queue_elt_mem_pool.alloc()) QueueElt(std::move(e))); 
 }
 
 template <typename Elt>
 void MSQueue<Elt>::push_tail(const Elt& e) {
-  push_tail_implem(new QueueElt(e));
+  push_tail_implem(new (queue_elt_mem_pool.alloc()) QueueElt(e));
 };
 
 template <typename Elt>
@@ -138,41 +138,52 @@ void MSQueue<Elt>::push_tail_implem(QueueElt* qe) {
 
   // swing the tail around.
   CAS_success= cmp_and_swap(
-     (uint64_t*) &tail, 
+     (uint64_t*) &tail,
      (uint64_t) m_tail,
      (uint64_t) qe);
-  assert(CAS_success); 
+  assert(CAS_success);
 };
 
 template <typename Elt>
 void MSQueue<Elt>::merge_queue(MSQueue<Elt>* lq) {
-  if (lq->is_empty()) return;
+  assert(lq != nullptr);
 
-  QueueElt* m_tail = tail;
-  QueueElt* lq_head = lq->peek_head_elt();
-  QueueElt* lq_tail = lq->peek_tail_elt();
-  barrier();
+  // merge the queue element by element.
+  while (lq->is_empty() == false) {
+    push_tail(std::move(lq->peek_head()));
+    lq->pop_head();
+  };
 
-  // single produced and single consumer model in this modified queue
-  // means that only merge may move tail and so it is free to only 
-  // CAS once.
-  bool CAS_success = false;
-  assert(lq_tail->get_next_elt() == nullptr);
-  assert(m_tail->get_next_elt() == nullptr);
-  // set the next stage
-  CAS_success = m_tail->set_next_elt(lq_head);
-  assert(CAS_success);
-
-  // swing the tail around.
-  CAS_success= cmp_and_swap(
-     (uint64_t*) &tail, 
-     (uint64_t) m_tail,
-     (uint64_t) lq_tail);
-  assert(CAS_success); 
-
-  // remove all the elements from the lq so that
-  // destructor may handle it.
-  lq->tail = lq->head;
+//  The following implementation is much faster, but allows the movement
+//  of memory of QueueElt from one queue to the other. We do not wish
+//  to do this. Hence, the above implementation. It will be slower, but
+//  will allow for easy usage of memory pools.
+//
+//  QueueElt* m_tail = tail;
+//  QueueElt* lq_head = lq->peek_head_elt();
+//  QueueElt* lq_tail = lq->peek_tail_elt();
+//  barrier();
+//
+//  // single produced and single consumer model in this modified queue
+//  // means that only merge may move tail and so it is free to only
+//  // CAS once.
+//  bool CAS_success = false;
+//  assert(lq_tail->get_next_elt() == nullptr);
+//  assert(m_tail->get_next_elt() == nullptr);
+//  // set the next stage
+//  CAS_success = m_tail->set_next_elt(lq_head);
+//  assert(CAS_success);
+//
+//  // swing the tail around.
+//  CAS_success= cmp_and_swap(
+//     (uint64_t*) &tail,
+//     (uint64_t) m_tail,
+//     (uint64_t) lq_tail);
+//  assert(CAS_success);
+//
+//  // remove all the elements from the lq so that
+//  // destructor may handle it.
+//  lq->tail = lq->head;
 }
 
 template <typename Elt>
@@ -181,7 +192,7 @@ MSQueue<Elt>::~MSQueue() {
     pop_head();
   }
 
-  delete head;
+  queue_elt_mem_pool.free(head);
 };
 
 #endif // _MS_QUEUE_IMPL_H_

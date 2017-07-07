@@ -3,7 +3,7 @@
 
 #include "experiment_config.h"
 #include "batch/txn_factory.h"
-#include "batch/memory_pools.h"
+#include "batch/action_memory_pool.h"
 #include "batch/time_util.h"
 #include "batch/stat_vec.h"
 #include "batch/static_mem_conf.h"

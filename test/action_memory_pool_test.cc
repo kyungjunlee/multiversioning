@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "batch/memory_pools.h"
+#include "batch/action_memory_pool.h"
 #include "batch/MS_queue.h"
 #include "test/test_action.h"
 
