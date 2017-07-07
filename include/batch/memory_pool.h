@@ -1,5 +1,5 @@
-#ifndef _MEMORY_POOL_INTERFACE_H_
-#define _MEMORY_POOL_INTERFACE_H_
+#ifndef _MEMORY_POOL_H_
+#define _MEMORY_POOL_H_
 
 #include "batch/mutex_rw_guard.h"
 
@@ -105,6 +105,6 @@ public:
   virtual ~MemoryPool();
 };
 
-#include "batch/memory_pool_inter_impl.h"
+#include "batch/memory_pool_impl.h"
 
-#endif // _MEMORY_POOL_INTERFACE_H_
+#endif // _MEMORY_POOL_H_

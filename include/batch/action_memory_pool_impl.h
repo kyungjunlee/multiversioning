@@ -1,7 +1,7 @@
-#ifndef _MEMORY_POOLS_IMPL_H_
-#define _MEMORY_POOLS_IMPL_H_
+#ifndef _ACTION_MEMORY_POOL_IMPL_H_
+#define _ACTION_MEMORY_POOL_IMPL_H_
 
-#include "batch/memory_pools.h"
+#include "batch/action_memory_pool.h"
 
 template <class ActionClass>
 ActionClass* ActionMemoryPool<ActionClass>::alloc_and_initialize() {
@@ -21,14 +21,4 @@ void ActionMemoryPool<ActionClass>::free(void* act) {
 template <class ActionClass>
 ActionMemoryPool<ActionClass>::~ActionMemoryPool() {};
 
-LockStage* LockStagePool::alloc_and_initialize(
-    LockStage::RequestingActions reqs,
-    LockType lt) {
-  return new (ls_memory_pool.alloc()) LockStage(reqs, lt);
-};
-
-LockStage* LockStagePool::alloc_and_initialize() {
-  return new (ls_memory_pool.alloc()) LockStage();
-};
-
-#endif // _MEMORY_POOLS_IMPL_H_
+#endif // _ACTION_MEMORY_POOL_IMPL_H_
