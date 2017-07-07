@@ -8,7 +8,7 @@
 
 // TODO: Make this a general queue and template it.
 //
-// Single consumer, single producer.
+// Fully concurrent, locked queue.
 class MemEltQueue {
 private:
   struct MemElt {
@@ -50,11 +50,11 @@ public:
   };
 
   MemElt* pop_head() {
-    if (is_empty()) {
+    MutexRWGuard g(&lock, LockType::exclusive);
+    if (head == nullptr) {
       return nullptr;
     }
 
-    MutexRWGuard g(&lock, LockType::exclusive);
     auto tmp = head;
     head = head->next_elt;
     if (head == nullptr) {
@@ -84,7 +84,10 @@ public:
     }
   };
 
-  ~MemEltQueue() { free_all_memory(); };
+  ~MemEltQueue() { 
+    free_all_memory(); 
+    pthread_rwlock_destroy(&lock);
+  };
 };
 
 // single allocator, single freer

@@ -98,12 +98,24 @@ void SPSCMRQueue<Elt>::pop_head() {
 
 template <typename Elt>
 void SPSCMRQueue<Elt>::push_tail(const Elt& e) {
-  push_tail_implem(std::make_shared<QueueElt>(e));
+  push_tail_implem(std::shared_ptr<QueueElt>(
+        new (queue_elt_mem_pool.alloc()) QueueElt(e),
+        [this](QueueElt* qe) {
+          qe->contents = nullptr;
+          qe->next = nullptr;
+          queue_elt_mem_pool.free(qe);
+        }));
 }
 
 template <typename Elt>
 void SPSCMRQueue<Elt>::push_tail(Elt&& e) {
-  push_tail_implem(std::make_shared<QueueElt>(std::move(e)));
+  push_tail_implem(std::shared_ptr<QueueElt>(
+        new (queue_elt_mem_pool.alloc()) QueueElt(e),
+        [this](QueueElt* qe) {
+          qe->contents = nullptr;
+          qe->next = nullptr;
+          queue_elt_mem_pool.free(qe);
+        }));
 }
 
 template <typename Elt>
@@ -122,23 +134,34 @@ void SPSCMRQueue<Elt>::push_tail_implem(
 
 template <typename Elt>
 void SPSCMRQueue<Elt>::merge_queue(SPSCMRQueue<Elt>* lq) {
-   if (lq->is_empty()) return;
+  assert(lq != nullptr);
 
-   MutexRWGuard g((pthread_rwlock_t*) &lock, LockType::exclusive);
-   if (head == nullptr) {
-    assert(tail == nullptr);
-    tail = lq->peek_tail_elt();
-    head = lq->peek_head_elt();
-   } else {
-    assert(tail->get_next_elt() == nullptr);
-    assert(lq->tail->get_next_elt() == nullptr);
-    tail->set_next_elt(lq->peek_head_elt());
-    tail = lq->peek_tail_elt();
-   }
+  // merge the queue element by element
+  while (lq->is_empty() == false) {
+    push_tail(*lq->peek_head());
+    lq->pop_head();
+  }
+//  The following implementation is much faster, but allows the movement
+//  of memory of QueueElt from one queue to the other. We do not wish
+//  to do this. Hence, the above implementation. It will be slower, but
+//  will allow for easy usage of memory pools.
+//
+//   MutexRWGuard g((pthread_rwlock_t*) &lock, LockType::exclusive);
+//   if (head == nullptr) {
+//    assert(tail == nullptr);
+//    tail = lq->peek_tail_elt();
+//    head = lq->peek_head_elt();
+//   } else {
+//    assert(tail->get_next_elt() == nullptr);
+//    assert(lq->tail->get_next_elt() == nullptr);
+//    tail->set_next_elt(lq->peek_head_elt());
+//    tail = lq->peek_tail_elt();
+//   }
 }
 
 template <typename Elt>
 SPSCMRQueue<Elt>::~SPSCMRQueue() {
+  while (is_empty() == false) pop_head();
   pthread_rwlock_destroy(&lock);
 }
 

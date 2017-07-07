@@ -1,6 +1,8 @@
 #ifndef SPSC_MR_QUEUE_H_
 #define SPSC_MR_QUEUE_H_
 
+#include "batch/memory_pool.h"
+
 #include <memory>
 #include <pthread.h>
 
@@ -40,6 +42,7 @@ public:
 
   std::shared_ptr<QueueElt> head;
   std::shared_ptr<QueueElt> tail;
+  MemoryPool<QueueElt> queue_elt_mem_pool;
 
   bool is_empty() const;
   

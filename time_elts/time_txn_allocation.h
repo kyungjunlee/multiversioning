@@ -2,7 +2,7 @@
 #define TIME_TXN_ALLOCATION_H_
 
 #include "batch/txn_factory.h"
-#include "batch/memory_pools.h"
+#include "batch/action_memory_pool.h"
 #include "batch/RMW_batch_action.h"
 #include "batch/time_util.h"
 #include "batch/print_util.h"

@@ -49,7 +49,7 @@ void LockTable::merge_batch_table_for(
     lt_it = lock_table.find(elt->first);
     assert(lt_it != lock_table.end());
 
-    auto& head_blt = *elt->second.peek_head();
+    auto head_blt = elt->second.peek_head();
     lt_it->second.merge_queue(&elt->second);
 
     // if the lock stage at the head has NOT been given the lock,
@@ -60,7 +60,7 @@ void LockTable::merge_batch_table_for(
     if (head_pt == nullptr) return;
 
     auto& head = *head_pt;
-    if (head == head_blt && 
+    if (head == *head_blt && 
         head->has_lock() == false) {
       head->notify_lock_obtained();
     }
