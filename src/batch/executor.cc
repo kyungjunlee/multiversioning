@@ -45,6 +45,9 @@ void BatchExecutor::process_action_batch() {
 
     assert(currentBatch->at(i) != nullptr);
     if (!process_action(currentBatch->at(i))) {
+      /*
+       * TODO: push_back requires memory allocation, fix?!
+       */
       pending_list->push_back(currentBatch->at(i));        
       pending_list->size();
     } 
@@ -104,6 +107,12 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
           continue;
         }
 
+        /*
+         * TODO: recursive here, but is it really necessary?
+         * change to iterative?
+         * isn't this including this current act as well?
+         * why do we need to this one, and what about following actions?
+         */
         for (auto action_sptr : blocking_actions) {
           this->process_action(action_sptr); 
         }
@@ -112,12 +121,17 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
     
     execute_blockers(act->get_writeset_handle());
     execute_blockers(act->get_readset_handle());
-    
+
+    /*
+     * TODO: why not executing "act" here, instead of putting it back to
+     * pending list?
+     */
     // unlock the action so that someone else may attempt to execute it.
     bool state_change_success = act->conditional_atomic_change_state(
         BatchActionState::processing,
         BatchActionState::substantiated);
     assert(state_change_success);
+
     return false;
   }
 };
