@@ -16,6 +16,9 @@ void Scheduler::StartWorking() {
   while(!is_stop_requested()) {
     TIME_IF_SCHED_DIAGNOSTICS(
       // get the batch actions
+      /*
+       * TODO: request_input -> create batch queue.... memory allocation?
+       */
       batch_actions = std::move(this->manager->request_input(this));
       TIME_IF_SCHED_DIAGNOSTICS(
         process_batch();, 

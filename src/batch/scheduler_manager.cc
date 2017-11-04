@@ -55,6 +55,10 @@ SchedulerThreadBatch ThreadInputQueues::get_batch_from_my_queue(
     }
   }
 
+  /*
+   * TODO: queue keeps shrinking and expanding again --- memory allocation!!
+   * this "batch" being copied to....
+   */
   SchedulerThreadBatch batch = std::move(my_queue.peek_head());
   my_queue.pop_head();
   return batch;
@@ -245,6 +249,10 @@ void SchedulerManager::register_created_batch(
       s != nullptr &&
       system_is_initialized());
 
+  /*
+   * TODO: push_tail increases the pending_queue --- memory allocation
+   
+   */
   // we don't need a lock to access s's pending batches queue. That is because
   // we are the only producer and consumer must hold the handing_lock. 
   pending_batches.pending_queues[s->get_thread_id()].push_tail({
@@ -391,7 +399,15 @@ void SchedulerManager::signal_execution_threads() {
    
     while (m_queue.is_empty() == false) {
       auto& curr_aw_batch = m_queue.peek_head();
-      exec_manager->signal_execution_threads(std::move(curr_aw_batch.tw));  
+      /*
+       * TODO: passing batch from scheduler to executor here
+       * better way to do? i.e., how to avoid this?
+       */
+      exec_manager->signal_execution_threads(std::move(curr_aw_batch.tw));
+      /*
+       * TODO: moving from m_queue to tmp_aw_batches, but... trigger memory allocation
+       * how to avoid this?
+       */
       m_queue.pop_head();
       tmp_aw_batches.push_back(std::move(curr_aw_batch));
     }
