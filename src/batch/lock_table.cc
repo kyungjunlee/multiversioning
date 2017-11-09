@@ -49,6 +49,10 @@ void LockTable::merge_batch_table_for(
     lt_it = lock_table.find(elt->first);
     assert(lt_it != lock_table.end());
 
+    /*
+     * TODO: this peek_head() calls so many time and the total time ie long
+     * maybe this is causing the problem?
+     */
     auto& head_blt = *elt->second.peek_head();
     lt_it->second.merge_queue(&elt->second);
 

@@ -99,7 +99,11 @@ private:
     results.reserve(300);
     TimePoint all_start, input_stop, output_stop, measure_stop;
     auto measure_throughput = [&]() {
-      pin_thread(78);
+      /*
+       * TODO: pinning the fixed number here might be dangerous
+       * change this to automtically set this cpu number
+       */
+      pin_thread(0);
       unsigned int current_measurement = 0;
       unsigned int former_measurement = 0;
       TimePoint iteration_start, iteration_end;
@@ -119,13 +123,13 @@ private:
     };
     
     auto put_input = [&]() {
-      pin_thread(77);
+      pin_thread(2);
       s.set_simulation_workload(std::move(workload));
       input_stop = TimeUtilities::now();
     };
 
     auto get_output = [&]() {
-      pin_thread(76);
+      pin_thread(1);
       std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
       output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();
@@ -146,6 +150,9 @@ private:
     };
 
     all_start = TimeUtilities::now();
+    /*
+     * TODO: measure the total execution time
+     */
     std::thread measure(measure_throughput);
     std::thread output(get_output);
     std::thread input(put_input);

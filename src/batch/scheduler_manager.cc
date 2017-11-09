@@ -245,6 +245,10 @@ void SchedulerManager::register_created_batch(
       s != nullptr &&
       system_is_initialized());
 
+  /*
+   * TODO: push_tail increases the pending_queue --- memory allocation
+
+   */
   // we don't need a lock to access s's pending batches queue. That is because
   // we are the only producer and consumer must hold the handing_lock. 
   pending_batches.pending_queues[s->get_thread_id()].push_tail({
@@ -314,6 +318,17 @@ void SchedulerManager::collect_awaiting_batches() {
       IF_SCHED_MAN_DIAG(
           diag.collection_queue_processed.add_sample(processed_batches)
       );
+
+      /*
+       * TODO: Because vectors use an array as their underlying storage,
+       * erasing elements in positions other than the vector end causes the container
+       * to relocate all the elements after the segment erased to their new positions.
+       * This is generally an inefficient operation compared to the one performed
+       * for the same operation by other kinds of sequence containers
+       * (such as list or forward_list).
+       *
+       * from http://www.cplusplus.com/reference/vector/vector/erase/
+       */
 
       sorted_batches.erase(
         sorted_batches.begin(), 
