@@ -48,6 +48,9 @@ void Scheduler::process_batch() {
     ac.sort_remaining();
     // translate a packing into lock request
     for (std::unique_ptr<IBatchAction>& act : packing) {
+      /*
+       * TODO: isn't it creating so many IBatchAction instances here?
+       */
       auto act_sptr = std::shared_ptr<IBatchAction>(std::move(act));
       workloads[curr_workload_item++] = act_sptr;
       lt.insert_lock_request(act_sptr);
