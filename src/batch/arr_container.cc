@@ -31,7 +31,7 @@ IBatchAction* ArrayContainer::peek_curr_elt() {
   return this->actions[current_element].get();
 }
 
-std::unique_ptr<IBatchAction> ArrayContainer::take_curr_elt() {
+IBatchAction* ArrayContainer::take_curr_elt() {
   if (arr_is_empty() || current_element == this->actions.size()) return nullptr;
 
   elements_removed_this_round ++;

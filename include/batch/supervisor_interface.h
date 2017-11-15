@@ -22,16 +22,15 @@ public:
     exec_conf(exec_conf)
   {};
 
-  typedef std::vector<std::unique_ptr<IBatchAction>> SimulationWorkload;
-  virtual void set_simulation_workload(
-      std::vector<std::unique_ptr<IBatchAction>>&& workload) {
+  typedef std::vector<IBatchAction*> SimulationWorkload;
+  virtual void set_simulation_workload(SimulationWorkload&& workload) {
     for(auto& act_ptr : workload) {
       sched_system->add_action(std::move(act_ptr));
     }
     sched_system->flush_actions();
   };
 
-  virtual std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>> 
+  virtual std::vector<IBatchAction*>*
     get_output() {
       return std::move(exec_system->try_get_done_batch());
   };

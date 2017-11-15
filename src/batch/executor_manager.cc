@@ -59,7 +59,7 @@ void ExecutorManager::signal_execution_threads(
   } 
 };
 
-std::unique_ptr<ExecutorThread::BatchActions> 
+ExecutorThread::BatchActions*
 ExecutorManager::get_done_batch() {
   std::unique_ptr<ExecutorThread::BatchActions> batch;
   while ((batch = try_get_done_batch()) == nullptr);
@@ -67,7 +67,7 @@ ExecutorManager::get_done_batch() {
   return std::move(batch);  
 }
 
-std::unique_ptr<ExecutorThread::BatchActions> 
+ExecutorThread::BatchActions*
 ExecutorManager::try_get_done_batch() {
   auto batch = executors[next_output_executor]->try_get_done_batch();
   next_output_executor ++;

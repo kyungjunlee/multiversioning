@@ -53,10 +53,10 @@ Packer::BatchActions Packer::get_packing(Container* c) {
   // TODO: Does this help or hinder?
   // over-reserve memory to be able to fit every elt within container
   // if such is the need.
-  BatchActions actions_in_packing;
+  BatchActions actions_in_packing = new BatchActions();
   actions_in_packing.reserve(c->get_remaining_count());
   IBatchAction* next_action;
-  std::unique_ptr<IBatchAction> action;
+  IBatchAction* action;
 
   auto merge_sets = [](RecordKeySet* mergeTo, RecordKeySet* mergeFrom) {
     for (auto it = mergeFrom->begin(); it != mergeFrom->end(); it++) {

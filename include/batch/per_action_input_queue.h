@@ -20,12 +20,12 @@ class Scheduler;
  *    comes in.
  */
 class PerActionInputQueue : 
-  private MSQueue<std::unique_ptr<IBatchAction>>,
+  private MSQueue<IBatchAction*>>,
   public InputQueue
 {
 public:
   PerActionInputQueue(uint32_t batch_size): 
-    MSQueue<std::unique_ptr<IBatchAction>>(),
+    MSQueue<IBatchAction*>(),
     InputQueue(batch_size)
   {};
 
@@ -52,12 +52,12 @@ public:
     return batch;
   }; 
 
-  virtual void add_action(std::unique_ptr<IBatchAction>&& act) override {
-    MSQueue<std::unique_ptr<IBatchAction>>::push_tail(std::move(act));
+  virtual void add_action(IBatchAction* act) override {
+    MSQueue<IBatchAction*>::push_tail(std::move(act));
   };
 
   virtual bool is_empty() override {
-    return MSQueue<std::unique_ptr<IBatchAction>>::is_empty();
+    return MSQueue<IBatchAction*>::is_empty();
   };
 
   // flushing does not do anything since the queue is per-action 

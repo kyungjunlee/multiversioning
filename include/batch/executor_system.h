@@ -29,8 +29,8 @@ protected:
 public:
   ExecutingSystem(ExecutingSystemConfig c): conf(c) {};
 
-  virtual std::unique_ptr<ExecutorThread::BatchActions> get_done_batch() = 0;  
-  virtual std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() = 0;  
+  virtual ExecutorThread::BatchActions* get_done_batch() = 0;  
+  virtual ExecutorThread::BatchActions* try_get_done_batch() = 0;  
   virtual void set_global_schedule_ptr(IGlobalSchedule* gs) = 0;
   virtual void set_db_storage_ptr(IDBStorage* db) = 0;
   virtual void start_working() = 0;

@@ -277,6 +277,9 @@ void SchedulerManager::collect_awaiting_batches() {
 
     // pass all of the scheduler-thread-local queues and insert
     // batches into the global vector. 
+    /*
+     * TODO: is it okay to access this local queue by SchedulerManager?
+     */
     for (unsigned int i = 0; i < queues_num; i++) {
       auto& current_queue = pending_batches.pending_queues[i];
       while (current_queue.is_empty() == false) {
@@ -355,7 +358,7 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
       // NOTE: 
       //  As mentioned before, we assume only ONE table. In this case we
       //  must have that each table has the same size, which is weaker.
-      hi.key = (this->db_conf.tables_definitions[0].num_records  - 1); 
+      hi.key = (this->db_conf.tables_definitions[0].num_records - 1); 
       next_queue = &merging_queues.merged_batches;
     } else {
       next_queue = &merging_queues.merging_stages[stage + 1];
@@ -370,9 +373,12 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
     while (m_queue.is_empty() == false) {
       // current awaiting batch
       auto& curr_aw = m_queue.peek_head();
+      /*
+       * TODO: don't we need to pass a reference of blt here, or move?
+       */
       gs->merge_into_global_schedule_for(curr_aw.blt, lo, hi);
       next_queue->push_tail(std::move(curr_aw));
-      m_queue.pop_head();  
+      m_queue.pop_head();
       processed ++;
 
       if (processed > 25) break;
@@ -401,20 +407,26 @@ void SchedulerManager::signal_execution_threads() {
     // to make sure that their destructors aren't called until the 
     // end of the function when lock is released. Otherwise a huge slowdown
     // ensues!
+    /* TODO: may not be necessary */
+    /*
     std::vector<AwaitingBatch> tmp_aw_batches;
     tmp_aw_batches.resize(300);
-   
+    */
     while (m_queue.is_empty() == false) {
       auto& curr_aw_batch = m_queue.peek_head();
       exec_manager->signal_execution_threads(std::move(curr_aw_batch.tw));  
       m_queue.pop_head();
+      /*
       tmp_aw_batches.push_back(std::move(curr_aw_batch));
+      */
     }
     
     IF_SCHED_MAN_DIAG(
+      /*
       if (tmp_aw_batches.size() > 0) {
         diag.number_signaled.add_sample(tmp_aw_batches.size());
       }
+      */
     );,
     diag.time_signaling_no_destr.add_sample,
     t1

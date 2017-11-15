@@ -9,6 +9,11 @@
 #include <chrono>
 #include <thread>
 
+/*
+ * gperf
+ */
+// #include <gperftools/profiler.h>
+
 // Experiment
 //    
 //  Class that controls the experiment, performs initialization, measurements and 
@@ -103,7 +108,7 @@ private:
        * TODO: pinning the fixed number here might be dangerous
        * change this to automtically set this cpu number
        */
-      pin_thread(0);
+      pin_thread(14);
       unsigned int current_measurement = 0;
       unsigned int former_measurement = 0;
       TimePoint iteration_start, iteration_end;
@@ -123,13 +128,13 @@ private:
     };
     
     auto put_input = [&]() {
-      pin_thread(2);
+      pin_thread(13);
       s.set_simulation_workload(std::move(workload));
       input_stop = TimeUtilities::now();
     };
 
     auto get_output = [&]() {
-      pin_thread(1);
+      pin_thread(12);
       std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
       output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();
@@ -277,7 +282,16 @@ public:
 
     initialize();
     do_warm_up_run();
+    /*
+     * gperf
+     */
+    // std::string gperf_file = "gperf/gperf-cpu."
+    //   + std::to_string(conf.sched_conf.scheduling_threads_count) + '.' 
+    //   + std::to_string(conf.exec_conf.executing_threads_count) + '.'
+    //   + std::to_string(conf.sched_conf.batch_size_act);
+    // ProfilerStart(gperf_file.c_str());
     auto results = do_measurements(total_time);
+    // ProfilerStop();
     
     Out printer(conf);
     printer.write_exp_description();

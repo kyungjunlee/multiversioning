@@ -17,9 +17,9 @@
 //    The executor manager contains handles to all the executor threads
 //    and may be used by scheduling threads to assign ownership of actions
 //    to execution threads in a synchronized manner. 
-class ExecutorQueue : public MSQueue<std::unique_ptr<ExecutorThread::BatchActions>> {
+class ExecutorQueue : public MSQueue<ExecutorThread::BatchActions*> {
 private:
-  using MSQueue<std::unique_ptr<ExecutorThread::BatchActions>>::merge_queue;
+  using MSQueue<ExecutorThread::BatchActions>::merge_queue;
 };
 
 // Pending Queue
@@ -27,7 +27,7 @@ private:
 //    Pending Queue is used by the executor to keep track of actions within
 //    a particular batch that could not be executed when the executor attempted
 //    to do so.
-typedef std::list<std::shared_ptr<IBatchAction>> PendingList;
+typedef std::list<IBatchAction*> PendingList;
 
 // BatchExecutor
 //
@@ -59,7 +59,7 @@ public:
   
   // implement the executor thread interface.
   void add_actions(ExecutorThread::BatchActions&& actions) override;
-  std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
+  ExecutorThread::BatchActions* try_get_done_batch() override;
   void signal_stop_working() override;
   bool is_stop_requested() override;
   void reset() override;

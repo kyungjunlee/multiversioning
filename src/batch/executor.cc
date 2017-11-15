@@ -6,7 +6,7 @@ BatchExecutor::BatchExecutor(
       ExecutorThreadManager* manager, 
       int m_cpu_number):
     ExecutorThread(manager, m_cpu_number) {
-  this->input_queue = std::make_unique<ExecutorQueue>();;
+  this->input_queue = std::make_unique<ExecutorQueue>();
   this->output_queue = std::make_unique<ExecutorQueue>();
   this->pending_list = std::make_unique<PendingList>();
 };
@@ -30,6 +30,10 @@ void BatchExecutor::Init() {
 };
 
 void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
+  /*
+   * TODO: remove make_unique ?
+   * make_unique will construct an object of type T and wrap it in a std::unique_ptr
+   */
   input_queue->push_tail(
       std::move(
         std::make_unique<ExecutorThread::BatchActions>(
@@ -46,8 +50,16 @@ void BatchExecutor::process_action_batch() {
     assert(currentBatch->at(i) != nullptr);
     if (!process_action(currentBatch->at(i))) {
       pending_list->push_back(currentBatch->at(i));        
-      pending_list->size();
-    } 
+      /*
+       * TODO: why calling size() here?
+       */ 
+      // pending_list->size();
+    } else {
+      /*
+       * now it's time to free it
+       */
+      delete currentBatch->at(i);
+    }
   } 
 
   // make sure that everything within current batch has been successfully executed!
@@ -59,7 +71,7 @@ void BatchExecutor::process_action_batch() {
   output_queue->push_tail(std::move(currentBatch));
 };
 
-bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
+bool BatchExecutor::process_action(IBatchAction* act) {
   assert(act != nullptr);
 
   uint64_t action_state = act->action_state;
@@ -127,7 +139,13 @@ void BatchExecutor::process_pending() {
   auto it = pending_list->begin();
   while (it != pending_list->end()) {
     if (process_action(*it)) {
+      /*
+       * time to deallocate the memory allocation for its IBatchAction
+       */
+      delete *it; // free(*it)
+
       it = pending_list->erase(it);
+
       continue;
     }
 
@@ -135,12 +153,12 @@ void BatchExecutor::process_pending() {
   }
 };
 
-std::unique_ptr<ExecutorThread::BatchActions> BatchExecutor::try_get_done_batch() {
+ExecutorThread::BatchActions* BatchExecutor::try_get_done_batch() {
   if (!output_queue->is_empty()) {
-    std::unique_ptr<ExecutorThread::BatchActions> act;
+    ExecutorThread::BatchActions* act;
     act = std::move(output_queue->peek_head());
     output_queue->pop_head();
-    return act; 
+    return act;
   }
 
   return nullptr;

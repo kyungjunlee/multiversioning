@@ -41,19 +41,18 @@ void Scheduler::process_batch() {
 
   // populate the batch lock table and workloads
   unsigned int curr_workload_item = 0;
-  std::vector<std::unique_ptr<IBatchAction>> packing;
+  std::vector<IBatchAction*> packing;
   while (ac.get_remaining_count() != 0) {
     // get packing
     packing = std::move(Packer::get_packing(&ac));
     ac.sort_remaining();
     // translate a packing into lock request
-    for (std::unique_ptr<IBatchAction>& act : packing) {
+    for (IBatchAction* act_ptr : packing) {
       /*
        * TODO: isn't it creating so many IBatchAction instances here?
        */
-      auto act_sptr = std::shared_ptr<IBatchAction>(std::move(act));
-      workloads[curr_workload_item++] = act_sptr;
-      lt.insert_lock_request(act_sptr);
+      workloads[curr_workload_item++] = act_ptr;
+      lt.insert_lock_request(act_ptr);
     }
   }
 
