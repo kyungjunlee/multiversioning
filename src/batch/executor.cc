@@ -151,15 +151,15 @@ void BatchExecutor::process_pending() {
   }
 };
 
-ExecutorThread::BatchActions* BatchExecutor::try_get_done_batch() {
+ExecutorThread::BatchActions BatchExecutor::try_get_done_batch() {
+  ExecutorThread::BatchActions act;
   if (!output_queue->is_empty()) {
-    ExecutorThread::BatchActions* act;
     act = std::move(output_queue->peek_head());
     output_queue->pop_head();
     return act;
   }
 
-  return nullptr;
+  return act;
 };
 
 void BatchExecutor::signal_stop_working() {

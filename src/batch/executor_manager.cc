@@ -59,21 +59,21 @@ void ExecutorManager::signal_execution_threads(
   } 
 };
 
-ExecutorThread::BatchActions*
+ExecutorThread::BatchActions
 ExecutorManager::get_done_batch() {
-  std::unique_ptr<ExecutorThread::BatchActions> batch;
-  while ((batch = try_get_done_batch()) == nullptr);
+  ExecutorThread::BatchActions batch;
+  while ((batch = std::move(try_get_done_batch())).size() == 0);
 
-  return std::move(batch);  
+  return batch;
 }
 
-ExecutorThread::BatchActions*
+ExecutorThread::BatchActions
 ExecutorManager::try_get_done_batch() {
-  auto batch = executors[next_output_executor]->try_get_done_batch();
+  auto batch = std::move(executors[next_output_executor]->try_get_done_batch());
   next_output_executor ++;
   next_output_executor %= executors.size();
 
-  return std::move(batch);
+  return batch;
 }
 
 void ExecutorManager::set_global_schedule_ptr(IGlobalSchedule* gs) {

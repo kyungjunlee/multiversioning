@@ -30,7 +30,7 @@ public:
     sched_system->flush_actions();
   };
 
-  virtual std::vector<IBatchAction*>*
+  virtual std::vector<IBatchAction*>
     get_output() {
       return std::move(exec_system->try_get_done_batch());
   };

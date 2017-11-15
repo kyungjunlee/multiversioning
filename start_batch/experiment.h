@@ -62,11 +62,11 @@ private:
 
     barrier();
 
-    std::vector<std::unique_ptr<std::vector<IBatchAction*>>> output;
+    std::vector<std::vector<IBatchAction*>> output;
     output.reserve(expected_output_elts);
     while (txns_completed < txns_num) {
-      auto o = s.get_output();
-      if (o == nullptr) continue;
+      auto o = std::move(s.get_output());
+      if (o.size() == 0) continue;
 
       if (txns_completed == 0) {
         print_debug_info(
@@ -78,7 +78,7 @@ private:
             });
       }
 
-      txns_completed += o->size();
+      txns_completed += o.size();
       output.push_back(std::move(o));
     }
 
@@ -135,17 +135,17 @@ private:
 
     auto get_output = [&]() {
       pin_thread(12);
-      std::vector<std::unique_ptr<std::vector<IBatchAction*>>> output;
+      std::vector<std::vector<IBatchAction*>> output;
       output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();
       uint64_t cur_txns_completed = txns_completed;
       assert(cur_txns_completed == 0);
       while (txns_completed < workload_size) {
-        auto o = s.get_output();
-        if (o == nullptr) continue;
+        auto o = std::move(s.get_output());
+        if (o.size() == 0) continue;
 
         cur_txns_completed = txns_completed;
-        bool res = cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o->size());  
+        bool res = cmp_and_swap(&txns_completed, cur_txns_completed, txns_completed + o.size());  
         assert(res);
         output.push_back(std::move(o));
       }

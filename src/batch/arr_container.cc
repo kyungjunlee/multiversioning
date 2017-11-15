@@ -28,7 +28,7 @@ IBatchAction* ArrayContainer::peek_curr_elt() {
   }
 
   // return the pointer within unique_ptr of the right elt.
-  return this->actions[current_element].get();
+  return this->actions[current_element];
 }
 
 IBatchAction* ArrayContainer::take_curr_elt() {

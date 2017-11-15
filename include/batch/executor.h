@@ -17,7 +17,7 @@
 //    The executor manager contains handles to all the executor threads
 //    and may be used by scheduling threads to assign ownership of actions
 //    to execution threads in a synchronized manner. 
-class ExecutorQueue : public MSQueue<ExecutorThread::BatchActions*> {
+class ExecutorQueue : public MSQueue<ExecutorThread::BatchActions> {
 private:
   using MSQueue<ExecutorThread::BatchActions>::merge_queue;
 };
@@ -59,7 +59,7 @@ public:
   
   // implement the executor thread interface.
   void add_actions(ExecutorThread::BatchActions&& actions) override;
-  ExecutorThread::BatchActions* try_get_done_batch() override;
+  ExecutorThread::BatchActions try_get_done_batch() override;
   void signal_stop_working() override;
   bool is_stop_requested() override;
   void reset() override;
