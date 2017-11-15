@@ -51,7 +51,7 @@ private:
   static unsigned int get_lock_number(LockDistributionConfig conf);
   static bool lock_distro_config_is_valid(LockDistributionConfig spec);
 public:
-  static std::vector<std::unique_ptr<IBatchAction>> generate_actions(
+  static std::vector<IBatchAction*> generate_actions(
       ActionSpecification spec,
       unsigned int number_of_actions);
 };

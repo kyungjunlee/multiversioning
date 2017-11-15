@@ -26,7 +26,7 @@ private:
   // private container for the batch before it is visible to the
   // execution threads. Necessary to make sure that adding transactions
   // is thread safe!
-  std::vector<std::unique_ptr<IBatchAction>> currentBatch;
+  std::vector<IBatchAction*> currentBatch;
 
 public:
   BatchedInputQueue(uint32_t batch_size): 

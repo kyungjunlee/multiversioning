@@ -19,7 +19,7 @@
 //    to execution threads in a synchronized manner. 
 class ExecutorQueue : public MSQueue<ExecutorThread::BatchActions*> {
 private:
-  using MSQueue<ExecutorThread::BatchActions>::merge_queue;
+  using MSQueue<std::unique_ptr<ExecutorThread::BatchActions>>::merge_queue;
 };
 
 // Pending Queue
@@ -41,11 +41,11 @@ protected:
   // Pending actions are those that may not be immediately executed, but 
   // belong to the currently processed batch.
   std::unique_ptr<PendingList> pending_list;
-  std::unique_ptr<ExecutorThread::BatchActions> currentBatch;
+  ExecutorThread::BatchActions currentBatch;
 
   void process_action_batch();
   // true if successful and false otherwise
-  bool process_action(std::shared_ptr<IBatchAction> act);
+  bool process_action(IBatchAction* act);
   void process_pending();
   
 public:

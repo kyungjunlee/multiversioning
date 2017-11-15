@@ -23,8 +23,8 @@ private:
   typedef TimeUtilities::TimePoint TimePoint;
 
   ExperimentConfig conf;
-  std::vector<std::unique_ptr<IBatchAction>> workload;
-  std::vector<std::unique_ptr<IBatchAction>> warm_up_workload;
+  std::vector<IBatchAction*> workload;
+  std::vector<IBatchAction*> warm_up_workload;
   Supervisor s;
   uint64_t txns_completed;
   unsigned int expected_output_elts;
@@ -62,7 +62,7 @@ private:
 
     barrier();
 
-    std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
+    std::vector<std::unique_ptr<std::vector<IBatchAction*>>> output;
     output.reserve(expected_output_elts);
     while (txns_completed < txns_num) {
       auto o = s.get_output();
@@ -135,7 +135,7 @@ private:
 
     auto get_output = [&]() {
       pin_thread(12);
-      std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
+      std::vector<std::unique_ptr<std::vector<IBatchAction*>>> output;
       output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();
       uint64_t cur_txns_completed = txns_completed;
@@ -188,12 +188,12 @@ private:
     return results;
   };
 
-  std::vector<std::unique_ptr<IBatchAction>> allocate_actions() {
+  std::vector<IBatchAction*> allocate_actions() {
     unsigned int acts_per_thread = 500000;
     unsigned int actions_num = conf.num_txns;
     // this is poor-mans ceil.
     unsigned int thread_num = actions_num / acts_per_thread + (actions_num % acts_per_thread != 0);
-    std::vector<std::vector<std::unique_ptr<IBatchAction>>> thread_actions{thread_num};
+    std::vector<std::vector<IBatchAction*>> thread_actions{thread_num};
     std::thread threads[thread_num];
 
     auto thread_alloc = [&actions_num, &thread_actions, &acts_per_thread, this](unsigned int i) {
@@ -216,10 +216,10 @@ private:
     }
 
     // merge all of the above into a single vector
-    std::vector<std::unique_ptr<IBatchAction>> res;
+    std::vector<IBatchAction*> res;
     for (auto& vec : thread_actions) {
       for (auto& act : vec) {
-        res.push_back(std::move(act));
+        res.push_back(act);
       }
     }
 
@@ -239,14 +239,14 @@ private:
 
     print_debug_info("Creating workload ... ");
     time_start = std::chrono::system_clock::now();
-    workload = allocate_actions();
+    workload = std::move(allocate_actions());
     time_end = std::chrono::system_clock::now();
     print_OK_time();
 
     print_debug_info("Creating warm up workload ... ");
     // TODO: Make the size of this a parameter...
     time_start = std::chrono::system_clock::now();
-    warm_up_workload = allocate_actions();
+    warm_up_workload = std::move(allocate_actions());
     time_end = std::chrono::system_clock::now();
     print_OK_time();
 

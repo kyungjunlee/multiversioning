@@ -113,7 +113,7 @@ bool ActionFactory<ActionClass>::lock_distro_config_is_valid(
 //};
 
 template <class ActionClass>
-std::vector<std::unique_ptr<IBatchAction>>
+std::vector<IBatchAction*>
 ActionFactory<ActionClass>::generate_actions (
     ActionSpecification spec,
     unsigned int number_of_actions) {
@@ -121,7 +121,7 @@ ActionFactory<ActionClass>::generate_actions (
       lock_distro_config_is_valid(spec.reads) &&
       lock_distro_config_is_valid(spec.writes));
   
-  std::vector<std::unique_ptr<IBatchAction>> res;
+  std::vector<IBatchAction*> res;
   for (unsigned int i = 0; i < number_of_actions; i++) {
     auto read_set = get_disjoint_set_of_random_numbers(
         spec.reads.low_record,
@@ -135,11 +135,11 @@ ActionFactory<ActionClass>::generate_actions (
         read_set);
 
     // construct the action
-    std::unique_ptr<IBatchAction> act = std::make_unique<ActionClass>(new TestTxn());
+    IBatchAction* act = new ActionClass(new TestTxn());
     for (auto& key : read_set) act->add_read_key(key);
     for (auto& key : write_set) act->add_write_key(key);
 
-    res.push_back(std::move(act));
+    res.push_back(act);
   }
 
   return res;

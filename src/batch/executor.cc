@@ -14,7 +14,7 @@ BatchExecutor::BatchExecutor(
 void BatchExecutor::StartWorking() {
   while (!is_stop_requested()) {
     // get a batch to execute or busy wait until we may do that
-    currentBatch.reset(nullptr);
+    currentBatch.clear();
 
     while(input_queue->is_empty()) {
       if (is_stop_requested()) return; 
@@ -41,15 +41,15 @@ void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
 };
 
 void BatchExecutor::process_action_batch() {
-  for (unsigned int i = 0; i < currentBatch->size(); i++) {
+  for (unsigned int i = 0; i < currentBatch.size(); i++) {
     // attempt to execute the pending actions first. This is because the 
     // actions "earlier" in the current batch are more likely to not
     // be blocked by other actions!
     process_pending();
 
-    assert(currentBatch->at(i) != nullptr);
-    if (!process_action(currentBatch->at(i))) {
-      pending_list->push_back(currentBatch->at(i));        
+    assert(currentBatch[i] != nullptr);
+    if (!process_action(currentBatch[i])) {
+      pending_list->push_back(currentBatch[i]);        
       /*
        * TODO: why calling size() here?
        */ 
@@ -58,7 +58,7 @@ void BatchExecutor::process_action_batch() {
       /*
        * now it's time to free it
        */
-      delete currentBatch->at(i);
+      delete currentBatch[i];
     }
   } 
 
