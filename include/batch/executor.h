@@ -19,7 +19,7 @@
 //    to execution threads in a synchronized manner. 
 class ExecutorQueue : public MSQueue<ExecutorThread::BatchActions*> {
 private:
-  using MSQueue<std::unique_ptr<ExecutorThread::BatchActions>>::merge_queue;
+  using MSQueue<ExecutorThread::BatchActions>::merge_queue;
 };
 
 // Pending Queue

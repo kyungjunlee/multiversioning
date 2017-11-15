@@ -49,7 +49,7 @@ public:
       ExecutorThreadManager::ThreadWorkloads&& workload) override;
   virtual std::shared_ptr<LockStage> 
     get_current_lock_holder_for(RecordKey key) override;
-  virtual void finalize_action(std::shared_ptr<IBatchAction> act) override;
+  virtual void finalize_action(IBatchAction* act) override;
 
   virtual ~ExecutorManager();
 };

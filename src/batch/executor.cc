@@ -35,9 +35,7 @@ void BatchExecutor::add_actions(ExecutorThread::BatchActions&& actions) {
    * make_unique will construct an object of type T and wrap it in a std::unique_ptr
    */
   input_queue->push_tail(
-      std::move(
-        std::make_unique<ExecutorThread::BatchActions>(
-          std::move(actions))));
+          std::move(actions));
 };
 
 void BatchExecutor::process_action_batch() {

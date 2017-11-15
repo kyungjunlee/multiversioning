@@ -89,7 +89,7 @@ ExecutorManager::get_current_lock_holder_for(RecordKey key) {
   return gs->get_stage_holding_lock_for(key);
 }
 
-void ExecutorManager::finalize_action(std::shared_ptr<IBatchAction> act) {
+void ExecutorManager::finalize_action(IBatchAction* act) {
   gs->finalize_execution_of_action(act);
 }
 

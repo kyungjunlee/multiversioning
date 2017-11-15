@@ -12,8 +12,8 @@ ArrayContainer::ArrayContainer(BatchActions&& actions):
       this->actions.end(),
       // NOTE: this makes use of an overloaded < operator for Actions!
       [](
-        std::unique_ptr<IBatchAction> const& a, 
-        std::unique_ptr<IBatchAction> const& b) 
+        IBatchAction* const& a, 
+        IBatchAction* const& b) 
       {return *a < *b;});
 };
 
