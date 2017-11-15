@@ -24,8 +24,8 @@ public:
 
   typedef std::vector<IBatchAction*> SimulationWorkload;
   virtual void set_simulation_workload(SimulationWorkload&& workload) {
-    for(auto& act_ptr : workload) {
-      sched_system->add_action(std::move(act_ptr));
+    for(auto act_ptr : workload) {
+      sched_system->add_action(act_ptr);
     }
     sched_system->flush_actions();
   };

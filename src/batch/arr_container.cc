@@ -12,8 +12,8 @@ ArrayContainer::ArrayContainer(BatchActions&& actions):
       this->actions.end(),
       // NOTE: this makes use of an overloaded < operator for Actions!
       [](
-        IBatchAction* const& a, 
-        IBatchAction* const& b) 
+        const IBatchAction* const a, 
+        const IBatchAction* const b) 
       {return *a < *b;});
 };
 
@@ -37,7 +37,10 @@ IBatchAction* ArrayContainer::take_curr_elt() {
   elements_removed_this_round ++;
   elements_removed_total ++;
   current_element ++;
-  return std::move(this->actions[current_element - 1]);
+
+  auto ret_ptr = this->actions[current_element - 1];
+  this->actions[current_element - 1] = nullptr;
+  return ret_ptr;
 }
 
 void ArrayContainer::advance_to_next_elt() {
@@ -45,7 +48,8 @@ void ArrayContainer::advance_to_next_elt() {
   // of contiguous unremoved space.
   if (elements_removed_this_round > 0) {
     this->actions[current_element - elements_removed_this_round] =
-      std::move(this->actions[current_element]);
+      this->actions[current_element];
+    this->actions[current_element] = nullptr;
   }
 
   current_element ++;
