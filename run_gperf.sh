@@ -2,9 +2,10 @@ mkdir -p data
 
 source experiment_config
 
-make batch;
+make batch
 
 heap_prof=heapprof
+heap_check=heapcheck
 cpu_prof=cpuprof
 
 for threads_indicator in `seq 0 $((${#exec_array[@]} - 1))`; 
@@ -19,6 +20,9 @@ for threads_indicator in `seq 0 $((${#exec_array[@]} - 1))`;
       if [ $1 = $heap_prof ]; then
         HEAPPROFILE=gperf/${gperf_heapprof}
         export HEAPPROFILE
+      elif [ $1 = $heap_check ]; then
+        HEAPCHECK=normal
+        export $HEAPCHECK
       elif [ $1 = $cpu_prof ]; then
         CPUPROFILE=gperf/${gperf_cpu}
         export CPUPROFILE
