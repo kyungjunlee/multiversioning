@@ -408,25 +408,24 @@ void SchedulerManager::signal_execution_threads() {
     // end of the function when lock is released. Otherwise a huge slowdown
     // ensues!
     /* TODO: may not be necessary */
-    /*
     std::vector<AwaitingBatch> tmp_aw_batches;
     tmp_aw_batches.resize(300);
-    */
+    
     while (m_queue.is_empty() == false) {
       auto& curr_aw_batch = m_queue.peek_head();
       exec_manager->signal_execution_threads(std::move(curr_aw_batch.tw));  
       m_queue.pop_head();
-      /*
+      /* TODO: may not be necessary */
       tmp_aw_batches.push_back(std::move(curr_aw_batch));
-      */
+      
     }
     
     IF_SCHED_MAN_DIAG(
-      /*
+      /* TODO: may not be necessary */
       if (tmp_aw_batches.size() > 0) {
         diag.number_signaled.add_sample(tmp_aw_batches.size());
       }
-      */
+      
     );,
     diag.time_signaling_no_destr.add_sample,
     t1

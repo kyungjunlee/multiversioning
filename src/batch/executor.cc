@@ -81,6 +81,9 @@ bool BatchExecutor::process_action(IBatchAction* act) {
   }
 
   // attempt to claim the action
+  /*
+   * TODO: why causes segmentation fault here?
+   */ 
   if (!act->conditional_atomic_change_state(
         BatchActionState::substantiated,
         BatchActionState::processing)) {

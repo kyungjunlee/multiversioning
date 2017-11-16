@@ -53,7 +53,7 @@ public:
   }; 
 
   virtual void add_action(IBatchAction* act) override {
-    MSQueue<IBatchAction*>::push_tail(std::move(act));
+    MSQueue<IBatchAction*>::push_tail(act);
   };
 
   virtual bool is_empty() override {
