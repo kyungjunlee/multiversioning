@@ -15,6 +15,11 @@ LIBS=-lnuma -lpthread -lrt -lcityhash
 TEST_LIBS=-lgtest
 CXX=g++-5
 
+# GPERF parameters
+#CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+GPERF_LFLAGS=-Wl,--no-as-needed# this linker flags is needed for GPERF
+GPERF_LIBS=-lprofiler -ltcmalloc
+
 LIBPATH=./libs/lib/
 INC_DIRS=include libs/include
 INCLUDE=$(foreach d, $(INC_DIRS), -I$d)
@@ -95,7 +100,8 @@ build/time_elements: $(OBJECTS) $(BATCHING_OBJECTS) $(TIMING_OBJECTS)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -Itime_elts -o $@ $^ -L$(LIBPATH) $(LIBS)
 
 build/batch_db: $(OBJECTS) $(BATCHING_OBJECTS) $(BATCH_DB_OBJECTS) 
-	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS)
+	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS) \
+        #$(LFLAGS) -L$(LIBPATH) $(GPERF_LIBS)
 
 build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -o $@ $^ -L$(LIBPATH) $(LIBS) $(TEST_LIBS)
