@@ -9,11 +9,19 @@
 # 													the scheduler manager and print them.
 # 	- SCHEDULER_MAN_NO_TIME -- disable timing statistics in diagnostics on scheduler manager.
 
-CFLAGS= $(ADD_CFLAGS) -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare 
+CFLAGS= $(ADD_CFLAGS) -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1
+CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free 
+LFLAGS=-Wl,--no-as-needed# this linker flags is needed for GPERF
 LIBS=-lnuma -lpthread -lrt -lcityhash
 TEST_LIBS=-lgtest
 CXX=g++-5
+
+# GPERF parameters
+CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+GPERF_LFLAGS=-Wl,--no-as-needed# this linker flags is needed for GPERF
+GPERF_LIBS=-lprofiler -ltcmalloc
+GPERF_LIBS=-ltcmalloc
 
 LIBPATH=./libs/lib/
 INC_DIRS=include libs/include
@@ -50,7 +58,7 @@ all: build/db
 test:CFLAGS+=-DTESTING=1 -DUSE_BACKOFF=1 
 test:build/tests
 
-batch: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1 -fno-omit-frame-pointer
+batch: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1 -fno-omit-frame-pointer# -pg -DSCHEDULER_DIAG
 batch: build/batch_db
 
 time: CFLAGS+=-DTESTING=0 -DUSE_BACKOFF=1
@@ -95,7 +103,8 @@ build/time_elements: $(OBJECTS) $(BATCHING_OBJECTS) $(TIMING_OBJECTS)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -Itime_elts -o $@ $^ -L$(LIBPATH) $(LIBS)
 
 build/batch_db: $(OBJECTS) $(BATCHING_OBJECTS) $(BATCH_DB_OBJECTS) 
-	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS)
+	@$(CXX) $(CFLAGS) $(INCLUDE) -Istart_batch -o $@ $^ -L$(LIBPATH) $(LIBS) \
+        $(LFLAGS) -L$(LIBPATH) $(GPERF_LIBS)
 
 build/tests:$(OBJECTS) $(BATCHING_OBJECTS) $(TESTOBJECTS) $(NON_MAIN_STARTS)
 	@$(CXX) $(CFLAGS) $(INCLUDE) -o $@ $^ -L$(LIBPATH) $(LIBS) $(TEST_LIBS)

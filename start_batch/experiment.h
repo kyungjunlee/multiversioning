@@ -113,7 +113,7 @@ private:
     s.reset_system();
   };
 
-  std::vector<std::pair<double, unsigned int>> do_measurements() {
+  std::vector<std::pair<double, unsigned int>> do_measurements(std::vector<double> &total_time) {
     assert(workload.size() == conf.num_txns);
     assert(txns_completed == 0);
 
@@ -188,6 +188,16 @@ private:
     // stop system
     s.stop_system();
 
+    /*
+     * measrue the total execution time
+     */
+    total_time.push_back(
+      TimeUtilities::time_difference_ms(all_start, input_stop));
+    total_time.push_back(
+      TimeUtilities::time_difference_ms(all_start, output_stop));
+    total_time.push_back(
+      TimeUtilities::time_difference_ms(all_start, measure_stop));
+
     print_debug_info ({
       "Input Time",
       "Output Time",
@@ -250,13 +260,20 @@ public:
   }
 
   void do_experiment() {
+    /*
+     * to measure the total time; input_time, output_time, measure_time
+     */
+    std::vector<double> total_time;
+    total_time.reserve(10);
+
     initialize();
     do_warm_up_run();
-    auto results = do_measurements();
+    auto results = do_measurements(total_time);
   
     Out printer(conf);
     printer.write_exp_description();
     printer.write_interim_completion_time_results(results);
+    printer.write_completion_time_results(total_time);
   };
 };
 
