@@ -20,6 +20,10 @@ void Scheduler::StartWorking() {
       TIME_IF_SCHED_DIAGNOSTICS(
         process_batch();, 
         diag.time_creating_schedule.add_sample, tp_2);
+      /*
+       * TODO: periodically hand_batch_to_execution or
+       * executor manager periodically picks packings from schedulers
+       */
       this->manager->hand_batch_to_execution(
           this, 
           batch_actions.batch_id, 
@@ -41,12 +45,17 @@ void Scheduler::process_batch() {
 
   // populate the batch lock table and workloads
   unsigned int curr_workload_item = 0;
+  /*
+   * TODO: do one-shot-packing; i.e., create as many packings as possible in one iteration
+   */
   std::vector<std::unique_ptr<IBatchAction>> packing;
+  // std::vector<std::vector<std::unique_ptr<IBatchAction>>> packings;
+  // packings = std::move(Packer::get_packings(&ac));
+
   while (ac.get_remaining_count() != 0) {
-    // get packing
     packing = std::move(Packer::get_packing(&ac));
     ac.sort_remaining();
-    // translate a packing into lock request
+
     for (std::unique_ptr<IBatchAction>& act : packing) {
       /*
        * TODO: isn't it creating so many IBatchAction instances here?

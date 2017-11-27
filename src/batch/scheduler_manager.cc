@@ -76,7 +76,7 @@ void ThreadInputQueues::assign_inputs(SchedulerThread* s) {
     auto& cur_queue = queues[i]; 
     if (cur_queue.is_empty() == false) continue;
 
-    while((actions = iq.try_get_action_batch()).size() == 0) {
+    while((actions = std::move(iq.try_get_action_batch())).size() == 0) {
       // No input to the system available.
       if (input_awaits(s)) {
         // if the distributing thread has unfinished work, stop waiting
@@ -344,6 +344,11 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
       LockType::exclusive,
       true);
   if (g.is_locked() == false) return;
+  /*
+   * TODO: BOTTLENECK --- LOCK CONTENTION
+   * For each stage, only one scheduling thread is allowed to merge its lock queue
+   * into the global lock queue.
+   */
 
   TIME_IF_SCHED_MAN_DIAGNOSTICS(
     auto& m_queue = merging_queues.merging_stages[stage];
@@ -406,6 +411,11 @@ void SchedulerManager::signal_execution_threads() {
    
     while (m_queue.is_empty() == false) {
       auto& curr_aw_batch = m_queue.peek_head();
+      /*
+       * TODO: BOTTLENECK --- LOCK CONTENTION
+       * Only one scheduling thread's packing will be passed to executors at a time
+       * although many scheduling threads are generating packings
+       */
       exec_manager->signal_execution_threads(std::move(curr_aw_batch.tw));  
       m_queue.pop_head();
       tmp_aw_batches.push_back(std::move(curr_aw_batch));
@@ -441,6 +451,6 @@ SchedulerManager::~SchedulerManager() {
  
   // just to make sure that we are safe on this front.
   stop_working();
-  IF_SCHED_MAN_DIAG(diag.print());
+  // IF_SCHED_MAN_DIAG(diag.print());
 };
 
