@@ -10,6 +10,11 @@
 
 #include <vector>
 #include <memory>
+/*
+ * LOCKLESS_MERGE
+ * to use cmp_and_swap(...)
+ */
+#include <util.h>
 
 // ThreadInputQueue
 //
@@ -117,17 +122,31 @@ struct GlobalOrderedBatches {
 struct BatchMergingStageQueues {
   BatchMergingStageQueues(unsigned int stages_number) {
     merging_stages.resize(stages_number);
+    /*
+     * LOCKLESS_MERGE
+     */
+    stage_locks = new uint64_t[stages_number]();
+    /* 
     stage_locks.resize(stages_number);
     for (auto& lck : stage_locks) {
       pthread_rwlock_init(&lck, NULL);
     }
+    */
     pthread_rwlock_init(&signaling_lock, NULL);
   };
 
   std::vector<AwaitingBatchQueue> merging_stages;
-  std::vector<pthread_rwlock_t> stage_locks;
+  /*
+   * LOCKLESS_MERGE
+   */
+  uint64_t* stage_locks;
+  // std::vector<pthread_rwlock_t> stage_locks;
   AwaitingBatchQueue merged_batches;
   pthread_rwlock_t signaling_lock;
+
+  ~BatchMergingStageQueues() {
+    if (stage_locks) delete stage_locks;
+  }
 };
 
 //  Scheduler Manager
@@ -139,6 +158,7 @@ struct BatchMergingStageQueues {
 class SchedulerManager : 
   public SchedulerThreadManager,
   public SchedulingSystem {
+
 private:
   bool system_is_initialized();
   void create_threads();

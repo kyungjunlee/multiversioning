@@ -76,7 +76,7 @@ void ThreadInputQueues::assign_inputs(SchedulerThread* s) {
     auto& cur_queue = queues[i]; 
     if (cur_queue.is_empty() == false) continue;
 
-    while((actions = std::move(iq.try_get_action_batch())).size() == 0) {
+    while((actions = iq.try_get_action_batch()).size() == 0) {
       // No input to the system available.
       if (input_awaits(s)) {
         // if the distributing thread has unfinished work, stop waiting
@@ -339,11 +339,20 @@ void SchedulerManager::collect_awaiting_batches() {
 };
 
 void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
+  /*
   MutexRWGuard g(
       &merging_queues.stage_locks[stage],
       LockType::exclusive,
       true);
   if (g.is_locked() == false) return;
+  */
+
+  /*
+   * LOCKLESS_MERGE
+   */
+  if (!try_lock((volatile uint64_t*)&merging_queues.stage_locks[stage]))
+    return;
+
   /*
    * TODO: BOTTLENECK --- LOCK CONTENTION
    * For each stage, only one scheduling thread is allowed to merge its lock queue
@@ -391,6 +400,12 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
     diag.time_merging[stage].add_sample,
     t1
   );
+  
+  /*
+   * LOCKLESS_MERGE
+   */
+  unlock((volatile uint64_t*)&merging_queues.stage_locks[stage]);
+
 };
 
 void SchedulerManager::signal_execution_threads() {
