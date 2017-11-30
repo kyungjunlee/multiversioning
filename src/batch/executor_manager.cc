@@ -59,17 +59,17 @@ void ExecutorManager::signal_execution_threads(
   } 
 };
 
-std::unique_ptr<ExecutorThread::BatchActions> 
+std::unique_ptr<ExecutorThread::BatchActions> &&
 ExecutorManager::get_done_batch() {
   std::unique_ptr<ExecutorThread::BatchActions> batch;
-  while ((batch = try_get_done_batch()) == nullptr);
+  while ((batch = std::move(try_get_done_batch())) == nullptr);
 
   return std::move(batch);  
 }
 
-std::unique_ptr<ExecutorThread::BatchActions> 
+std::unique_ptr<ExecutorThread::BatchActions> &&
 ExecutorManager::try_get_done_batch() {
-  auto batch = executors[next_output_executor]->try_get_done_batch();
+  auto batch = std::move(executors[next_output_executor]->try_get_done_batch());
   next_output_executor ++;
   next_output_executor %= executors.size();
 
@@ -89,7 +89,7 @@ ExecutorManager::get_current_lock_holder_for(RecordKey key) {
   return gs->get_stage_holding_lock_for(key);
 }
 
-void ExecutorManager::finalize_action(std::shared_ptr<IBatchAction> act) {
+void ExecutorManager::finalize_action(std::shared_ptr<IBatchAction>&& act) {
   gs->finalize_execution_of_action(act);
 }
 

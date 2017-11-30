@@ -67,7 +67,7 @@ protected:
 
 public:
   BatchLockTable();
-  void insert_lock_request(std::shared_ptr<IBatchAction> request);
+  void insert_lock_request(std::unique_ptr<IBatchAction>&& request);
   const LockTableType& get_lock_table_data();
 
   friend class LockTable;

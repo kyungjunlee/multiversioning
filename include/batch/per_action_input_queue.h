@@ -29,7 +29,7 @@ public:
     InputQueue(batch_size)
   {};
 
-  virtual InputQueue::BatchActions try_get_action_batch() override {
+  virtual InputQueue::BatchActions&& try_get_action_batch() override {
     // we return the whole batch only if the input queue is not empty. 
     // otherwise we return an empty vector!
     if (this->is_empty()) 
@@ -49,7 +49,7 @@ public:
       this->pop_head();
     }
 
-    return batch;
+    return std::move(batch);
   }; 
 
   virtual void add_action(std::unique_ptr<IBatchAction>&& act) override {

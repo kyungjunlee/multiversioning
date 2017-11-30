@@ -53,7 +53,7 @@ void Scheduler::process_batch() {
        */
       auto act_sptr = std::shared_ptr<IBatchAction>(std::move(act));
       workloads[curr_workload_item++] = act_sptr;
-      lt.insert_lock_request(act_sptr);
+      lt.insert_lock_request(std::move(act_sptr));
     }
   }
 

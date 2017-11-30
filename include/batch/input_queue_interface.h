@@ -25,7 +25,7 @@ public:
   
   // Try to get a batch of actions. Returns an empty vector if no actions
   // are available and otherwise busy waits until a whole batch is available.
-  virtual BatchActions try_get_action_batch() = 0;
+  virtual BatchActions&& try_get_action_batch() = 0;
 
   // Puts the action into the global queue. Does not guarantee that the actions
   // are visible to the execution threads. To enforce "flushing" consider calling

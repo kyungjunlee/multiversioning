@@ -26,7 +26,7 @@ LockStage::LockStage(
   assert(!(lt == LockType::exclusive && requesters.size() > 1));
 };
 
-bool LockStage::add_to_stage(std::shared_ptr<IBatchAction> txn, LockType lt) {
+bool LockStage::add_to_stage(std::shared_ptr<IBatchAction>&& txn, LockType lt) {
   // can only add to a stage when both the request and the stage are shared
   // or when the stage is empty.
   if ((lt == LockType::exclusive && requesters.size() > 0) ||
@@ -34,7 +34,7 @@ bool LockStage::add_to_stage(std::shared_ptr<IBatchAction> txn, LockType lt) {
     return false;
   }
 
-  requesters.insert(txn);
+  requesters.insert(std::move(txn));
   l_type = lt;
   holders ++;
   return true;

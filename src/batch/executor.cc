@@ -59,7 +59,7 @@ void BatchExecutor::process_action_batch() {
   output_queue->push_tail(std::move(currentBatch));
 };
 
-bool BatchExecutor::process_action(std::shared_ptr<IBatchAction> act) {
+bool BatchExecutor::process_action(std::shared_ptr<IBatchAction>&& act) {
   assert(act != nullptr);
 
   uint64_t action_state = act->action_state;
@@ -135,12 +135,12 @@ void BatchExecutor::process_pending() {
   }
 };
 
-std::unique_ptr<ExecutorThread::BatchActions> BatchExecutor::try_get_done_batch() {
+std::unique_ptr<ExecutorThread::BatchActions>&& BatchExecutor::try_get_done_batch() {
   if (!output_queue->is_empty()) {
     std::unique_ptr<ExecutorThread::BatchActions> act;
     act = std::move(output_queue->peek_head());
     output_queue->pop_head();
-    return act; 
+    return std::move(act); 
   }
 
   return nullptr;

@@ -103,16 +103,16 @@ void LockTable::allocate_mem_for(RecordKey key) {
 
 BatchLockTable::BatchLockTable() {}
 
-void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction> req) {
+void BatchLockTable::insert_lock_request(std::shared_ptr<IBatchAction>&& req) {
   auto add_request = [this, &req](
       IBatchAction::RecordKeySet* set, LockType typ) {
     for (auto& i : *set) {
       BatchLockQueue& blq = lock_table.emplace(i, BatchLockQueue()).first->second;
       if (blq.is_empty() || 
-          ((*blq.peek_tail())->add_to_stage(req, typ) == false)) {
+          ((*blq.peek_tail())->add_to_stage(std::move(req), typ) == false)) {
         // insertion into the stage failed. Make a new stage and add it in.
         blq.non_concurrent_push_tail(std::move(
-              std::make_shared<LockStage>(LockStage({req}, typ))));
+              std::make_shared<LockStage>(LockStage({std::move(req)}, typ))));
       }
     }
   };

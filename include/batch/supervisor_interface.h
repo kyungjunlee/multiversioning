@@ -31,7 +31,7 @@ public:
     sched_system->flush_actions();
   };
 
-  virtual std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>> 
+  virtual std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>> &&
     get_output() {
       return std::move(exec_system->try_get_done_batch());
   };

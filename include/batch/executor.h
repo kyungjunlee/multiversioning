@@ -45,7 +45,8 @@ protected:
 
   void process_action_batch();
   // true if successful and false otherwise
-  bool process_action(std::shared_ptr<IBatchAction> act);
+  bool process_action(std::shared_ptr<IBatchAction>&& act);
+  // bool process_action(std::shared_ptr<IBatchAction> act);
   void process_pending();
   
 public:

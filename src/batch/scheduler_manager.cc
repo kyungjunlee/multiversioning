@@ -70,13 +70,13 @@ void ThreadInputQueues::assign_inputs(SchedulerThread* s) {
   }
 
   // Lock is granted. Assign inputs.
-  InputQueue::BatchActions actions;
+  InputQueue::BatchActions&& actions;
   unsigned int thread_count = queues.size();
   for (unsigned int i = 0; i < thread_count; i++) {
     auto& cur_queue = queues[i]; 
     if (cur_queue.is_empty() == false) continue;
 
-    while((actions = iq.try_get_action_batch()).size() == 0) {
+    while((actions = std::move(iq.try_get_action_batch())).size() == 0) {
       // No input to the system available.
       if (input_awaits(s)) {
         // if the distributing thread has unfinished work, stop waiting
