@@ -37,7 +37,7 @@ public:
     if (MSQueue<std::vector<std::unique_ptr<IBatchAction>>>::is_empty()) 
       return InputQueue::BatchActions();
 
-    auto return_value = std::move(this->peek_head());
+    auto return_value = this->peek_head();
     this->pop_head();
 
     return return_value;

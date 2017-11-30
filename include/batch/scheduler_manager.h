@@ -104,11 +104,20 @@ struct GlobalOrderedBatches {
   GlobalOrderedBatches():
     handed_batch_id(0)
   {
-    pthread_rwlock_init(&lck, NULL);
+    /*
+     * LOCKLESS_MERGE
+     */
+    lck = 0;
+    
+    // pthread_rwlock_init(&lck, NULL);
   };
   
   std::vector<AwaitingBatch> batches;
-  pthread_rwlock_t lck;
+  /*
+   * LOCKLESS_MERGE
+   */
+  uint64_t lck;
+  // pthread_rwlock_t lck;
   uint64_t handed_batch_id;
 };
 
@@ -126,13 +135,14 @@ struct BatchMergingStageQueues {
      * LOCKLESS_MERGE
      */
     stage_locks = new uint64_t[stages_number]();
+    signaling_lock = 0;
     /* 
     stage_locks.resize(stages_number);
     for (auto& lck : stage_locks) {
       pthread_rwlock_init(&lck, NULL);
     }
-    */
     pthread_rwlock_init(&signaling_lock, NULL);
+    */
   };
 
   std::vector<AwaitingBatchQueue> merging_stages;
@@ -140,9 +150,10 @@ struct BatchMergingStageQueues {
    * LOCKLESS_MERGE
    */
   uint64_t* stage_locks;
-  // std::vector<pthread_rwlock_t> stage_locks;
+  uint64_t signaling_lock;
   AwaitingBatchQueue merged_batches;
-  pthread_rwlock_t signaling_lock;
+  // std::vector<pthread_rwlock_t> stage_locks;
+  // pthread_rwlock_t signaling_lock;
 
   ~BatchMergingStageQueues() {
     if (stage_locks) delete stage_locks;

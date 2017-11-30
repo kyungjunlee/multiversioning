@@ -267,9 +267,17 @@ void SchedulerManager::process_created_batches() {
 };
 
 void SchedulerManager::collect_awaiting_batches() {
+  /*
   MutexRWGuard g(&sorted_pending_batches.lck, LockType::exclusive, true);
   if (g.is_locked() == false) return;
   assert(g.is_locked());
+  */
+
+  /*
+   * LOCKLESS_MERGE
+   */
+  if (!try_lock((volatile uint64_t*)&sorted_pending_batches.lck))
+    return;
   
   TIME_IF_SCHED_MAN_DIAGNOSTICS(
     unsigned int queues_num = pending_batches.pending_queues.size(); 
@@ -336,6 +344,11 @@ void SchedulerManager::collect_awaiting_batches() {
     },
     diag.time_collecting_inputs.add_sample,
     tp1);
+  
+  /*
+   * LOCKLESS_MERGE
+   */
+  unlock((volatile uint64_t*)&sorted_pending_batches.lck);
 };
 
 void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
@@ -409,11 +422,19 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
 };
 
 void SchedulerManager::signal_execution_threads() {
+  /*
   MutexRWGuard g(
       &merging_queues.signaling_lock,
       LockType::exclusive,
       true);
   if (g.is_locked() == false) return;
+  */
+
+  /*
+   * LOCKLESS_MERGE
+   */
+  if (!try_lock((volatile uint64_t*)&merging_queues.signaling_lock))
+    return;
 
   TIME_IF_SCHED_MAN_DIAGNOSTICS(
     auto& m_queue = merging_queues.merged_batches;
@@ -445,7 +466,14 @@ void SchedulerManager::signal_execution_threads() {
     t1
   );
 
+  /*
   g.unlock();
+  */
+
+  /*
+   * LOCKLESS_MERGE
+   */
+  unlock((volatile uint64_t*)&merging_queues.signaling_lock);
 };
 
 SchedulerManager::~SchedulerManager() {
