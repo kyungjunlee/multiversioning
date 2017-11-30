@@ -105,7 +105,7 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction>&& act) {
           continue;
         }
 
-        for (auto&& action_sptr : blocking_actions) {
+        for (auto& action_sptr : blocking_actions) {
           this->process_action(std::move(action_sptr)); 
         }
       } 
@@ -144,7 +144,7 @@ std::unique_ptr<ExecutorThread::BatchActions>&& BatchExecutor::try_get_done_batc
     return std::move(act); 
   }
 
-  return nullptr;
+  return std::move(nullptr);
 };
 
 void BatchExecutor::signal_stop_working() {
