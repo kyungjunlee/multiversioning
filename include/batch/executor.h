@@ -60,7 +60,7 @@ public:
   
   // implement the executor thread interface.
   void add_actions(ExecutorThread::BatchActions&& actions) override;
-  std::unique_ptr<ExecutorThread::BatchActions> try_get_done_batch() override;
+  std::unique_ptr<ExecutorThread::BatchActions>&& try_get_done_batch() override;
   void signal_stop_working() override;
   bool is_stop_requested() override;
   void reset() override;

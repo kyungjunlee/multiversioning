@@ -43,8 +43,9 @@ void BatchExecutor::process_action_batch() {
     // be blocked by other actions!
     process_pending();
 
-    assert(currentBatch->at(i) != nullptr);
-    if (!process_action(currentBatch->at(i))) {
+    // assert(currentBatch->at(i) != nullptr);
+
+    if (!process_action(std::move(currentBatch->at(i)))) {
       pending_list->push_back(currentBatch->at(i));        
       pending_list->size();
     } 
@@ -81,10 +82,10 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction>&& act) {
   // we successfully claimed the action.
   if (act->ready_to_execute()) {
     act->Run(this->exec_manager->get_db_storage_pointer());
-    this->exec_manager->finalize_action(act); 
     bool state_change_success = act->conditional_atomic_change_state(
         BatchActionState::processing,
         BatchActionState::done);
+    this->exec_manager->finalize_action(std::move(act)); 
     assert(state_change_success);
     return true;
   } else {
@@ -104,8 +105,8 @@ bool BatchExecutor::process_action(std::shared_ptr<IBatchAction>&& act) {
           continue;
         }
 
-        for (auto action_sptr : blocking_actions) {
-          this->process_action(action_sptr); 
+        for (auto&& action_sptr : blocking_actions) {
+          this->process_action(std::move(action_sptr)); 
         }
       } 
     };
@@ -126,7 +127,7 @@ void BatchExecutor::process_pending() {
   // attempt to execute everything within the pending queue
   auto it = pending_list->begin();
   while (it != pending_list->end()) {
-    if (process_action(*it)) {
+    if (process_action(std::move(*it))) {
       it = pending_list->erase(it);
       continue;
     }
