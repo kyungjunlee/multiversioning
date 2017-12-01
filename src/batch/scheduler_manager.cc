@@ -144,7 +144,7 @@ void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
 void SchedulerManager::create_threads() {
   int i = 0;
   // create scheduler helper thread
-  helper = std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
+  helper = std::make_shared<SchedulerHelper>(this, conf.first_pin_cpu_id + i, i);
 
   for (i = 1; 
       i <= this->conf.scheduling_threads_count; 
@@ -152,8 +152,6 @@ void SchedulerManager::create_threads() {
 		schedulers.push_back(
 			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
   }
-
-
 };
 
 ExecutorThreadManager::ThreadWorkloads
@@ -437,7 +435,7 @@ void SchedulerManager::signal_execution_threads() {
     diag.time_signaling_no_destr.add_sample,
     t1
   );
-  
+
   /*
   g.unlock();
   */

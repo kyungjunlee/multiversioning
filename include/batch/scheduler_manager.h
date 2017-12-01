@@ -2,6 +2,7 @@
 #define SCHEDULER_MANAGER_H_
 
 #include "batch/scheduler.h"
+#include "batch/scheduler_helper.h"
 #include "batch/lock_table.h"
 #include "batch/batched_input_queue.h"
 #include "batch/scheduler_system.h"

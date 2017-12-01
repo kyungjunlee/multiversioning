@@ -31,6 +31,8 @@ class SchedulerThreadManager {
         uint64_t batch_id,
         OrderedWorkload&& workload,
         BatchLockTable&& blt) = 0;
+
+    virtual void process_created_batches() = 0;
     
     virtual ~SchedulerThreadManager(){};
 };

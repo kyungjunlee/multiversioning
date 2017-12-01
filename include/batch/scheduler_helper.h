@@ -22,7 +22,7 @@ class SchedulerHelper : public SchedulerThread {
 private:
   uint64_t thread_id;
 public:
-  Scheduler(
+  SchedulerHelper(
       SchedulerThreadManager* manager,
       int m_cpu_number,
       uint64_t thread_id);
@@ -42,7 +42,7 @@ public:
   void StartWorking() override;
   void Init() override;
 
-  virtual ~Scheduler();
+  virtual ~SchedulerHelper();
 
   IF_SCHED_DIAG(
     SchedulerDiag diag;

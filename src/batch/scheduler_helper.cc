@@ -9,7 +9,7 @@ SchedulerHelper::SchedulerHelper(
     SchedulerThreadManager* manager,
     int m_cpu_number,
     uint64_t thread_id):
-  SchedulerHelperThread(manager, m_cpu_number, thread_id)
+  SchedulerThread(manager, m_cpu_number, thread_id)
 {};
 
 void SchedulerHelper::StartWorking() {
