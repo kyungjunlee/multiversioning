@@ -49,10 +49,12 @@ SchedulerThreadBatch ThreadInputQueues::get_batch_from_my_queue(
     // if there is no more input, help handing the load to execution.
     // TODO:
     //  This is a hack... warning with this, might be dangerous.
+    /*
     SchedulerManager* man = static_cast<SchedulerManager*>(s->manager);
     if (man->thread_input.unassigned_input_exists() == false) {
       man->process_created_batches();
     }
+    */
   }
 
   SchedulerThreadBatch batch = std::move(my_queue.peek_head());
@@ -143,15 +145,12 @@ void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
 
 void SchedulerManager::create_threads() {
   int i = 0;
-  // create scheduler helper thread
-  helper = std::make_shared<SchedulerHelper>(this, conf.first_pin_cpu_id + i, i);
-
-  for (i = 1; 
-      i <= this->conf.scheduling_threads_count; 
-      i++) {
+  for (; i < this->conf.scheduling_threads_count; i++) {
 		schedulers.push_back(
 			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
   }
+  // create scheduler helper thread
+  helper = std::make_shared<SchedulerHelper>(this, conf.first_pin_cpu_id + i, i);
 };
 
 ExecutorThreadManager::ThreadWorkloads
