@@ -169,6 +169,7 @@ public:
   BatchMergingStageQueues merging_queues;
   
   std::vector<std::shared_ptr<SchedulerThread>> schedulers;
+  std::shared_ptr<SchedulerThread> helper;
   IGlobalSchedule* gs;
 
   SchedulerManager(

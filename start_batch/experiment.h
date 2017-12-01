@@ -98,12 +98,16 @@ private:
     std::vector<std::pair<double, unsigned int>> results;
     results.reserve(300);
     TimePoint all_start, input_stop, output_stop, measure_stop;
+    /*
+     * pinning the fixed number here might be dangerous,
+     * but change this to automtically set this cpu number
+     */
+    uint32_t total_num_threads = conf.sched_conf.scheduling_threads_count
+      + conf.exec_conf.executing_threads_count + 2;
+      // TODO: set 2 for now (1 + # of scheduler helpers)
+
     auto measure_throughput = [&]() {
-      /*
-       * TODO: pinning the fixed number here might be dangerous
-       * change this to automtically set this cpu number
-       */
-      pin_thread(0);
+      pin_thread(total_num_threads);
       unsigned int current_measurement = 0;
       unsigned int former_measurement = 0;
       TimePoint iteration_start, iteration_end;
@@ -123,13 +127,13 @@ private:
     };
     
     auto put_input = [&]() {
-      pin_thread(2);
+      pin_thread(total_num_threads + 2);
       s.set_simulation_workload(std::move(workload));
       input_stop = TimeUtilities::now();
     };
 
     auto get_output = [&]() {
-      pin_thread(1);
+      pin_thread(total_num_threads + 1);
       std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
       output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();

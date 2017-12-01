@@ -126,7 +126,7 @@ SchedulerManager::SchedulerManager(
 };
 
 bool SchedulerManager::system_is_initialized() {
-  return schedulers.size() > 0;
+  return schedulers.size() > 0 && helper;
 }
 
 void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
@@ -142,12 +142,18 @@ void SchedulerManager::set_global_schedule_ptr(IGlobalSchedule* gs) {
 }
 
 void SchedulerManager::create_threads() {
-  for (int i = 0; 
-      i < this->conf.scheduling_threads_count; 
+  int i = 0;
+  // create scheduler helper thread
+  helper = std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
+
+  for (i = 1; 
+      i <= this->conf.scheduling_threads_count; 
       i++) {
 		schedulers.push_back(
 			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
   }
+
+
 };
 
 ExecutorThreadManager::ThreadWorkloads
@@ -177,12 +183,17 @@ void SchedulerManager::start_working() {
     scheduler_thread_ptr->Run();
     scheduler_thread_ptr->WaitInit();
   }
+  // start the scheduler helper thread
+  helper->Run();
+  helper->WaitInit();
 };
 
 void SchedulerManager::init() {
   for (auto& scheduler_thread_ptr : schedulers) {
     scheduler_thread_ptr->Init();
   }
+  // init the scheduler helper thread
+  helper->Init();
 };
 
 void SchedulerManager::reset() {
@@ -205,6 +216,8 @@ void SchedulerManager::reset() {
   for (auto& scheduler_thread_ptr : schedulers) {
     scheduler_thread_ptr->reset();
   }
+  // reset the scheduler helper thread
+  helper->reset();
 };
 
 void SchedulerManager::stop_working() {
@@ -212,6 +225,9 @@ void SchedulerManager::stop_working() {
     scheduler_thread_ptr->signal_stop_working();
     scheduler_thread_ptr->Join();
   }
+  // reset the scheduler helper thread
+  helper->signal_stop_working();
+  helper->Join();
 }
 
 SchedulerThreadBatch SchedulerManager::request_input(SchedulerThread* s) {
@@ -233,7 +249,7 @@ void SchedulerManager::hand_batch_to_execution(
     OrderedWorkload&& workload,
     BatchLockTable&& blt) {
   register_created_batch(s, batch_id, std::move(workload), std::move(blt));
-  process_created_batches();
+  // process_created_batches();
 };
 
 void SchedulerManager::register_created_batch(
@@ -245,10 +261,6 @@ void SchedulerManager::register_created_batch(
       s != nullptr &&
       system_is_initialized());
 
-  /*
-   * TODO: push_tail increases the pending_queue --- memory allocation
-
-   */
   // we don't need a lock to access s's pending batches queue. That is because
   // we are the only producer and consumer must hold the handing_lock. 
   pending_batches.pending_queues[s->get_thread_id()].push_tail({
@@ -267,9 +279,11 @@ void SchedulerManager::process_created_batches() {
 };
 
 void SchedulerManager::collect_awaiting_batches() {
+  /*
   MutexRWGuard g(&sorted_pending_batches.lck, LockType::exclusive, true);
   if (g.is_locked() == false) return;
   assert(g.is_locked());
+  */
   
   TIME_IF_SCHED_MAN_DIAGNOSTICS(
     unsigned int queues_num = pending_batches.pending_queues.size(); 
@@ -339,11 +353,13 @@ void SchedulerManager::collect_awaiting_batches() {
 };
 
 void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
+  /*
   MutexRWGuard g(
       &merging_queues.stage_locks[stage],
       LockType::exclusive,
       true);
   if (g.is_locked() == false) return;
+  */
 
   TIME_IF_SCHED_MAN_DIAGNOSTICS(
     auto& m_queue = merging_queues.merging_stages[stage];
@@ -389,11 +405,13 @@ void SchedulerManager::merge_into_global_schedule(unsigned int stage) {
 };
 
 void SchedulerManager::signal_execution_threads() {
+  /*
   MutexRWGuard g(
       &merging_queues.signaling_lock,
       LockType::exclusive,
       true);
   if (g.is_locked() == false) return;
+  */
 
   TIME_IF_SCHED_MAN_DIAGNOSTICS(
     auto& m_queue = merging_queues.merged_batches;
@@ -419,22 +437,27 @@ void SchedulerManager::signal_execution_threads() {
     diag.time_signaling_no_destr.add_sample,
     t1
   );
-
+  
+  /*
   g.unlock();
+  */
 };
 
 SchedulerManager::~SchedulerManager() {
   IF_SCHED_DIAG(
     GlobalSchedulerDiag gsd;
+    Scheduler* scheduler_ptr;
     for (auto& scheduler_thread_ptr : schedulers) {
       // NOTE: This will only work with this particular implementation
       // of scheduler... But I guess that should be alright for now.
       //
       // Otherwise we'd have to define an interface for all of below... FT.
-      Scheduler* scheduler_ptr = 
-        static_cast<Scheduler*>(scheduler_thread_ptr.get());
+      scheduler_ptr =  static_cast<Scheduler*>(scheduler_thread_ptr.get());
       gsd.add_sample(scheduler_ptr->diag);
     }
+    // TODO: do we have to do this for the helper thread as well?
+    scheduler_ptr = static_cast<Scheduler*>(helper.get());
+    gsd.add_sample(scheduler_ptr->diag);
 
     gsd.print();
   );

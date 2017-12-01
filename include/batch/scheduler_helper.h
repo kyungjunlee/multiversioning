@@ -1,5 +1,5 @@
-#ifndef BATCH_SCHEDULER_H_
-#define BATCH_SCHEDULER_H_
+#ifndef BATCH_SCHEDULER_HELPER_H_
+#define BATCH_SCHEDULER_HELPER_H_
 
 #include "batch/batch_action_interface.h"
 #include "batch/lock_table.h"
@@ -8,16 +8,17 @@
 #include "batch/scheduler_thread.h"
 #include "batch/diagnostics.h"
 
-//  Scheduler
+//  SchedulerHelper
 //
 //    The implementation of a scheduler thread. This is the part of the system
-//    that does the actual work of creating batch schedules only.
+//    that does the actual work of merging it within the global schedule and
+//    assigning ready packings to executing threads.
 //
 //      TODO:
 //          Tests for:
 //            - StartWorking 
 //            - Init
-class Scheduler : public SchedulerThread {
+class SchedulerHelper : public SchedulerThread {
 private:
   uint64_t thread_id;
 public:
@@ -26,15 +27,11 @@ public:
       int m_cpu_number,
       uint64_t thread_id);
 
+  /*
   SchedulerThreadBatch batch_actions;
   BatchLockTable lt;
   SchedulerThreadManager::OrderedWorkload workloads;
-
-  /*
-   *  Has two basic effects:
-   *    Populates the batch lock table and workloads variables.
-   */
-  void process_batch();
+  */
   
   // override SchedulerThread interface
   void signal_stop_working() override;
@@ -52,4 +49,4 @@ public:
   );
 };
 
-#endif // BATCH_SCHEDULER_H_
+#endif // BATCH_SCHEDULER_HELPER_H_

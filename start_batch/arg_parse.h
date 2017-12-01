@@ -115,7 +115,7 @@ private:
         (uint32_t) strtoul(
             m[static_cast<int>(OptionCode::batch_size)], nullptr, 10),
       .batch_length_sec = 0,
-      .first_pin_cpu_id = 1,
+      .first_pin_cpu_id = 2, // TODO: set 2 for now (1 + # of scheduler helpers)
       .num_table_merging_shard = 
         (uint32_t) strtoul(
             m[static_cast<int>(OptionCode::num_table_merging_shard)], nullptr, 10),
@@ -135,7 +135,8 @@ private:
             m[static_cast<int>(OptionCode::num_exec_threads)], nullptr, 10),
       .first_pin_cpu_id = 
         (uint32_t) strtoul(
-            m[static_cast<int>(OptionCode::num_sched_threads)], nullptr, 10) + 1
+            m[static_cast<int>(OptionCode::num_sched_threads)], nullptr, 10) + 2
+        // // TODO: set 2 for now (1 + # of scheduler helpers)
     };
 
     return conf;
