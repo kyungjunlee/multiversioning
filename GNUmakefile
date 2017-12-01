@@ -11,7 +11,7 @@
 
 CFLAGS= $(ADD_CFLAGS) -O2 -g -Wall -Wextra -Werror -std=c++14 -Wno-sign-compare
 CFLAGS+=-DSNAPSHOT_ISOLATION=0 -DSMALL_RECORDS=0 -DREAD_COMMITTED=1
-CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free 
+#CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free 
 LFLAGS=-Wl,--no-as-needed# this linker flags is needed for GPERF
 LIBS=-lnuma -lpthread -lrt -lcityhash
 TEST_LIBS=-lgtest
