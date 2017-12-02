@@ -20,7 +20,7 @@ CXX=g++-5
 # GPERF parameters
 #CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 GPERF_LFLAGS=-Wl,--no-as-needed# this linker flags is needed for GPERF
-GPERF_LIBS=-lprofiler -ltcmalloc
+GPERF_LIBS=-ltcmalloc #-lprofiler
 
 LIBPATH=./libs/lib/
 INC_DIRS=include libs/include
