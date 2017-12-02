@@ -32,7 +32,9 @@ class SchedulerThreadManager {
         OrderedWorkload&& workload,
         BatchLockTable&& blt) = 0;
 
+    virtual void collect_awaiting_batches() = 0;
     virtual void process_created_batches() = 0;
+    virtual void signal_execution_threads() = 0;
     
     virtual ~SchedulerThreadManager(){};
 };

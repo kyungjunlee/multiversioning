@@ -21,11 +21,19 @@
 class SchedulerHelper : public SchedulerThread {
 private:
   uint64_t thread_id;
+  /* roles
+   *  1 : collect_awaiting_batches
+   *  2 : merging
+   *  3 : signaling
+   */
+  uint32_t roles;
+
 public:
   SchedulerHelper(
       SchedulerThreadManager* manager,
       int m_cpu_number,
-      uint64_t thread_id);
+      uint64_t thread_id,
+      uint32_t role_num);
 
   /*
   SchedulerThreadBatch batch_actions;

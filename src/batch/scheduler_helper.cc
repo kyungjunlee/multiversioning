@@ -8,9 +8,12 @@
 SchedulerHelper::SchedulerHelper(
     SchedulerThreadManager* manager,
     int m_cpu_number,
-    uint64_t thread_id):
+    uint64_t thread_id,
+    uint32_t role_num):
   SchedulerThread(manager, m_cpu_number, thread_id)
-{};
+{
+  roles = role_num;
+};
 
 void SchedulerHelper::StartWorking() {
   while(!is_stop_requested()) {
@@ -20,7 +23,12 @@ void SchedulerHelper::StartWorking() {
      *  2. merge them into global schedulers
      *  3. send ready packings to executing threads
      */
-    this->manager->process_created_batches();
+    if (roles == 1)
+      this->manager->collect_awaiting_batches();
+    else if (roles == 2)
+      this->manager->process_created_batches();
+    else
+      this->manager->signal_execution_threads();
   }
 };
 

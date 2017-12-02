@@ -103,8 +103,8 @@ private:
      * but change this to automtically set this cpu number
      */
     uint32_t total_num_threads = conf.sched_conf.scheduling_threads_count
-      + conf.exec_conf.executing_threads_count + 2;
-      // TODO: set 2 for now (1 + # of scheduler helpers)
+      + conf.exec_conf.executing_threads_count + 4;
+      // TODO: set 4 for now,4 = 1 + 3 (# of scheduler helpers)
 
     auto measure_throughput = [&]() {
       pin_thread(total_num_threads);

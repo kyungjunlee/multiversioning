@@ -128,7 +128,7 @@ SchedulerManager::SchedulerManager(
 };
 
 bool SchedulerManager::system_is_initialized() {
-  return schedulers.size() > 0 && helper;
+  return schedulers.size() > 0 && helpers.size() > 0;
 }
 
 void SchedulerManager::add_action(std::unique_ptr<IBatchAction>&& act) {
@@ -149,8 +149,12 @@ void SchedulerManager::create_threads() {
 		schedulers.push_back(
 			std::make_shared<Scheduler>(this, conf.first_pin_cpu_id + i, i));
   }
-  // create scheduler helper thread
-  helper = std::make_shared<SchedulerHelper>(this, conf.first_pin_cpu_id + i, i);
+  // create scheduler helper threads
+  int j = 1;
+  for (; i < this->conf.scheduling_threads_count + 3; i++) {
+    helpers.push_back(
+      std::make_shared<SchedulerHelper>(this, conf.first_pin_cpu_id + i, i, j++)); 
+  }
 };
 
 ExecutorThreadManager::ThreadWorkloads
@@ -181,8 +185,10 @@ void SchedulerManager::start_working() {
     scheduler_thread_ptr->WaitInit();
   }
   // start the scheduler helper thread
-  helper->Run();
-  helper->WaitInit();
+  for (auto& scheduler_thread_ptr : helpers) {
+    scheduler_thread_ptr->Run();
+    scheduler_thread_ptr->WaitInit(); 
+  }
 };
 
 void SchedulerManager::init() {
@@ -190,7 +196,9 @@ void SchedulerManager::init() {
     scheduler_thread_ptr->Init();
   }
   // init the scheduler helper thread
-  helper->Init();
+  for (auto& scheduler_thread_ptr : helpers) {
+    scheduler_thread_ptr->Init(); 
+  }
 };
 
 void SchedulerManager::reset() {
@@ -214,7 +222,9 @@ void SchedulerManager::reset() {
     scheduler_thread_ptr->reset();
   }
   // reset the scheduler helper thread
-  helper->reset();
+  for (auto& scheduler_thread_ptr : helpers) {
+    scheduler_thread_ptr->reset(); 
+  }
 };
 
 void SchedulerManager::stop_working() {
@@ -223,8 +233,10 @@ void SchedulerManager::stop_working() {
     scheduler_thread_ptr->Join();
   }
   // reset the scheduler helper thread
-  helper->signal_stop_working();
-  helper->Join();
+  for (auto& scheduler_thread_ptr : helpers) {
+    scheduler_thread_ptr->signal_stop_working();
+    scheduler_thread_ptr->Join(); 
+  }
 }
 
 SchedulerThreadBatch SchedulerManager::request_input(SchedulerThread* s) {
@@ -268,11 +280,11 @@ void SchedulerManager::register_created_batch(
 };
 
 void SchedulerManager::process_created_batches() {
-  collect_awaiting_batches();
+  // collect_awaiting_batches();
   for (unsigned int i = 0; i < conf.num_table_merging_shard; i++) {
     merge_into_global_schedule(i); 
   }
-  signal_execution_threads();
+  // signal_execution_threads();
 };
 
 void SchedulerManager::collect_awaiting_batches() {
