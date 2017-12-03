@@ -98,11 +98,16 @@ private:
     std::vector<std::pair<double, unsigned int>> results;
     results.reserve(300);
     TimePoint all_start, input_stop, output_stop, measure_stop;
+    /*
+     * pinning the fixed number here might be dangerous,
+     * but change this to automtically set this cpu number
+     */
+    uint32_t total_num_threads = conf.sched_conf.scheduling_threads_count
+      + conf.exec_conf.executing_threads_count + 1;
+      // TODO: set 4 for now,4 = 1 + 3 (# of scheduler helpers)
+
+    /*
     auto measure_throughput = [&]() {
-      /*
-       * TODO: pinning the fixed number here might be dangerous
-       * change this to automtically set this cpu number
-       */
       pin_thread(0);
       unsigned int current_measurement = 0;
       unsigned int former_measurement = 0;
@@ -121,15 +126,16 @@ private:
       }
       measure_stop = TimeUtilities::now();
     };
+    */
     
     auto put_input = [&]() {
-      pin_thread(2);
+      pin_thread(total_num_threads);
       s.set_simulation_workload(std::move(workload));
       input_stop = TimeUtilities::now();
     };
 
     auto get_output = [&]() {
-      pin_thread(1);
+      pin_thread(total_num_threads + 1);
       std::vector<std::unique_ptr<std::vector<std::shared_ptr<IBatchAction>>>> output;
       output.reserve(expected_output_elts);
       unsigned int workload_size = workload.size();
@@ -150,13 +156,13 @@ private:
     };
 
     all_start = TimeUtilities::now();
-    std::thread measure(measure_throughput);
+    //std::thread measure(measure_throughput);
     std::thread output(get_output);
     std::thread input(put_input);
     
     input.join();
     output.join();
-    measure.join();
+    //measure.join();
 
     // stop system
     s.stop_system();
@@ -168,8 +174,10 @@ private:
       TimeUtilities::time_difference_ms(all_start, input_stop));
     total_time.push_back(
       TimeUtilities::time_difference_ms(all_start, output_stop));
+    /*
     total_time.push_back(
       TimeUtilities::time_difference_ms(all_start, measure_stop));
+    */
 
     print_debug_info ({ 
       "Input Time",
