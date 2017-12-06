@@ -2,7 +2,7 @@ mkdir -p data
 
 source experiment_config
 
-make batch;
+make batch -j80
 
 for threads_indicator in `seq 0 $((${#exec_array[@]} - 1))`; 
   do for batch_size_indicator in `seq 0 $((${#batch_sizes[@]} - 1))`;

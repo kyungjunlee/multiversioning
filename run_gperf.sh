@@ -3,7 +3,7 @@ mkdir -p gperf
 
 source experiment_config
 
-make batch -j17
+make batch -j80
 
 heap_prof=heapprof
 cpu_prof=cpuprof

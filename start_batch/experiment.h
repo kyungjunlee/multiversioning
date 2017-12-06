@@ -106,6 +106,7 @@ private:
       + conf.exec_conf.executing_threads_count + 4;
       // TODO: set 4 for now,4 = 1 + 3 (# of scheduler helpers)
 
+    /*
     auto measure_throughput = [&]() {
       pin_thread(total_num_threads);
       unsigned int current_measurement = 0;
@@ -125,7 +126,8 @@ private:
       }
       measure_stop = TimeUtilities::now();
     };
-    
+    */
+   
     auto put_input = [&]() {
       pin_thread(total_num_threads + 2);
       s.set_simulation_workload(std::move(workload));
@@ -154,13 +156,13 @@ private:
     };
 
     all_start = TimeUtilities::now();
-    std::thread measure(measure_throughput);
+    //std::thread measure(measure_throughput);
     std::thread output(get_output);
     std::thread input(put_input);
     
     input.join();
     output.join();
-    measure.join();
+    //measure.join();
 
     // stop system
     s.stop_system();
@@ -172,8 +174,10 @@ private:
       TimeUtilities::time_difference_ms(all_start, input_stop));
     total_time.push_back(
       TimeUtilities::time_difference_ms(all_start, output_stop));
+    /*
     total_time.push_back(
       TimeUtilities::time_difference_ms(all_start, measure_stop));
+    */
 
     print_debug_info ({ 
       "Input Time",
