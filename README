@@ -2,12 +2,14 @@ Warning: This is still a work in progress.
 
 Library dependencies:
 
-The project links with the cityhash and libnuma libraries. The source
-for each dependency can be respectively found at:
+The project links with the cityhash and libnuma libraries.
+For tcmalloc, please look at the gperftools library.
+The source for each dependency can be respectively found at:
 
 https://github.com/google/cityhash.git
 https://github.com/numactl/numactl.git
 https://github.com/google/googletest
+https://github.com/gperftools/gperftools
 
 The resulting libraries and header files must be installed in the
 libs/ directory. Pass --prefix=$(MV_DIR)/libs/ while configuring the
